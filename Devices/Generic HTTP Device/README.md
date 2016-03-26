@@ -1,6 +1,6 @@
 # Generic HTTP Device
 
-This project consists of a Raspberry Pi running Raspbian OS. It runs HTTPD with index.php as the source. The PHP runs the gpio command in order to the pins on the Pi. The code sample causes a relay to momentarily turn on then off. I'm using this on a gate so the short/momentary capability was key.
+This project consists of a Raspberry Pi running Raspbian OS. It runs HTTPD with index.php as the source. The PHP runs the gpio command in order to enable the pins on the Pi. The code sample in the PHP file causes a relay to momentarily turn on then off. I'm using this on a gate so the short/momentary capability was key.
 
 The Groovy file is the Device Handler for SmartThings.
 index.php is meant to reside in /var/www/html folder of the Raspbery Pi and runs the external gpio command in Linux.
