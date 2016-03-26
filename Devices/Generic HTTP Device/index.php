@@ -82,6 +82,12 @@ $lastpos = strpos($output, ',');
 $output = trim(substr($output,$firstpos+2, $lastpos-$firstpos-2));
 echo "UpTime=$output\n";
 
+//TEMPERATURE
+$tempcelcius = shell_exec('sudo vcgencmd measure_temp | sed "s/temp=//g" | sed "s/\'/°/g"');
+$tempfahr = round(trim(substr($tempcelcius,0, strpos($tempcelcius, '°')-6))*9/5+32,1);
+$tempfahr = 'CPU Temp=' . $tempfahr . '°F';
+echo "CPU Temp=$tempcelcius$tempfahr\n";
+
 if (isset($_POST['GateTrigger']))
 {
 //exec("sudo python /var/www/momentary.py");

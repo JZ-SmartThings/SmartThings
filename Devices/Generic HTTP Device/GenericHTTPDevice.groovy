@@ -1,5 +1,5 @@
 /**
- *  Generic HTTP Device v1.0.20160323
+ *  Generic HTTP Device v1.0.20160326
  *
  *  Source code can be found here: https://github.com/JZ-SmartThings/SmartThings/blob/master/Devices/Generic%20HTTP%20Device/GenericHTTPDevice.groovy
  *
@@ -25,6 +25,7 @@ metadata {
 		attribute "cpuUsage", "string"
 		attribute "spaceUsed", "string"
 		attribute "upTime", "string"
+		attribute "cpuTemp", "string"
 		command "DeviceTrigger"
 		command "TestTrigger"
 		command "RebootNow"
@@ -32,7 +33,7 @@ metadata {
 
 
     preferences {
-		input("DeviceButtonName", "string", title:"Button Name", description: "Please enter button name", required: true, displayDuringSetup: true)
+//		input("DeviceButtonName", "string", title:"Button Name", description: "Please enter button name", required: true, displayDuringSetup: true)
 		input("DeviceIP", "string", title:"Device IP Address", description: "Please enter your device's IP Address", required: true, displayDuringSetup: true)
 		input("DevicePort", "string", title:"Device Port", description: "Please enter port 80 or your device's Port", required: true, displayDuringSetup: true)
 		input("DevicePath", "string", title:"URL Path", description: "Rest of the URL, include forward slash.", displayDuringSetup: true)
@@ -57,19 +58,22 @@ metadata {
 			state "default", label:'TEST' , action: "TestTrigger", icon: "st.Office.office13", backgroundColor:"#53a7c0"
 		}
         valueTile("cpuUsage", "device.cpuUsage", width: 1, height: 1, inactiveLabel: false, decoration: "flat") {
-            state("default", label: '${currentValue}', backgroundColor:"#663399")
+            state("default", label: '${currentValue}', backgroundColor:"#ffffff")
         }
         valueTile("spaceUsed", "device.spaceUsed", width: 1, height: 1, inactiveLabel: false, decoration: "flat") {
-            state("default", label: '${currentValue}', backgroundColor:"#663399")
+            state("default", label: '${currentValue}', backgroundColor:"#ffffff")
         }
         valueTile("upTime", "device.upTime", width: 1, height: 1, inactiveLabel: false, decoration: "flat") {
-            state("default", label: '${currentValue}', backgroundColor:"#663399")
+            state("default", label: '${currentValue}', backgroundColor:"#ffffff")
+        }
+        valueTile("cpuTemp", "device.cpuTemp", width: 1, height: 1, inactiveLabel: false, decoration: "flat") {
+            state("default", label: '${currentValue}', backgroundColor:"#ffffff")
         }
         standardTile("RebootNow", "device.switch", width: 1, height: 1, decoration: "flat") {
 			state "default", label:'REBOOT' , action: "RebootNow", icon: "st.Seasonal Winter.seasonal-winter-014", backgroundColor:"#ff0000"
 		}
 		main "DeviceTrigger"
-		details(["lastTriggered", "DeviceTrigger", "testTriggered", "TestTrigger", "cpuUsage", "spaceUsed", "upTime", "RebootNow"])
+		details(["lastTriggered", "DeviceTrigger", "testTriggered", "TestTrigger", "cpuUsage", "spaceUsed", "upTime", "cpuTemp", "RebootNow"])
 	}
 }
 
@@ -188,6 +192,15 @@ def parse(String description) {
                 }
             }
 			sendEvent(name: "upTime", value: upTime.toString().replace("=","\n"), unit: "")
+		}
+		if (bodyReturned.contains('CPU Temp=')) {
+            def cpuTemp=''
+            def data=bodyReturned.eachLine { line ->
+            	if (line.contains('CPU Temp=')) {
+                	cpuTemp=cpuTemp.replace("CPU Temp=","\n")+line.replace("CPU Temp=","\n")
+                }
+            }
+			sendEvent(name: "cpuTemp", value: "Temp"+cpuTemp.toString().replace("=","\n"), unit: "")
 		}
 	} 
 }
