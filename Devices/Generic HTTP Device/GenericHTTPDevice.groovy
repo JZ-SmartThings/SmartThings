@@ -197,10 +197,16 @@ def parse(String description) {
             def cpuTemp=''
             def data=bodyReturned.eachLine { line ->
             	if (line.contains('CPU Temp=')) {
-                	cpuTemp=cpuTemp.replace("CPU Temp=","\n")+line.replace("CPU Temp=","\n")
+					line=line.replace("\n","")
+					if (cpuTemp.length() == 0) {
+						cpuTemp=line.replace("CPU Temp=","")
+					} else {
+						cpuTemp=cpuTemp+' = '+line.replace("CPU Temp=","")
+					}
+					//log.debug cpuTemp
                 }
             }
-			sendEvent(name: "cpuTemp", value: "Temp"+cpuTemp.toString().replace("=","\n"), unit: "")
+			sendEvent(name: "cpuTemp", value: "CPU Temperature\n"+cpuTemp.toString(), unit: "")
 		}
 	} 
 }
