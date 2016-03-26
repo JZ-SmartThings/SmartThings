@@ -5,6 +5,6 @@ This project consists of a Raspberry Pi running Raspbian OS. It runs HTTPD with 
 The Groovy file is the Device Handler for SmartThings.
 index.php is meant to reside in /var/www/html folder of the Raspbery Pi and runs the external gpio command in Linux.
 
-This is the original video that I used for the Raspberry Pi piece: https://www.youtube.com/watch?v=p2abZ90-eU0&feature=youtu.be
+This is the original video that I used for the Raspberry Pi piece: https://www.youtube.com/watch?v=p2abZ90-eU0
 
 The SmartThings driver was a few hours of self-learning and a bit of frustration --- I really wanted that value tile to show me the last time the script ran WITH SUCCESS.
