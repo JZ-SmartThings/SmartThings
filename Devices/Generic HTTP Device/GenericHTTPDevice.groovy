@@ -1,5 +1,5 @@
 /**
- *  Generic HTTP Device v1.0.20160322
+ *  Generic HTTP Device v1.0.20160323
  *
  *  Source code can be found here: https://github.com/JZ-SmartThings/SmartThings/blob/master/Devices/Generic%20HTTP%20Device/GenericHTTPDevice.groovy
  *
@@ -17,11 +17,17 @@
  */
 
 metadata {
-	definition (name: "Generic HTTP Device", author: "JZ") {
+	definition (name: "Generic HTTP Device", author: "JZ", namespace:"JZ") {
 		capability "Switch"
 		attribute "hubactionMode", "string"
 		attribute "lastTriggered", "string"
-		command "GateTrigger"
+		attribute "testTriggered", "string"
+		attribute "cpuUsage", "string"
+		attribute "spaceUsed", "string"
+		attribute "upTime", "string"
+		command "DeviceTrigger"
+		command "TestTrigger"
+		command "RebootNow"
 	}
 
 
@@ -38,23 +44,48 @@ metadata {
 	}
 
 	tiles {
-        standardTile("GateTrigger", "device.switch", width: 3, height: 1, canChangeIcon: true, canChangeBackground: true, decoration: "flat") {
-			state "default", label:'GATE' , action: "GateTrigger", icon: "st.Outdoor.outdoor22", backgroundColor:"#53a7c0"
-		}
-
-        valueTile("lastTriggered", "device.lastTriggered", width: 3, height: 1, inactiveLabel: false, decoration: "flat") {
+        valueTile("lastTriggered", "device.lastTriggered", width: 2, height: 1, inactiveLabel: false, decoration: "flat") {
             state("default", label: 'Last triggered:\n${currentValue}', backgroundColor:"#ffffff")
-        }    
-
-		main "GateTrigger"
-		details(["GateTrigger", "lastTriggered"])
+        }
+        standardTile("DeviceTrigger", "device.switch", width: 1, height: 1, canChangeIcon: true, canChangeBackground: true, decoration: "flat") {
+			state "default", label:'GATE' , action: "DeviceTrigger", icon: "st.Outdoor.outdoor22", backgroundColor:"#53a7c0"
+		}
+        valueTile("testTriggered", "device.testTriggered", width: 2, height: 1, inactiveLabel: false, decoration: "flat") {
+            state("default", label: 'Test triggered:\n${currentValue}', backgroundColor:"#ffffff")
+        }
+        standardTile("TestTrigger", "device.switch", width: 1, height: 1, decoration: "flat") {
+			state "default", label:'TEST' , action: "TestTrigger", icon: "st.Office.office13", backgroundColor:"#53a7c0"
+		}
+        valueTile("cpuUsage", "device.cpuUsage", width: 1, height: 1, inactiveLabel: false, decoration: "flat") {
+            state("default", label: '${currentValue}', backgroundColor:"#663399")
+        }
+        valueTile("spaceUsed", "device.spaceUsed", width: 1, height: 1, inactiveLabel: false, decoration: "flat") {
+            state("default", label: '${currentValue}', backgroundColor:"#663399")
+        }
+        valueTile("upTime", "device.upTime", width: 1, height: 1, inactiveLabel: false, decoration: "flat") {
+            state("default", label: '${currentValue}', backgroundColor:"#663399")
+        }
+        standardTile("RebootNow", "device.switch", width: 1, height: 1, decoration: "flat") {
+			state "default", label:'REBOOT' , action: "RebootNow", icon: "st.Seasonal Winter.seasonal-winter-014", backgroundColor:"#ff0000"
+		}
+		main "DeviceTrigger"
+		details(["lastTriggered", "DeviceTrigger", "testTriggered", "TestTrigger", "cpuUsage", "spaceUsed", "upTime", "RebootNow"])
 	}
 }
 
-def GateTrigger() {
+def DeviceTrigger() {
 	log.debug "Gate Triggered!!!"
-    //sendEvent(name: "GateTrigger", value: "test", unit: "")
+    //sendEvent(name: "DeviceTrigger", value: "test", unit: "")
     runCmd(DeviceBodyText)
+}
+
+def TestTrigger() {
+	log.debug "Test Triggered!!!"
+    runCmd('Test=')
+}
+def RebootNow() {
+	log.debug "Reboot Triggered!!!"
+    runCmd('RebootNow=')
 }
 
 def runCmd(String varCommand) {
@@ -117,17 +148,51 @@ def parse(String description) {
 		//putImageInS3(descMap)
 		//log.debug descMap["body"]
 		def bodyReturned = new String(descMap["body"].decodeBase64())
-		//log.debug bodyReturned
-		if (bodyReturned.contains('Success')) {
+		log.debug bodyReturned
+		if (bodyReturned.contains(DeviceBodyText + 'Success')) {
 			log.debug "FOUND SUCCESS!!!"
-			def timeString = new Date().format("yyyy-MM-dd h:mm a", location.timeZone)
+			def timeString = new Date().format("yyyy-MM-dd h:mm:ss a", location.timeZone)
 			log.debug timeString
 			//sendEvent(name: "GateTriggered", value: timeString as String, unit: "")
 			sendEvent(name: "lastTriggered", value: timeString as String, unit: "")
 			//lastTriggered=timeString as String
 		}
+		if (bodyReturned.contains('Test=Success')) {
+			def timeString = new Date().format("yyyy-MM-dd h:mm:ss a", location.timeZone)
+			sendEvent(name: "testTriggered", value: timeString as String, unit: "")
+		}
+		if (bodyReturned.contains('CPU=')) {
+            def cpuData=''
+            def data=bodyReturned.eachLine { line ->
+            	if (line.contains('CPU=')) {
+                	cpuData=line
+                }
+            }
+            //log.debug cpuData
+			sendEvent(name: "cpuUsage", value: cpuData.toString().replace("=","\n"), unit: "")
+		}
+		if (bodyReturned.contains('Space Used=')) {
+            def spaceUsed=''
+            def data=bodyReturned.eachLine { line ->
+            	if (line.contains('Space Used=')) {
+                	spaceUsed=line
+                }
+            }
+			sendEvent(name: "spaceUsed", value: spaceUsed.toString().replace("=","\n"), unit: "")
+		}
+		if (bodyReturned.contains('UpTime=')) {
+            def upTime=''
+            def data=bodyReturned.eachLine { line ->
+            	if (line.contains('UpTime=')) {
+                	upTime=line
+                }
+            }
+			sendEvent(name: "upTime", value: upTime.toString().replace("=","\n"), unit: "")
+		}
 	} 
 }
+
+
 def parseDescriptionAsMap(description) {
 	description.split(",").inject([:]) { map, param ->
 	def nameAndValue = param.split(":")
