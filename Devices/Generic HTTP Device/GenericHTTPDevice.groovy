@@ -206,7 +206,7 @@ def parse(String description) {
 					//log.debug cpuTemp
                 }
             }
-			sendEvent(name: "cpuTemp", value: "CPU Temperature\n"+cpuTemp.toString(), unit: "")
+			sendEvent(name: "cpuTemp", value: "CPU Temp\n"+cpuTemp.toString(), unit: "")
 		}
 	} 
 }
