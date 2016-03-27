@@ -33,12 +33,17 @@ metadata {
 
 
     preferences {
-//		input("DeviceButtonName", "string", title:"Button Name", description: "Please enter button name", required: true, displayDuringSetup: true)
+//		input("DeviceButtonName", "string", title:"Button Name", description: "Please enter button name", required: false, displayDuringSetup: true)
 		input("DeviceIP", "string", title:"Device IP Address", description: "Please enter your device's IP Address", required: true, displayDuringSetup: true)
 		input("DevicePort", "string", title:"Device Port", description: "Please enter port 80 or your device's Port", required: true, displayDuringSetup: true)
 		input("DevicePath", "string", title:"URL Path", description: "Rest of the URL, include forward slash.", displayDuringSetup: true)
 		input(name: "DevicePostGet", type: "enum", title: "POST or GET", options: ["POST","GET"], required: true, displayDuringSetup: true)
 		input("DeviceBodyText", "string", title:'Body Content', description: 'Type in "GateTrigger=" for PHP POST', displayDuringSetup: true)
+        section() {
+			input("HTTPAuth", "bool", title:"Requires User Auth?", description: "Choose if the HTTP requires basic authentication", defaultValue: false, required: true, displayDuringSetup: true)
+			input("HTTPUser", "string", title:"HTTP User", description: "Enter your basic username", required: false, displayDuringSetup: true)
+			input("HTTPPassword", "string", title:"HTTP Password", description: "Enter your basic password", required: false, displayDuringSetup: true)
+		}
 	}
     
 	simulator {
@@ -97,6 +102,8 @@ def runCmd(String varCommand) {
     def hosthex = convertIPtoHex(host).toUpperCase()
     def porthex = convertPortToHex(DevicePort).toUpperCase()
     device.deviceNetworkId = "$hosthex:$porthex" 
+	def userpassascii = "${HTTPUser}:${HTTPPassword}"
+	def userpass = "Basic " + userpassascii.encodeAsBase64().toString()
     
     log.debug "The device id configured is: $device.deviceNetworkId"
     
@@ -109,6 +116,9 @@ def runCmd(String varCommand) {
     def headers = [:] 
     headers.put("HOST", "$host:$DevicePort")
 	headers.put("Content-Type", "application/x-www-form-urlencoded")
+   	if (HTTPAuth) {
+        headers.put("Authorization", userpass)
+    }
 
     log.debug "The Header is $headers"
     
@@ -160,6 +170,9 @@ def parse(String description) {
 			//sendEvent(name: "GateTriggered", value: timeString as String, unit: "")
 			sendEvent(name: "lastTriggered", value: timeString as String, unit: "")
 			//lastTriggered=timeString as String
+		}
+		if (bodyReturned.contains('Authentication Required!')) {
+			sendEvent(name: "testTriggered", value: "Use Authentication Credentials", unit: "")
 		}
 		if (bodyReturned.contains('Test=Success')) {
 			def timeString = new Date().format("yyyy-MM-dd h:mm:ss a", location.timeZone)

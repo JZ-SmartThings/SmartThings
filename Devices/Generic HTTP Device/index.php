@@ -1,12 +1,26 @@
+<?php
+$perform_authentication=false;
+
+if ($perform_authentication) {
+	$valid_passwords = array ("gate" => "gate1");
+	$valid_users = array_keys($valid_passwords);
+	$user = $_SERVER['PHP_AUTH_USER'];
+	$pass = $_SERVER['PHP_AUTH_PW'];
+	$validated = (in_array($user, $valid_users)) && ($pass == $valid_passwords[$user]);
+	if (!$validated) {
+	  header('WWW-Authenticate: Basic realm="Generic HTTP Device"');
+	  header('HTTP/1.0 401 Unauthorized');
+	  die ("Authentication Required!");
+	}
+}
+// If code arrives here, this would be a valid user.
+?>
+
 <html>
 <head>
 <meta charset="UTF-8" />
 <!--  <link rel="stylesheet" type="text/css" href="css/style.css"> -->
 <meta name=viewport content='width=700'>
-</head>
-
-
-<div class="center">
 
 <style type='text/css'>
 body, pre	 {
@@ -59,7 +73,11 @@ body, pre	 {
 }
 </style>
 
+</head>
+
 <body>
+
+<div class="center">
 <pre>
 <?php
 //DATE
@@ -107,14 +125,14 @@ exec("sudo shutdown -r now");
 
 
 <form method="post">
-<button class="btn" name="GateTrigger">Gate Trigger</button>&nbsp;
-<br/>
-<button class="btn" name="RebootNow" OnClick='return (confirm("Are you sure you want to reboot?"));'>Reboot Now</button>&nbsp;
-<br/>
-<button class="btn" name="Test">Test</button>&nbsp;
+	<button class="btn" name="GateTrigger">Gate Trigger</button>
+	<br/>
+	<button class="btn" name="RebootNow" OnClick='return (confirm("Are you sure you want to reboot?"));'>Reboot Now</button>
+	<br/>
+	<button class="btn" name="Test">Test</button>
 </form>
-
 </div>
-
 </body>
+
+
 </html>
