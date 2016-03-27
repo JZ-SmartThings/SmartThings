@@ -1,5 +1,5 @@
 /**
- *  Generic HTTP Device v1.0.20160326
+ *  Generic HTTP Device v1.0.20160327
  *
  *  Source code can be found here: https://github.com/JZ-SmartThings/SmartThings/blob/master/Devices/Generic%20HTTP%20Device/GenericHTTPDevice.groovy
  *
@@ -22,6 +22,7 @@ metadata {
 		attribute "hubactionMode", "string"
 		attribute "lastTriggered", "string"
 		attribute "testTriggered", "string"
+		attribute "triggerswitch", "string"
 		attribute "cpuUsage", "string"
 		attribute "spaceUsed", "string"
 		attribute "upTime", "string"
@@ -29,6 +30,7 @@ metadata {
 		command "DeviceTrigger"
 		command "TestTrigger"
 		command "RebootNow"
+		command "ResetTiles"
 	}
 
 
@@ -53,14 +55,16 @@ metadata {
         valueTile("lastTriggered", "device.lastTriggered", width: 2, height: 1, inactiveLabel: false, decoration: "flat") {
             state("default", label: 'Last triggered:\n${currentValue}', backgroundColor:"#ffffff")
         }
-        standardTile("DeviceTrigger", "device.switch", width: 1, height: 1, canChangeIcon: true, canChangeBackground: true, decoration: "flat") {
-			state "default", label:'GATE' , action: "DeviceTrigger", icon: "st.Outdoor.outdoor22", backgroundColor:"#53a7c0"
+        standardTile("DeviceTrigger", "device.triggerswitch", width: 1, height: 1, canChangeIcon: true, canChangeBackground: true, decoration: "flat") {
+			state "default", label:'GATE' , action: "DeviceTrigger", icon: "st.Outdoor.outdoor22", backgroundColor:"#53a7c0", nextState: "triggerrunning"
+            state "triggerrunning", label: 'OPENING', action: "ResetTiles", icon: "st.Outdoor.outdoor22", backgroundColor: "#990000", nextState: "default"
 		}
         valueTile("testTriggered", "device.testTriggered", width: 2, height: 1, inactiveLabel: false, decoration: "flat") {
             state("default", label: 'Test triggered:\n${currentValue}', backgroundColor:"#ffffff")
         }
-        standardTile("TestTrigger", "device.switch", width: 1, height: 1, decoration: "flat") {
-			state "default", label:'TEST' , action: "TestTrigger", icon: "st.Office.office13", backgroundColor:"#53a7c0"
+        standardTile("TestTrigger", "device.testswitch", width: 1, height: 1, decoration: "flat") {
+			state "default", label:'TEST', action: "TestTrigger", icon: "st.Office.office13", backgroundColor:"#53a7c0", nextState: "testrunning"
+            state "testrunning", label: 'TESTING', action: "ResetTiles", icon: "st.Office.office13", backgroundColor: "#990000", nextState: "default"
 		}
         valueTile("cpuUsage", "device.cpuUsage", width: 1, height: 1, inactiveLabel: false, decoration: "flat") {
             state("default", label: '${currentValue}', backgroundColor:"#ffffff")
@@ -77,6 +81,9 @@ metadata {
         standardTile("RebootNow", "device.switch", width: 1, height: 1, decoration: "flat") {
 			state "default", label:'REBOOT' , action: "RebootNow", icon: "st.Seasonal Winter.seasonal-winter-014", backgroundColor:"#ff0000"
 		}
+//		standardTile("refresh", "device.refresh", inactiveLabel: false, decoration: "flat", width: 1, height: 1) {
+//			state "default", action:"ResetTiles", icon:"st.secondary.refresh"
+//		}
 		main "DeviceTrigger"
 		details(["lastTriggered", "DeviceTrigger", "testTriggered", "TestTrigger", "cpuUsage", "spaceUsed", "upTime", "cpuTemp", "RebootNow"])
 	}
@@ -87,7 +94,6 @@ def DeviceTrigger() {
     //sendEvent(name: "DeviceTrigger", value: "test", unit: "")
     runCmd(DeviceBodyText)
 }
-
 def TestTrigger() {
 	log.debug "Test Triggered!!!"
     runCmd('Test=')
@@ -96,7 +102,12 @@ def RebootNow() {
 	log.debug "Reboot Triggered!!!"
     runCmd('RebootNow=')
 }
-
+def ResetTiles() {
+	//RETURN BUTTONS TO CORRECT STATE
+	sendEvent(name: "testswitch", value: "default", isStateChange: true)
+	sendEvent(name: "triggerswitch", value: "default", isStateChange: true)
+	log.debug "Resetting tiles."
+}
 def runCmd(String varCommand) {
     def host = DeviceIP 
     def hosthex = convertIPtoHex(host).toUpperCase()
@@ -149,11 +160,14 @@ def runCmd(String varCommand) {
     catch (Exception e) {
     	log.debug "Hit Exception $e on $hubAction"
     }   
+
 }
 
 
 def parse(String description) {
 //    log.debug "Parsing '${description}'"
+
+	def whichTile = ''
     def map = [:]
 	def retResult = []
 	def descMap = parseDescriptionAsMap(description)
@@ -169,14 +183,21 @@ def parse(String description) {
 			log.debug timeString
 			//sendEvent(name: "GateTriggered", value: timeString as String, unit: "")
 			sendEvent(name: "lastTriggered", value: timeString as String, unit: "")
+			whichTile = 'main'
 			//lastTriggered=timeString as String
 		}
-		if (bodyReturned.contains('Authentication Required!')) {
+		if (bodyReturned.contains('GateTrigger=Failed : Authentication Required!')) {
+			sendEvent(name: "lastTriggered", value: "Use Authentication Credentials", unit: "")
+			whichTile = 'main'
+		}
+		if (bodyReturned.contains('Test=Failed : Authentication Required!')) {
 			sendEvent(name: "testTriggered", value: "Use Authentication Credentials", unit: "")
+			whichTile = 'test'
 		}
 		if (bodyReturned.contains('Test=Success')) {
 			def timeString = new Date().format("yyyy-MM-dd h:mm:ss a", location.timeZone)
 			sendEvent(name: "testTriggered", value: timeString as String, unit: "")
+			whichTile = 'test'
 		}
 		if (bodyReturned.contains('CPU=')) {
             def cpuData=''
@@ -221,7 +242,30 @@ def parse(String description) {
             }
 			sendEvent(name: "cpuTemp", value: "CPU Temp\n"+cpuTemp.toString(), unit: "")
 		}
-	} 
+	}
+
+
+//	def result = createEvent(name: "testswitch", value: "default", isStateChange: true)
+//	log.debug "testswitch returned ${result?.descriptionText}"
+//	return result
+
+	//RETURN BUTTONS TO CORRECT STATE
+	log.debug 'whichtile: $whichtile'
+	if (whichTile.contains('test')) {
+		def result = createEvent(name: "testswitch", value: "default", isStateChange: true)
+		log.debug "testswitch returned ${result?.descriptionText}"
+		return result
+	} else if (whichTile.contains('main')) {
+		def result = createEvent(name: "triggerswitch", value: "default", isStateChange: true)
+		log.debug "triggerswitch returned ${result?.descriptionText}"
+		return result
+	} else {
+		def result = createEvent(name: "testswitch", value: "default", isStateChange: true)
+		log.debug "testswitch returned ${result?.descriptionText}"
+		return result
+	}
+/**
+*/
 }
 
 

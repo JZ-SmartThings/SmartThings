@@ -8,9 +8,15 @@ if ($perform_authentication) {
 	$pass = $_SERVER['PHP_AUTH_PW'];
 	$validated = (in_array($user, $valid_users)) && ($pass == $valid_passwords[$user]);
 	if (!$validated) {
-	  header('WWW-Authenticate: Basic realm="Generic HTTP Device"');
-	  header('HTTP/1.0 401 Unauthorized');
-	  die ("Authentication Required!");
+		header('WWW-Authenticate: Basic realm="Generic HTTP Device"');
+		header('HTTP/1.0 401 Unauthorized');
+		if (isset($_POST['Test'])) {
+			echo "Test=Failed : ";
+		}
+		if (isset($_POST['GateTrigger'])) {
+			echo "GateTrigger=Failed : ";
+		}
+		die ("Authentication Required!");
 	}
 }
 // If code arrives here, this would be a valid user.
@@ -109,7 +115,7 @@ echo "CPU Temp=$tempcelcius$tempfahr\n";
 if (isset($_POST['GateTrigger']))
 {
 //exec("sudo python /var/www/momentary.py");
-exec("sudo gpio -g mode 4 out ; gpio -g write 4 1 ; sleep 1 ; gpio -g write 4 0");
+exec("sudo gpio -g mode 4 out ; gpio -g write 4 0 ; sleep 1 ; gpio -g write 4 1");
 echo "GateTrigger=Success\n";
 }
 if (isset($_POST['Test']))
