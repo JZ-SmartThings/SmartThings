@@ -4,6 +4,7 @@ This project consists of a Raspberry Pi running Raspbian OS. It runs HTTPD with 
 
 The Groovy file is the Device Handler for SmartThings.
 index.php is meant to reside in /var/www/html folder of the Raspbery Pi and runs the external gpio command in Linux.
+At the top of index.php, change the first variable to "true" instead of "false" and this will make the PHP page protected with basic authentication. After making that change, make sure to change the SmartThings preferences for the device.
 
 This is the original video that I used for the Raspberry Pi piece: https://www.youtube.com/watch?v=p2abZ90-eU0
 
