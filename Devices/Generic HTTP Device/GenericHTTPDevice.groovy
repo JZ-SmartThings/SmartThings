@@ -57,14 +57,14 @@ metadata {
         }
         standardTile("DeviceTrigger", "device.triggerswitch", width: 1, height: 1, canChangeIcon: true, canChangeBackground: true, decoration: "flat") {
 			state "default", label:'GATE' , action: "DeviceTrigger", icon: "st.Outdoor.outdoor22", backgroundColor:"#53a7c0", nextState: "triggerrunning"
-            state "triggerrunning", label: 'OPENING', action: "ResetTiles", icon: "st.Outdoor.outdoor22", backgroundColor: "#990000", nextState: "default"
+            state "triggerrunning", label: 'OPENING', action: "ResetTiles", icon: "st.Outdoor.outdoor22", backgroundColor: "#FF6600", nextState: "default"
 		}
         valueTile("testTriggered", "device.testTriggered", width: 2, height: 1, inactiveLabel: false, decoration: "flat") {
             state("default", label: 'Test triggered:\n${currentValue}', backgroundColor:"#ffffff")
         }
         standardTile("TestTrigger", "device.testswitch", width: 1, height: 1, decoration: "flat") {
 			state "default", label:'TEST', action: "TestTrigger", icon: "st.Office.office13", backgroundColor:"#53a7c0", nextState: "testrunning"
-            state "testrunning", label: 'TESTING', action: "ResetTiles", icon: "st.Office.office13", backgroundColor: "#990000", nextState: "default"
+            state "testrunning", label: 'TESTING', action: "ResetTiles", icon: "st.Office.office13", backgroundColor: "#FF6600", nextState: "default"
 		}
         valueTile("cpuUsage", "device.cpuUsage", width: 1, height: 1, inactiveLabel: false, decoration: "flat") {
             state("default", label: '${currentValue}', backgroundColor:"#ffffff")
