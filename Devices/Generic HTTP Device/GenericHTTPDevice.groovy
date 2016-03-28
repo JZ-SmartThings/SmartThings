@@ -34,7 +34,7 @@ metadata {
 	}
 
 
-    preferences {
+	preferences {
 //		input("DeviceButtonName", "string", title:"Button Name", description: "Please enter button name", required: false, displayDuringSetup: true)
 		input("DeviceIP", "string", title:"Device IP Address", description: "Please enter your device's IP Address", required: true, displayDuringSetup: true)
 		input("DevicePort", "string", title:"Device Port", description: "Please enter port 80 or your device's Port", required: true, displayDuringSetup: true)
@@ -47,7 +47,7 @@ metadata {
 			input("HTTPPassword", "string", title:"HTTP Password", description: "Enter your basic password", required: false, displayDuringSetup: true)
 		}
 	}
-    
+	
 	simulator {
 	}
 
@@ -57,7 +57,7 @@ metadata {
 		}
 		standardTile("DeviceTrigger", "device.triggerswitch", width: 1, height: 1, canChangeIcon: true, canChangeBackground: true, decoration: "flat") {
 			state "default", label:'GATE' , action: "DeviceTrigger", icon: "st.Outdoor.outdoor22", backgroundColor:"#53a7c0", nextState: "triggerrunning"
-            state "triggerrunning", label: 'OPENING', action: "ResetTiles", icon: "st.Outdoor.outdoor22", backgroundColor: "#FF6600", nextState: "default"
+			state "triggerrunning", label: 'OPENING', action: "ResetTiles", icon: "st.Outdoor.outdoor22", backgroundColor: "#FF6600", nextState: "default"
 		}
 		valueTile("testTriggered", "device.testTriggered", width: 2, height: 1, inactiveLabel: false, decoration: "flat") {
 			state("default", label: 'Test triggered:\n${currentValue}', backgroundColor:"#ffffff")
@@ -165,7 +165,7 @@ def runCmd(String varCommand) {
 
 
 def parse(String description) {
-//    log.debug "Parsing '${description}'"
+//	log.debug "Parsing '${description}'"
 
 	def whichTile = ''
 	def map = [:]
@@ -219,12 +219,12 @@ def parse(String description) {
 			sendEvent(name: "spaceUsed", value: spaceUsed.toString().replace("=","\n"), unit: "")
 		}
 		if (bodyReturned.contains('UpTime=')) {
-            def upTime=''
-            def data=bodyReturned.eachLine { line ->
-            	if (line.contains('UpTime=')) {
-                	upTime=line
-                }
-            }
+		def upTime=''
+		def data=bodyReturned.eachLine { line ->
+			if (line.contains('UpTime=')) {
+				upTime=line
+			}
+		}
 			sendEvent(name: "upTime", value: upTime.toString().replace("=","\n"), unit: "")
 		}
 		if (bodyReturned.contains('CPU Temp=')) {
