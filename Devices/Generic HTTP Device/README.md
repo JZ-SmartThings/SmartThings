@@ -11,5 +11,5 @@ This is the original video that I used for the Raspberry Pi piece: https://www.y
 The SmartThings driver was a few hours of self-learning and a bit of frustration --- I really wanted that value tile to show me the last time the script ran WITH SUCCESS.
 
 v1.0.20160327 - Toggling tile states in general and with respect to authentication. Fixed GPIO in the PHP script to be correct and toggle on then off. Used to have off then on, which is incorrect.
-v1.0.20160326 - Added temperature. Added basic authentication.
-v1.0.20160323 - Initial version
+</br>v1.0.20160326 - Added temperature. Added basic authentication.
+</br>v1.0.20160323 - Initial version
