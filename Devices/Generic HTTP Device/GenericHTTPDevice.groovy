@@ -68,7 +68,7 @@ metadata {
 		}
 		valueTile("cpuUsage", "device.cpuUsage", width: 1, height: 1, inactiveLabel: false, decoration: "flat") {
 			state("default", label: '${currentValue}', backgroundColor:"#ffffff")
-			}
+		}
 		valueTile("spaceUsed", "device.spaceUsed", width: 1, height: 1, inactiveLabel: false, decoration: "flat") {
 			state("default", label: '${currentValue}', backgroundColor:"#ffffff")
 		}
@@ -219,12 +219,12 @@ def parse(String description) {
 			sendEvent(name: "spaceUsed", value: spaceUsed.toString().replace("=","\n"), unit: "")
 		}
 		if (bodyReturned.contains('UpTime=')) {
-		def upTime=''
-		def data=bodyReturned.eachLine { line ->
-			if (line.contains('UpTime=')) {
-				upTime=line
+			def upTime=''
+			def data=bodyReturned.eachLine { line ->
+				if (line.contains('UpTime=')) {
+					upTime=line
+				}
 			}
-		}
 			sendEvent(name: "upTime", value: upTime.toString().replace("=","\n"), unit: "")
 		}
 		if (bodyReturned.contains('CPU Temp=')) {
