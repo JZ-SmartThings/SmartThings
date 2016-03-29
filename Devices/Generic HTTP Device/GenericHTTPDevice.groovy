@@ -1,5 +1,5 @@
 /**
- *  Generic HTTP Device v1.0.20160327
+ *  Generic HTTP Device v1.0.20160328
  *
  *  Source code can be found here: https://github.com/JZ-SmartThings/SmartThings/blob/master/Devices/Generic%20HTTP%20Device/GenericHTTPDevice.groovy
  *
@@ -27,6 +27,7 @@ metadata {
 		attribute "spaceUsed", "string"
 		attribute "upTime", "string"
 		attribute "cpuTemp", "string"
+		attribute "freeMem", "string"
 		command "DeviceTrigger"
 		command "TestTrigger"
 		command "RebootNow"
@@ -69,13 +70,16 @@ metadata {
 		valueTile("cpuUsage", "device.cpuUsage", width: 1, height: 1, inactiveLabel: false, decoration: "flat") {
 			state("default", label: '${currentValue}', backgroundColor:"#ffffff")
 		}
+		valueTile("cpuTemp", "device.cpuTemp", width: 1, height: 1, inactiveLabel: false, decoration: "flat") {
+			state("default", label: '${currentValue}', backgroundColor:"#ffffff")
+		}
 		valueTile("spaceUsed", "device.spaceUsed", width: 1, height: 1, inactiveLabel: false, decoration: "flat") {
 			state("default", label: '${currentValue}', backgroundColor:"#ffffff")
 		}
 		valueTile("upTime", "device.upTime", width: 1, height: 1, inactiveLabel: false, decoration: "flat") {
 			state("default", label: '${currentValue}', backgroundColor:"#ffffff")
 		}
-		valueTile("cpuTemp", "device.cpuTemp", width: 1, height: 1, inactiveLabel: false, decoration: "flat") {
+		valueTile("freeMem", "device.freeMem", width: 1, height: 1, inactiveLabel: false, decoration: "flat") {
 			state("default", label: '${currentValue}', backgroundColor:"#ffffff")
 		}
 		standardTile("RebootNow", "device.switch", width: 1, height: 1, decoration: "flat") {
@@ -85,7 +89,7 @@ metadata {
 //			state "default", action:"ResetTiles", icon:"st.secondary.refresh"
 //		}
 		main "DeviceTrigger"
-		details(["lastTriggered", "DeviceTrigger", "testTriggered", "TestTrigger", "cpuUsage", "spaceUsed", "upTime", "cpuTemp", "RebootNow"])
+		details(["lastTriggered", "DeviceTrigger", "testTriggered", "TestTrigger", "cpuUsage", "cpuTemp", "upTime", "RebootNow", "spaceUsed", "freeMem"])
 	}
 }
 
@@ -241,6 +245,15 @@ def parse(String description) {
 				}
 			}
 			sendEvent(name: "cpuTemp", value: "CPU Temp\n"+cpuTemp.toString(), unit: "")
+		}
+		if (bodyReturned.contains('Free Mem=')) {
+			def freeMem=''
+			def data=bodyReturned.eachLine { line ->
+				if (line.contains('Free Mem=')) {
+					freeMem=line
+				}
+			}
+			sendEvent(name: "freeMem", value: freeMem.toString().replace("=","\n"), unit: "")
 		}
 	}
 

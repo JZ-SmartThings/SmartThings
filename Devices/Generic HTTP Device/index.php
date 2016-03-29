@@ -112,6 +112,10 @@ $tempfahr = round(trim(substr($tempcelcius,0, strpos($tempcelcius, '°')-6))*9/5
 $tempfahr = 'CPU Temp=' . $tempfahr . '°F';
 echo "CPU Temp=$tempcelcius$tempfahr\n";
 
+//FREE MEMORY
+$output = shell_exec('free -t -h | tr -s " " | grep "Total:" | awk -F " " \'{print $4 " of " $2}\'');
+echo "Free Mem=$output";
+
 if (isset($_POST['GateTrigger']))
 {
 //exec("sudo python /var/www/momentary.py");
