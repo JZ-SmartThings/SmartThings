@@ -1,5 +1,5 @@
 /**
- *  Generic HTTP Device v1.0.20160328
+ *  Generic HTTP Device v1.0.20160402
  *
  *  Source code can be found here: https://github.com/JZ-SmartThings/SmartThings/blob/master/Devices/Generic%20HTTP%20Device/GenericHTTPDevice.groovy
  *
@@ -15,6 +15,8 @@
  *  for the specific language governing permissions and limitations under the License.
  *
  */
+
+import groovy.json.JsonSlurper
 
 metadata {
 	definition (name: "Generic HTTP Device", author: "JZ", namespace:"JZ") {
@@ -32,6 +34,7 @@ metadata {
 		command "TestTrigger"
 		command "RebootNow"
 		command "ResetTiles"
+		command "ClearTiles"
 	}
 
 
@@ -41,7 +44,8 @@ metadata {
 		input("DevicePort", "string", title:"Device Port", description: "Please enter port 80 or your device's Port", required: true, displayDuringSetup: true)
 		input("DevicePath", "string", title:"URL Path", description: "Rest of the URL, include forward slash.", displayDuringSetup: true)
 		input(name: "DevicePostGet", type: "enum", title: "POST or GET", options: ["POST","GET"], required: true, displayDuringSetup: true)
-		input("DeviceBodyText", "string", title:'Body Content', description: 'Type in "GateTrigger=" for PHP POST', displayDuringSetup: true)
+		input("DeviceBodyText", "string", title:'Body Content', description: 'Type in "GateTrigger=" or "CustomTrigger="', required: true, displayDuringSetup: true)
+		input("UseJSON", "bool", title:"Use JSON instead of HTML?", description: "Use JSON instead of HTML?", defaultValue: false, required: false, displayDuringSetup: true)
 		section() {
 			input("HTTPAuth", "bool", title:"Requires User Auth?", description: "Choose if the HTTP requires basic authentication", defaultValue: false, required: true, displayDuringSetup: true)
 			input("HTTPUser", "string", title:"HTTP User", description: "Enter your basic username", required: false, displayDuringSetup: true)
@@ -57,7 +61,7 @@ metadata {
 			state("default", label: 'Last triggered:\n${currentValue}', backgroundColor:"#ffffff")
 		}
 		standardTile("DeviceTrigger", "device.triggerswitch", width: 1, height: 1, canChangeIcon: true, canChangeBackground: true, decoration: "flat") {
-			state "default", label:'GATE' , action: "DeviceTrigger", icon: "st.Outdoor.outdoor22", backgroundColor:"#53a7c0", nextState: "triggerrunning"
+			state "default", label:'GATE' , action: "on", icon: "st.Outdoor.outdoor22", backgroundColor:"#53a7c0", nextState: "triggerrunning"
 			state "triggerrunning", label: 'OPENING', action: "ResetTiles", icon: "st.Outdoor.outdoor22", backgroundColor: "#FF6600", nextState: "default"
 		}
 		valueTile("testTriggered", "device.testTriggered", width: 2, height: 1, inactiveLabel: false, decoration: "flat") {
@@ -82,34 +86,54 @@ metadata {
 		valueTile("freeMem", "device.freeMem", width: 1, height: 1, inactiveLabel: false, decoration: "flat") {
 			state("default", label: '${currentValue}', backgroundColor:"#ffffff")
 		}
-		standardTile("RebootNow", "device.switch", width: 1, height: 1, decoration: "flat") {
-			state "default", label:'REBOOT' , action: "RebootNow", icon: "st.Seasonal Winter.seasonal-winter-014", backgroundColor:"#ff0000"
+		standardTile("RebootNow", "device.rebootnow", width: 1, height: 1, decoration: "flat") {
+			state "default", label:'REBOOT' , action: "RebootNow", icon: "st.Seasonal Winter.seasonal-winter-014", backgroundColor:"#ff0000", nextState: "rebooting"
+			state "rebooting", label: 'REBOOTING', action: "ResetTiles", icon: "st.Office.office13", backgroundColor: "#FF6600", nextState: "default"
 		}
-//		standardTile("refresh", "device.refresh", inactiveLabel: false, decoration: "flat", width: 1, height: 1) {
-//			state "default", action:"ResetTiles", icon:"st.secondary.refresh"
-//		}
+		standardTile("clearTiles", "device.clear", width: 1, height: 1, decoration: "flat") {
+			state "default", label:'Clear Tiles', action:"ClearTiles", icon:"st.Bath.bath9"
+		}
 		main "DeviceTrigger"
-		details(["lastTriggered", "DeviceTrigger", "testTriggered", "TestTrigger", "cpuUsage", "cpuTemp", "upTime", "RebootNow", "spaceUsed", "freeMem"])
+		details(["lastTriggered", "DeviceTrigger", "testTriggered", "TestTrigger", "cpuUsage", "cpuTemp", "upTime", "RebootNow", "spaceUsed", "freeMem", "clearTiles"])
 	}
 }
 
-def DeviceTrigger() {
-	log.debug "Gate Triggered!!!"
-	//sendEvent(name: "DeviceTrigger", value: "test", unit: "")
-	runCmd(DeviceBodyText)
+def on() {
+	if (UseJSON==true) {
+		log.debug DeviceBodyText + " Triggered!!!"
+		runCmd(DeviceBodyText + '&UseJSON=')
+	} else {
+		log.debug DeviceBodyText + " JSON Triggered!!!"
+		runCmd(DeviceBodyText)
+	}
 }
 def TestTrigger() {
-	log.debug "Test Triggered!!!"
-	runCmd('Test=')
+	if (UseJSON==true) {
+		log.debug "Test Triggered!!!"
+		runCmd('Test=&UseJSON=')
+	} else {
+		log.debug "Test JSON Triggered!!!"
+		runCmd('Test=')
+	}
 }
 def RebootNow() {
 	log.debug "Reboot Triggered!!!"
 	runCmd('RebootNow=')
 }
+def ClearTiles() {
+	sendEvent(name: "testTriggered", value: "", unit: "")
+	sendEvent(name: "lastTriggered", value: "", unit: "")
+	sendEvent(name: "cpuUsage", value: "", unit: "")
+	sendEvent(name: "cpuTemp", value: "", unit: "")
+	sendEvent(name: "spaceUsed", value: "", unit: "")
+	sendEvent(name: "upTime", value: "", unit: "")
+	sendEvent(name: "freeMem", value: "", unit: "")
+}
 def ResetTiles() {
 	//RETURN BUTTONS TO CORRECT STATE
 	sendEvent(name: "testswitch", value: "default", isStateChange: true)
 	sendEvent(name: "triggerswitch", value: "default", isStateChange: true)
+	sendEvent(name: "rebootnow", value: "default", isStateChange: true)
 	log.debug "Resetting tiles."
 }
 def runCmd(String varCommand) {
@@ -134,9 +158,7 @@ def runCmd(String varCommand) {
 	if (HTTPAuth) {
 		headers.put("Authorization", userpass)
 	}
-
 	log.debug "The Header is $headers"
-	
 	def method = "POST"
 	try {
 		if (DevicePostGet.toUpperCase() == "GET") {
@@ -150,133 +172,120 @@ def runCmd(String varCommand) {
 	}
 	log.debug "The method is $method"
 	try {
-	def hubAction = new physicalgraph.device.HubAction(
-		method: method,
-		path: path,
-		body: body,
-		headers: headers
-		)
-
-	hubAction.options = [outputMsgToS3:false]
-	//log.debug hubAction
-	hubAction
+		def hubAction = new physicalgraph.device.HubAction(
+			method: method,
+			path: path,
+			body: body,
+			headers: headers
+			)
+		hubAction.options = [outputMsgToS3:false]
+		//log.debug hubAction
+		hubAction
 	}
 	catch (Exception e) {
 		log.debug "Hit Exception $e on $hubAction"
 	}   
-
 }
-
 
 def parse(String description) {
 //	log.debug "Parsing '${description}'"
-
 	def whichTile = ''
 	def map = [:]
 	def retResult = []
 	def descMap = parseDescriptionAsMap(description)
-	//Image
-	if (descMap["body"]) {
-		//putImageInS3(descMap)
-		//log.debug descMap["body"]
-		def bodyReturned = new String(descMap["body"].decodeBase64())
-		log.debug bodyReturned
-		if (bodyReturned.contains(DeviceBodyText + 'Success')) {
-			log.debug "FOUND SUCCESS!!!"
-			def timeString = new Date().format("yyyy-MM-dd h:mm:ss a", location.timeZone)
-			log.debug timeString
-			//sendEvent(name: "GateTriggered", value: timeString as String, unit: "")
-			sendEvent(name: "lastTriggered", value: timeString as String, unit: "")
-			whichTile = 'main'
-			//lastTriggered=timeString as String
-		}
-		if (bodyReturned.contains('GateTrigger=Failed : Authentication Required!')) {
-			sendEvent(name: "lastTriggered", value: "Use Authentication Credentials", unit: "")
-			whichTile = 'main'
-		}
-		if (bodyReturned.contains('Test=Failed : Authentication Required!')) {
-			sendEvent(name: "testTriggered", value: "Use Authentication Credentials", unit: "")
-			whichTile = 'test'
-		}
-		if (bodyReturned.contains('Test=Success')) {
-			def timeString = new Date().format("yyyy-MM-dd h:mm:ss a", location.timeZone)
-			sendEvent(name: "testTriggered", value: timeString as String, unit: "")
-			whichTile = 'test'
-		}
-		if (bodyReturned.contains('CPU=')) {
-			def cpuData=''
-			def data=bodyReturned.eachLine { line ->
-				if (line.contains('CPU=')) {
-					cpuData=line
-				}
-			}
-			//log.debug cpuData
-			sendEvent(name: "cpuUsage", value: cpuData.toString().replace("=","\n"), unit: "")
-		}
-		if (bodyReturned.contains('Space Used=')) {
-			def spaceUsed=''
-			def data=bodyReturned.eachLine { line ->
-				if (line.contains('Space Used=')) {
-					spaceUsed=line
-				}
-			}
-			sendEvent(name: "spaceUsed", value: spaceUsed.toString().replace("=","\n"), unit: "")
-		}
-		if (bodyReturned.contains('UpTime=')) {
-			def upTime=''
-			def data=bodyReturned.eachLine { line ->
-				if (line.contains('UpTime=')) {
-					upTime=line
-				}
-			}
-			sendEvent(name: "upTime", value: upTime.toString().replace("=","\n"), unit: "")
-		}
-		if (bodyReturned.contains('CPU Temp=')) {
-			def cpuTemp=''
-			def data=bodyReturned.eachLine { line ->
-				if (line.contains('CPU Temp=')) {
-					line=line.replace("\n","")
-					if (cpuTemp.length() == 0) {
-						cpuTemp=line.replace("CPU Temp=","")
-					} else {
-						cpuTemp=cpuTemp+' = '+line.replace("CPU Temp=","")
-					}
-					//log.debug cpuTemp
-				}
-			}
-			sendEvent(name: "cpuTemp", value: "CPU Temp\n"+cpuTemp.toString(), unit: "")
-		}
-		if (bodyReturned.contains('Free Mem=')) {
-			def freeMem=''
-			def data=bodyReturned.eachLine { line ->
-				if (line.contains('Free Mem=')) {
-					freeMem=line
-				}
-			}
-			sendEvent(name: "freeMem", value: freeMem.toString().replace("=","\n"), unit: "")
+	def jsonlist = [:]
+	def bodyReturned = new String(descMap["body"].decodeBase64())
+	def headersReturned = new String(descMap["headers"].decodeBase64())
+	log.debug "BODY---" + bodyReturned
+	//log.debug "HEADERS---" + headersReturned
+
+	if (descMap["body"] && headersReturned.contains("application/json")) {
+		def body = new String(descMap["body"].decodeBase64())
+		def slurper = new JsonSlurper()
+		jsonlist = slurper.parseText(body)
+		//log.debug "JSONLIST---" + jsonlist."CPU"
+		jsonlist.put ("Date", new Date().format("yyyy-MM-dd h:mm:ss a", location.timeZone))
+	} else if (descMap["body"] && headersReturned.contains("text/html")) {
+		jsonlist.put ("Date", new Date().format("yyyy-MM-dd h:mm:ss a", location.timeZone))
+		def data=bodyReturned.eachLine { line ->
+			if (line.contains('CPU=')) { jsonlist.put ("CPU", line.replace("CPU=","")) }
+			if (line.contains('Space Used=')) { jsonlist.put ("Space Used", line.replace("Space Used=","")) }
+			if (line.contains('UpTime=')) { jsonlist.put ("UpTime", line.replace("UpTime=","")) }
+			if (line.contains('CPU Temp=')) { jsonlist.put ("CPU Temp",line.replace("CPU Temp=","")) }
+			if (line.contains('Free Mem=')) { jsonlist.put ("Free Mem",line.replace("Free Mem=",""))  }
+			if (line.contains('CustomTrigger=Success')) { jsonlist.put ("CustomTrigger", "Success") }
+			if (line.contains('Test=Success')) { jsonlist.put ("Test", "Success") }
+			if (line.contains('Test=Failed : Authentication Required!')) { jsonlist.put ("Test", "Authentication Required!") }
+			if (line.contains(DeviceBodyText + 'Success')) { jsonlist.put (DeviceBodyText.replace("=",""), "Success") }
+			if (line.contains(DeviceBodyText + 'Failed : Authentication Required!')) { jsonlist.put (DeviceBodyText.replace("=",""), "Authentication Required!") }
+			if (line.contains('RebootNow=Success')) { jsonlist.put ("RebootNow", "Success") }
+			if (line.contains('RebootNow=Failed : Authentication Required!')) { jsonlist.put ("RebootNow", "Authentication Required!") }
 		}
 	}
 
+	if (descMap["body"] && (headersReturned.contains("application/json") || headersReturned.contains("text/html"))) {
+		//putImageInS3(descMap)
+		if (jsonlist."${DeviceBodyText.replace("=","")}"=="Success") {
+			log.debug DeviceBodyText.replace("=","") + " --- RETURNED SUCCESS!!!"
+			sendEvent(name: "lastTriggered", value: jsonlist."Date", unit: "")
+			whichTile = 'main'
+		}
+		if (jsonlist."${DeviceBodyText.replace("=","")}"=="Authentication Required!") {
+			sendEvent(name: "lastTriggered", value: "Use Authentication Credentials", unit: "")
+			whichTile = 'main'
+		}
+		if (jsonlist."Test"=="Authentication Required!") {
+			sendEvent(name: "testTriggered", value: "Use Authentication Credentials", unit: "")
+			whichTile = 'test'
+		}
+		if (jsonlist."Test"=="Success") {
+			sendEvent(name: "testTriggered", value: jsonlist."Date", unit: "")
+			whichTile = 'test'
+		}
+		if (jsonlist."CPU") {
+			sendEvent(name: "cpuUsage", value: "CPU\n" + jsonlist."CPU".replace("=","\n"), unit: "")
+		}
+		if (jsonlist."Space Used") {
+			sendEvent(name: "spaceUsed", value: "Space Used\n" + jsonlist."Space Used".replace("=","\n"), unit: "")
+		}
+		if (jsonlist."UpTime") {
+			sendEvent(name: "upTime", value: "UpTime\n" + jsonlist."UpTime".replace("=","\n"), unit: "")
+		}
+		if (jsonlist."CPU Temp") {
+			sendEvent(name: "cpuTemp", value: "CPU Temp\n" + jsonlist."CPU Temp".replace("=","\n").replace("\'","°").replace("C ","C="), unit: "")
+		}
+		if (jsonlist."Free Mem") {
+			sendEvent(name: "freeMem", value: "Free Mem\n" + jsonlist."Free Mem".replace("=","\n"), unit: "")
+		}
+		if (jsonlist."RebootNow") {
+			whichTile = 'RebootNow'
+		}
+	}
+
+	log.debug jsonlist
 
 //	def result = createEvent(name: "testswitch", value: "default", isStateChange: true)
 //	log.debug "testswitch returned ${result?.descriptionText}"
 //	return result
 
 	//RETURN BUTTONS TO CORRECT STATE
-	log.debug 'whichtile: $whichtile'
-	if (whichTile.contains('test')) {
-		def result = createEvent(name: "testswitch", value: "default", isStateChange: true)
-		log.debug "testswitch returned ${result?.descriptionText}"
-		return result
-	} else if (whichTile.contains('main')) {
-		def result = createEvent(name: "triggerswitch", value: "default", isStateChange: true)
-		log.debug "triggerswitch returned ${result?.descriptionText}"
-		return result
-	} else {
-		def result = createEvent(name: "testswitch", value: "default", isStateChange: true)
-		log.debug "testswitch returned ${result?.descriptionText}"
-		return result
-	}
+	//log.debug 'whichTile: ' + whichTile
+    switch (whichTile) {
+        case 'test':
+			def result = createEvent(name: "testswitch", value: "default", isStateChange: true)
+			//log.debug "testswitch returned ${result?.descriptionText}"
+			return result
+        case 'main':
+			def result = createEvent(name: "triggerswitch", value: "default", isStateChange: true)
+			return result
+        case 'RebootNow':
+			def result = createEvent(name: "rebootnow", value: "default", isStateChange: true)
+			return result
+        default:
+			def result = createEvent(name: "testswitch", value: "default", isStateChange: true)
+			//log.debug "testswitch returned ${result?.descriptionText}"
+			return result
+    }
 /**
 */
 }
@@ -287,30 +296,23 @@ def parseDescriptionAsMap(description) {
 	map += [(nameAndValue[0].trim()):nameAndValue[1].trim()]
 	}
 }
-
-
 private String convertIPtoHex(ipAddress) { 
 	String hex = ipAddress.tokenize( '.' ).collect {  String.format( '%02x', it.toInteger() ) }.join()
 	//log.debug "IP address entered is $ipAddress and the converted hex code is $hex"
 	return hex
 }
-
 private String convertPortToHex(port) {
 	String hexport = port.toString().format( '%04x', port.toInteger() )
 	//log.debug hexport
 	return hexport
 }
-
 private Integer convertHexToInt(hex) {
 	Integer.parseInt(hex,16)
 }
-
-
 private String convertHexToIP(hex) {
 	//log.debug("Convert hex to ip: $hex") 
 	[convertHexToInt(hex[0..1]),convertHexToInt(hex[2..3]),convertHexToInt(hex[4..5]),convertHexToInt(hex[6..7])].join(".")
 }
-
 private getHostAddress() {
 	def parts = device.deviceNetworkId.split(":")
 	//log.debug device.deviceNetworkId
