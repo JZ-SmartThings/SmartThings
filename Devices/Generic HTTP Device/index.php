@@ -1,4 +1,4 @@
-<?php //v1.0.20160402
+<?php //v1.0.20160405
 
 $perform_authentication=false;
 
@@ -32,7 +32,7 @@ if ($perform_authentication) {
 date_default_timezone_set('America/Los_Angeles');
 $rpi = array(
 	"Date" => date("M jS, Y h:i:s A"),
-	"Space Used" => shell_exec('df -h|grep /dev/root | cut -d \' \' -f 14 | tr -d \'\n\''),
+	"Space Used" => shell_exec('df -h|grep /dev/root | awk \'{print $(NF-1)}\' | tr -d \'\n\''),
 	"UpTime" => trim(substr(shell_exec('uptime'),strpos(shell_exec('uptime'), 'up')+2, strpos(shell_exec('uptime'), ',')-strpos(shell_exec('uptime'), 'up')-2)),
 	"CPU" => shell_exec('grep \'cpu \' /proc/stat | awk \'{usage=($2+$4)*100/($2+$4+$5)} END {print usage "%"}\' | sed \'s/\(\.[0-9]\).*$/\1%/g\' | tr -d \'\n\''),
 	"CPU Temp" => shell_exec('sudo vcgencmd measure_temp | sed "s/temp=//g" | tr -d \'\n\'').' '.round(trim(substr(shell_exec('sudo vcgencmd measure_temp | sed "s/temp=//g" | tr -d \'\n\''),0, strpos(shell_exec('sudo vcgencmd measure_temp | sed "s/temp=//g" | tr -d \'\n\''), '\'')-6))*9/5+32,1) . '\'F',
