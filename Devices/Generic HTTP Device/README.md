@@ -12,7 +12,7 @@ This is the original video that I used for the Raspberry Pi piece: https://www.y
 
 The SmartThings driver was a few hours of self-learning and a bit of frustration --- I really wanted that value tile to show me the last time the script ran WITH SUCCESS.
 
-</br>v1.0.20160406 - Added the CustomTrigger button. Made buttons smaller. CPU Temp now accurately C to F. Added color to some tiles. Defaulting in port & body if left empty in prefs.
+</br>v1.0.20160406 - Added the CustomTrigger button. Made buttons smaller. CPU Temp now accurately converts C to F. Added color to some tiles. Defaulting in port & body if left empty in prefs.
 </br>v1.0.20160405 - Modified Space Used to use awk instead of cut and delimiters. GitHub reported bug.
 </br>v1.0.20160402 - Added JSON support. Modified Reboot tile with states. Added Clear Tiles button.
 </br>v1.0.20160328 - Modified tile background while in "running" states and added free memory tile.
