@@ -1,4 +1,4 @@
-<?php //v1.0.20160405
+<?php //v1.0.20160406
 
 $perform_authentication=false;
 
@@ -35,10 +35,16 @@ $rpi = array(
 	"Space Used" => shell_exec('df -h|grep /dev/root | awk \'{print $(NF-1)}\' | tr -d \'\n\''),
 	"UpTime" => trim(substr(shell_exec('uptime'),strpos(shell_exec('uptime'), 'up')+2, strpos(shell_exec('uptime'), ',')-strpos(shell_exec('uptime'), 'up')-2)),
 	"CPU" => shell_exec('grep \'cpu \' /proc/stat | awk \'{usage=($2+$4)*100/($2+$4+$5)} END {print usage "%"}\' | sed \'s/\(\.[0-9]\).*$/\1%/g\' | tr -d \'\n\''),
-	"CPU Temp" => shell_exec('sudo vcgencmd measure_temp | sed "s/temp=//g" | tr -d \'\n\'').' '.round(trim(substr(shell_exec('sudo vcgencmd measure_temp | sed "s/temp=//g" | tr -d \'\n\''),0, strpos(shell_exec('sudo vcgencmd measure_temp | sed "s/temp=//g" | tr -d \'\n\''), '\'')-6))*9/5+32,1) . '\'F',
+	"CPU Temp" => CPUTemp(),
+	//"CPU Temp" => function($name) {return 100;},
 	"Free Mem" => shell_exec('free -t -h | tr -s " " | grep "Total:" | awk -F " " \'{print $4 " of " $2}\' | tr -d \'\n\'')
 );
 
+function CPUTemp() {
+	$celcius = shell_exec('sudo vcgencmd measure_temp | sed "s/temp=//g" | tr -d \'\n\'');
+	$fahrenheit = round(substr(str_replace("C","",$celcius), 0, -1) * 1.8 + 32, 0) . "'F";
+    return $celcius .' '. $fahrenheit;
+}
 if (isset($_POST['GateTrigger'])) {
 	exec("sudo gpio -g mode 4 out ; gpio -g write 4 0 ; sleep 1 ; gpio -g write 4 1");
 	$rpi = $rpi + array("GateTrigger" => "Success");
@@ -47,6 +53,7 @@ if (isset($_POST['Test'])) {
 	$rpi = $rpi + array("Test" => "Success");
 }
 if (isset($_POST['CustomTrigger'])) {
+	shell_exec("sudo gpio -g mode 21 out ; gpio -g write 21 0 ; sleep 1 ; gpio -g write 21 1");
 	$rpi = $rpi + array("CustomTrigger" => "Success");
 }
 if (isset($_POST['RebootNow'])) {
@@ -134,18 +141,10 @@ echo "CPU Temp=".str_replace("'","°",$rpi['CPU Temp'])."\n";
 //FREE MEMORY
 echo "Free Mem=".$rpi['Free Mem']."\n";
 
-if (isset($_POST['GateTrigger'])) {
-	echo "GateTrigger=Success\n";
-}
-if (isset($_POST['Test'])) {
-	echo "Test=Success\n";
-}
-if (isset($_POST['CustomTrigger'])) {
-	echo "CustomTrigger=Success\n";
-}
-if (isset($_POST['RebootNow'])) {
-	echo "RebootNow=Success\n";
-}
+if (isset($_POST['GateTrigger'])) { echo "GateTrigger=Success\n"; }
+if (isset($_POST['Test'])) { echo "Test=Success\n"; }
+if (isset($_POST['CustomTrigger'])) { echo "CustomTrigger=Success\n"; }
+if (isset($_POST['RebootNow'])) { echo "RebootNow=Success\n"; }
 ?>
 </pre>
 
