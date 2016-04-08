@@ -1,5 +1,5 @@
 /**
- *  Generic HTTP Device v1.0.20160407
+ *  Generic HTTP Device v1.0.20160408
  *
  *  Source code can be found here: https://github.com/JZ-SmartThings/SmartThings/blob/master/Devices/Generic%20HTTP%20Device/GenericHTTPDevice.groovy
  *
@@ -70,14 +70,14 @@ metadata {
 			state("default", label: 'Custom triggered:\n${currentValue}', backgroundColor:"#ffffff")
 		}
 		standardTile("CustomTrigger", "device.customswitch", width: 1, height: 1, decoration: "flat") {
-			state "default", label:'CUSTOM', action: "CustomTrigger", icon: "st.Lighting.light13", backgroundColor:"#53a7c0", nextState: "customrunning"
+			state "default", label:'CUSTOM', action: "off", icon: "st.Lighting.light13", backgroundColor:"#53a7c0", nextState: "customrunning"
 			state "customrunning", label: 'RUNNING', action: "ResetTiles", icon: "st.Lighting.light13", backgroundColor: "#FF6600", nextState: "default"
 		}
 		valueTile("testTriggered", "device.testTriggered", width: 5, height: 1, decoration: "flat") {
 			state("default", label: 'Test triggered:\n${currentValue}', backgroundColor:"#ffffff")
 		}
 		standardTile("TestTrigger", "device.testswitch", width: 1, height: 1, decoration: "flat") {
-			state "default", label:'TEST', action: "TestTrigger", icon: "st.Office.office13", backgroundColor:"#53a7c0", nextState: "testrunning"
+			state "default", label:'TEST', action: "poll", icon: "st.Office.office13", backgroundColor:"#53a7c0", nextState: "testrunning"
 			state "testrunning", label: 'TESTING', action: "ResetTiles", icon: "st.Office.office13", backgroundColor: "#FF6600", nextState: "default"
 		}
 		valueTile("cpuUsage", "device.cpuUsage", width: 2, height: 2) {
@@ -153,7 +153,7 @@ def on() {
 		runCmd(LocalDeviceBodyText)
 	}
 }
-def CustomTrigger() {
+def off() {
 	if (UseJSON==true) {
 		log.debug "Custom Triggered!!!"
 		runCmd('CustomTrigger=&UseJSON=')
