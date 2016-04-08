@@ -1,5 +1,5 @@
 /**
- *  Generic HTTP Device v1.0.20160406
+ *  Generic HTTP Device v1.0.20160407
  *
  *  Source code can be found here: https://github.com/JZ-SmartThings/SmartThings/blob/master/Devices/Generic%20HTTP%20Device/GenericHTTPDevice.groovy
  *
@@ -21,6 +21,8 @@ import groovy.json.JsonSlurper
 metadata {
 	definition (name: "Generic HTTP Device", author: "JZ", namespace:"JZ") {
 		capability "Switch"
+		capability "Polling"
+		capability "Refresh"
 		attribute "hubactionMode", "string"
 		attribute "lastTriggered", "string"
 		attribute "testTriggered", "string"
@@ -127,6 +129,18 @@ metadata {
 	}
 }
 
+def refresh() {
+    poll()
+}
+def poll() {
+	if (UseJSON==true) {
+		log.debug "Test Triggered!!!"
+		runCmd('Test=&UseJSON=')
+	} else {
+		log.debug "Test JSON Triggered!!!"
+		runCmd('Test=')
+	}
+}
 def on() {
 	def LocalDeviceBodyText = ''
 	if (DeviceBodyText==null) { LocalDeviceBodyText = "GateTrigger=" } else { LocalDeviceBodyText = DeviceBodyText }
@@ -146,16 +160,6 @@ def CustomTrigger() {
 	} else {
 		log.debug "Custom JSON Triggered!!!"
 		runCmd('CustomTrigger=')
-	}
-}
-def TestTrigger() {
-	log.debug 
-	if (UseJSON==true) {
-		log.debug "Test Triggered!!!"
-		runCmd('Test=&UseJSON=')
-	} else {
-		log.debug "Test JSON Triggered!!!"
-		runCmd('Test=')
 	}
 }
 def RebootNow() {
@@ -180,6 +184,7 @@ def ResetTiles() {
 	sendEvent(name: "rebootnow", value: "default", isStateChange: true)
 	log.debug "Resetting tiles."
 }
+
 def runCmd(String varCommand) {
 	def host = DeviceIP 
 	def hosthex = convertIPtoHex(host).toUpperCase()
