@@ -1,4 +1,4 @@
-<?php //v1.0.20160407
+<?php //v1.0.20160406
 
 $perform_authentication=false;
 

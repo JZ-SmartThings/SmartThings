@@ -8,13 +8,10 @@ The Groovy file is the Device Handler for SmartThings.
 index.php is meant to reside in /var/www/html folder of the Raspbery Pi and runs the external gpio command in Linux.
 At the top of index.php, change the first variable to "true" instead of "false" and this will make the PHP page protected with basic authentication. After making that change, make sure to change the SmartThings preferences for the device.
 
-This project was tested successfully via an external IP, with an Amazon Echo/Alexa and Pollster. Here's a useful command for checking the Raspberry Pi pin status & value. It's pretty close to what WebIOPi offers but in text mode and refreshes every half second: watch -n0.5 gpio readall
-
 This is the original video that I used for the Raspberry Pi piece: https://www.youtube.com/watch?v=p2abZ90-eU0
 
 The SmartThings driver was a few hours of self-learning and a bit of frustration --- I really wanted that value tile to show me the last time the script ran WITH SUCCESS.
 
-</br>v1.0.20160407 - Added Poll & Refresh to execute the TEST function. Now able to add the switch to Pollster and should see the time update in Test Triggered. Validated external IP with custom port and Amazon Echo/Alexa.
 </br>v1.0.20160406 - Added the CustomTrigger button. Made buttons smaller. CPU Temp now accurately converts C to F. Added color to some tiles. Defaulting in port & body if left empty in prefs.
 </br>v1.0.20160405 - Modified Space Used to use awk instead of cut and delimiters. GitHub reported bug.
 </br>v1.0.20160402 - Added JSON support. Modified Reboot tile with states. Added Clear Tiles button.
