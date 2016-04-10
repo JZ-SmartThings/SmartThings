@@ -91,7 +91,7 @@ metadata {
 
 def take() {
 	log.debug "Taking picture"
-	cameraCmd("/SnapshotJPEG?Resolution=640x480")
+	cameraCmd("/SnapshotJPEG?Resolution=320x240")
 }
 def home() {
 	log.debug "Moving to Home position"
