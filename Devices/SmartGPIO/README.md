@@ -4,6 +4,8 @@ This project consists of a Raspberry Pi running Raspbian OS. It runs HTTPD with 
 
 Link to the project: https://community.smartthings.com/t/smartgpio-raspberry-pi-with-php-returns-gpio-pin-status-to-st-image-tile/44803
 
+Grab index.php file from here: https://github.com/JZ-SmartThings/SmartThings/tree/master/Devices/Generic%20HTTP%20Device
+
 The Groovy file is the Device Handler for SmartThings.
 index.php is meant to reside in /var/www/html folder of the Raspbery Pi and runs the a command in Linux and returns a JPEG of that output to SmartThings.
 At the top of index.php, change the first variable to "true" instead of "false" and this will make the PHP page protected with basic authentication. After making that change, make sure to change the SmartThings preferences for the device.
