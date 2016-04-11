@@ -1,4 +1,4 @@
-<?php //v1.0.20160410
+<?php //v1.0.20160411
 
 $perform_authentication=false;
 
@@ -80,7 +80,7 @@ if (isset($_POST['GPIO']) && $rpi['php5-gd'] == true) {
 	$background_color = imagecolorallocate($im, 0, 0, 0);
 	$text_color = imagecolorallocate($im, 255, 255, 255);
 	$green = imagecolorallocate($im, 51, 102, 51);
-	$blue = imagecolorallocate($im, 0, 0, 102);
+	$blue = imagecolorallocate($im, 51, 102, 153);
 	$red = imagecolorallocate($im, 255, 51, 102);
 	imagefilledrectangle($im, 8, 5, 196, 195, $green);
 	imagefilledrectangle($im, 203, 5, 391, 195, $blue);
