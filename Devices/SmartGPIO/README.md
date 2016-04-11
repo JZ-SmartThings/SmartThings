@@ -2,7 +2,7 @@
 
 This project consists of a Raspberry Pi running Raspbian OS. It runs HTTPD with index.php as the source. The PHP has many functions but this device driver is specifically to see the GPIO status of all pins in a picture format.
 
-Link to the project: <INSERT LINK>
+Link to the project: https://community.smartthings.com/t/smartgpio-raspberry-pi-with-php-returns-gpio-pin-status-to-st-image-tile/44803
 
 The Groovy file is the Device Handler for SmartThings.
 index.php is meant to reside in /var/www/html folder of the Raspbery Pi and runs the a command in Linux and returns a JPEG of that output to SmartThings.
