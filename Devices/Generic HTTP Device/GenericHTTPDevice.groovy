@@ -1,5 +1,5 @@
 /**
- *  Generic HTTP Device v1.0.20160408
+ *  Generic HTTP Device v1.0.20160410
  *
  *  Source code can be found here: https://github.com/JZ-SmartThings/SmartThings/blob/master/Devices/Generic%20HTTP%20Device/GenericHTTPDevice.groovy
  *
@@ -23,7 +23,6 @@ metadata {
 		capability "Switch"
 		capability "Polling"
 		capability "Refresh"
-		attribute "hubactionMode", "string"
 		attribute "lastTriggered", "string"
 		attribute "testTriggered", "string"
 		attribute "customTriggered", "string"
@@ -45,7 +44,7 @@ metadata {
 		input("DeviceIP", "string", title:"Device IP Address", description: "Please enter your device's IP Address", required: true, displayDuringSetup: true)
 		input("DevicePort", "string", title:"Device Port", description: "Empty assumes port 80.", required: false, displayDuringSetup: true)
 		input("DevicePath", "string", title:"URL Path", description: "Rest of the URL, include forward slash.", displayDuringSetup: true)
-		input(name: "DevicePostGet", type: "enum", title: "POST or GET", options: ["POST","GET"], required: true, displayDuringSetup: true)
+		input(name: "DevicePostGet", type: "enum", title: "POST or GET", options: ["POST","GET"], defaultValue: "POST", required: false, displayDuringSetup: true)
 		input("DeviceBodyText", "string", title:'Body Content', description: 'Empty assumes "GateTrigger="', required: false, displayDuringSetup: false)
 		input("UseJSON", "bool", title:"Use JSON instead of HTML?", description: "Use JSON instead of HTML?", defaultValue: false, required: false, displayDuringSetup: true)
 		section() {
@@ -186,12 +185,12 @@ def ResetTiles() {
 }
 
 def runCmd(String varCommand) {
-	def host = DeviceIP 
+	def host = DeviceIP
 	def hosthex = convertIPtoHex(host).toUpperCase()
 	def LocalDevicePort = ''
 	if (DevicePort==null) { LocalDevicePort = "80" } else { LocalDevicePort = DevicePort }
 	def porthex = convertPortToHex(LocalDevicePort).toUpperCase()
-	device.deviceNetworkId = "$hosthex:$porthex" 
+	device.deviceNetworkId = "$hosthex:$porthex"
 	def userpassascii = "${HTTPUser}:${HTTPPassword}"
 	def userpass = "Basic " + userpassascii.encodeAsBase64().toString()
 
@@ -245,39 +244,44 @@ def parse(String description) {
 	def retResult = []
 	def descMap = parseDescriptionAsMap(description)
 	def jsonlist = [:]
-	def bodyReturned = new String(descMap["body"].decodeBase64())
-	def headersReturned = new String(descMap["headers"].decodeBase64())
-	log.debug "BODY---" + bodyReturned
+	def bodyReturned = ' '
+	def headersReturned = ' '
+	if (descMap["body"] && descMap["headers"]) {
+		bodyReturned = new String(descMap["body"].decodeBase64())
+		headersReturned = new String(descMap["headers"].decodeBase64())
+	}
+	//log.debug "BODY---" + bodyReturned
 	//log.debug "HEADERS---" + headersReturned
+
 	def LocalDeviceBodyText = ''
 	if (DeviceBodyText==null) { LocalDeviceBodyText = "GateTrigger=" } else { LocalDeviceBodyText = DeviceBodyText }
 
-	if (descMap["body"] && headersReturned.contains("application/json")) {
-		def body = new String(descMap["body"].decodeBase64())
-		def slurper = new JsonSlurper()
-		jsonlist = slurper.parseText(body)
-		//log.debug "JSONLIST---" + jsonlist."CPU"
-		jsonlist.put ("Date", new Date().format("yyyy-MM-dd h:mm:ss a", location.timeZone))
-	} else if (descMap["body"] && headersReturned.contains("text/html")) {
-		jsonlist.put ("Date", new Date().format("yyyy-MM-dd h:mm:ss a", location.timeZone))
-		def data=bodyReturned.eachLine { line ->
-			if (line.contains('CPU=')) { jsonlist.put ("CPU", line.replace("CPU=","")) }
-			if (line.contains('Space Used=')) { jsonlist.put ("Space Used", line.replace("Space Used=","")) }
-			if (line.contains('UpTime=')) { jsonlist.put ("UpTime", line.replace("UpTime=","")) }
-			if (line.contains('CPU Temp=')) { jsonlist.put ("CPU Temp",line.replace("CPU Temp=","")) }
-			if (line.contains('Free Mem=')) { jsonlist.put ("Free Mem",line.replace("Free Mem=",""))  }
-			if (line.contains('CustomTrigger=Success')) { jsonlist.put ("CustomTrigger", "Success") }
-			if (line.contains(LocalDeviceBodyText + 'Success')) { jsonlist.put (LocalDeviceBodyText.replace("=",""), "Success") }
-			if (line.contains(LocalDeviceBodyText + 'Failed : Authentication Required!')) { jsonlist.put (LocalDeviceBodyText.replace("=",""), "Authentication Required!") }
-			if (line.contains('CustomTrigger=Success')) { jsonlist.put ("CustomTrigger", "Success") }
-			if (line.contains('CustomTrigger=Failed : Authentication Required!')) { jsonlist.put ("CustomTrigger", "Authentication Required!") }
-			if (line.contains('Test=Success')) { jsonlist.put ("Test", "Success") }
-			if (line.contains('Test=Failed : Authentication Required!')) { jsonlist.put ("Test", "Authentication Required!") }
-			if (line.contains('RebootNow=Success')) { jsonlist.put ("RebootNow", "Success") }
-			if (line.contains('RebootNow=Failed : Authentication Required!')) { jsonlist.put ("RebootNow", "Authentication Required!") }
+	if (descMap["body"]) {
+		if (headersReturned.contains("application/json")) {
+			def body = new String(descMap["body"].decodeBase64())
+			def slurper = new JsonSlurper()
+			jsonlist = slurper.parseText(body)
+			//log.debug "JSONLIST---" + jsonlist."CPU"
+			jsonlist.put ("Date", new Date().format("yyyy-MM-dd h:mm:ss a", location.timeZone))
+		} else if (headersReturned.contains("text/html")) {
+			jsonlist.put ("Date", new Date().format("yyyy-MM-dd h:mm:ss a", location.timeZone))
+			def data=bodyReturned.eachLine { line ->
+				if (line.contains('CPU=')) { jsonlist.put ("CPU", line.replace("CPU=","")) }
+				if (line.contains('Space Used=')) { jsonlist.put ("Space Used", line.replace("Space Used=","")) }
+				if (line.contains('UpTime=')) { jsonlist.put ("UpTime", line.replace("UpTime=","")) }
+				if (line.contains('CPU Temp=')) { jsonlist.put ("CPU Temp",line.replace("CPU Temp=","")) }
+				if (line.contains('Free Mem=')) { jsonlist.put ("Free Mem",line.replace("Free Mem=",""))  }
+				if (line.contains(LocalDeviceBodyText + 'Success')) { jsonlist.put (LocalDeviceBodyText.replace("=",""), "Success") }
+				if (line.contains(LocalDeviceBodyText + 'Failed : Authentication Required!')) { jsonlist.put (LocalDeviceBodyText.replace("=",""), "Authentication Required!") }
+				if (line.contains('CustomTrigger=Success')) { jsonlist.put ("CustomTrigger", "Success") }
+				if (line.contains('CustomTrigger=Failed : Authentication Required!')) { jsonlist.put ("CustomTrigger", "Authentication Required!") }
+				if (line.contains('Test=Success')) { jsonlist.put ("Test", "Success") }
+				if (line.contains('Test=Failed : Authentication Required!')) { jsonlist.put ("Test", "Authentication Required!") }
+				if (line.contains('RebootNow=Success')) { jsonlist.put ("RebootNow", "Success") }
+				if (line.contains('RebootNow=Failed : Authentication Required!')) { jsonlist.put ("RebootNow", "Authentication Required!") }
+			}
 		}
 	}
-
 	if (descMap["body"] && (headersReturned.contains("application/json") || headersReturned.contains("text/html"))) {
 		//putImageInS3(descMap)
 		if (jsonlist."Test"=="Authentication Required!") {
@@ -330,6 +334,9 @@ def parse(String description) {
 //	def result = createEvent(name: "testswitch", value: "default", isStateChange: true)
 //	log.debug "testswitch returned ${result?.descriptionText}"
 //	return result
+
+	//RESET THE DEVICE ID TO GENERIC/RANDOM NUMBER. THIS ALLOWS MULTIPLE DEVICES TO USE THE SAME ID/IP
+	device.deviceNetworkId = "ID_WILL_BE_CHANGED_AT_RUNTIME_" + (Math.abs(new Random().nextInt()) % 99999 + 1)
 
 	//RETURN BUTTONS TO CORRECT STATE
 	//log.debug 'whichTile: ' + whichTile
