@@ -14,4 +14,5 @@ Here's a useful command for checking the Raspberry Pi pin status & value. It's p
 
 </br>v1.0.20160410 - Initial version
 </br>
-<img src="https://github.com/JZ-SmartThings/SmartThings/blob/master/Devices/Generic%20HTTP%20Device/Screenshot_PHP_Page.png">
+<img src="https://github.com/JZ-SmartThings/SmartThings/blob/master/Devices/SmartGPIO/Screenshot_Android_App.png">
+<img src="https://github.com/JZ-SmartThings/SmartThings/blob/master/Devices/SmartGPIO/Screenshot_PHP_Page.png">
