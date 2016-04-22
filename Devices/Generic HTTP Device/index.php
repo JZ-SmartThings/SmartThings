@@ -1,4 +1,4 @@
-<?php //v1.0.20160411
+<?php //v1.0.20160422
 
 $perform_authentication=false;
 
@@ -41,7 +41,7 @@ $gd_installed=false;
 foreach(get_loaded_extensions() as $name){ if ($name=='gd') {$gd_installed=true;}}
 $rpi = array(
 	"Date" => date("Y-m-d h:i:sA"),
-	"Space Used" => shell_exec('df -h|grep /dev/root | awk \'{print $(NF-1)}\' | tr -d \'\n\''),
+	"Space Used" => shell_exec('df -h | awk \'NR==2\' | awk \'{print $(NF-1)}\' | tr -d \'\n\''),
 	"UpTime" => trim(substr(shell_exec('uptime'),strpos(shell_exec('uptime'), 'up')+2, strpos(shell_exec('uptime'), ',')-strpos(shell_exec('uptime'), 'up')-2)),
 	"CPU" => shell_exec('grep \'cpu \' /proc/stat | awk \'{usage=($2+$4)*100/($2+$4+$5)} END {print usage "%"}\' | sed \'s/\(\.[0-9]\).*$/\1%/g\' | tr -d \'\n\''),
 	"CPU Temp" => CPUTemp(),
