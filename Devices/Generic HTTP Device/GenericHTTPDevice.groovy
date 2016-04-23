@@ -1,5 +1,5 @@
 /**
- *  Generic HTTP Device v1.0.20160410
+ *  Generic HTTP Device v1.0.20160423
  *
  *  Source code can be found here: https://github.com/JZ-SmartThings/SmartThings/blob/master/Devices/Generic%20HTTP%20Device/GenericHTTPDevice.groovy
  *
@@ -340,6 +340,7 @@ def parse(String description) {
 
 	//RETURN BUTTONS TO CORRECT STATE
 	//log.debug 'whichTile: ' + whichTile
+	ResetTiles()
     switch (whichTile) {
         case 'test':
 			def result = createEvent(name: "testswitch", value: "default", isStateChange: true)
