@@ -340,7 +340,6 @@ def parse(String description) {
 
 	//RETURN BUTTONS TO CORRECT STATE
 	//log.debug 'whichTile: ' + whichTile
-	ResetTiles()
     switch (whichTile) {
         case 'test':
 			def result = createEvent(name: "testswitch", value: "default", isStateChange: true)
