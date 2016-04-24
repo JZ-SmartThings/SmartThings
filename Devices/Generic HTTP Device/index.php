@@ -1,4 +1,4 @@
-<?php //v1.0.20160422
+<?php //v1.0.20160423
 
 $perform_authentication=false;
 
@@ -76,14 +76,16 @@ if (isset($_POST['GDInstall']) && $rpi['php5-gd'] != "Installed") {
 }
 if (isset($_POST['GPIO']) && $rpi['php5-gd'] == true) {
 	header("Content-type: image/jpeg");
-	$im = @imagecreate(400, 200) or die("Cannot initialize new GD image stream.");
+	$gpiolines = shell_exec("gpio readall | wc -l");
+	$imheight = 200 + ($gpiolines - 19)*12;
+	$im = @imagecreate(400, $imheight) or die("Cannot initialize new GD image stream.");
 	$background_color = imagecolorallocate($im, 255, 255, 255);
 	$text_color = imagecolorallocate($im, 0, 0, 0);
 	$green = imagecolorallocate($im, 51, 255, 153);
 	$blue = imagecolorallocate($im, 102, 204, 255);
 	$red = imagecolorallocate($im, 255, 51, 51);
-	imagefilledrectangle($im, 8, 5, 196, 195, $green);
-	imagefilledrectangle($im, 203, 5, 391, 195, $blue);
+	imagefilledrectangle($im, 8, 5, 196, $imheight-5, $green);
+	imagefilledrectangle($im, 203, 5, 391, $imheight-5, $blue);
 	imagefilledrectangle($im, 172, 0, 227, 11, $red);
 	$array = explode("\n", shell_exec("gpio readall"));
 	imagestring($im, 1.3, 0, 0, " ", $text_color);
@@ -92,7 +94,7 @@ if (isset($_POST['GPIO']) && $rpi['php5-gd'] == true) {
 		imagestring($im, 1.3, 0, $counter, $v, $text_color);
 		$counter = $counter + 12;
 	}
-	imagejpeg($im, NULL, 80);
+	imagejpeg($im, NULL, 80-(3*($gpiolines-19)));
 	imagedestroy($im);
 	exit;
 }
