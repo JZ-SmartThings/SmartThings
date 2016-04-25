@@ -1,4 +1,4 @@
-<?php //v1.0.20160423
+<?php //v1.0.20160425
 
 $perform_authentication=false;
 
@@ -54,14 +54,14 @@ function CPUTemp() {
     return $celcius .' '. $fahrenheit;
 }
 if (isset($_POST['GateTrigger'])) {
-	exec("sudo gpio -g mode 4 out ; gpio -g write 4 0 ; sleep 1 ; gpio -g write 4 1");
+	exec("sudo gpio -g mode 4 out ; gpio -g write 4 0 ; sleep 0.1 ; gpio -g write 4 1");
 	$rpi = $rpi + array("GateTrigger" => "Success");
 }
 if (isset($_POST['Test'])) {
 	$rpi = $rpi + array("Test" => "Success");
 }
 if (isset($_POST['CustomTrigger'])) {
-	shell_exec("sudo gpio -g mode 21 out ; gpio -g write 21 0 ; sleep 1 ; gpio -g write 21 1");
+	shell_exec("sudo gpio -g mode 21 out ; gpio -g write 21 0 ; sleep 0.1 ; gpio -g write 21 1");
 	$rpi = $rpi + array("CustomTrigger" => "Success");
 }
 if (isset($_POST['RebootNow'])) {
