@@ -1,4 +1,4 @@
-<?php //v1.0.20160425
+<?php //v1.0.20160428
 
 $perform_authentication=false;
 
@@ -17,7 +17,7 @@ if ($perform_authentication) {
 		if (isset($_POST['GateTrigger'])) {
 			echo "GateTrigger=Failed : ";
 		}
-		if (isset($_POST['CustomTrigger'])) {
+		if (isset($_POST['CustomTrigger']) || isset($_POST['CustomTriggerOn']) || isset($_POST['CustomTriggerOff'])) {
 			echo "CustomTrigger=Failed : ";
 		}
 		if (isset($_POST['RebootNow'])) {
@@ -63,6 +63,14 @@ if (isset($_POST['Test'])) {
 if (isset($_POST['CustomTrigger'])) {
 	shell_exec("sudo gpio -g mode 21 out ; gpio -g write 21 0 ; sleep 0.1 ; gpio -g write 21 1");
 	$rpi = $rpi + array("CustomTrigger" => "Success");
+}
+if (isset($_POST['CustomTriggerOn'])) {
+	shell_exec("sudo gpio -g mode 21 out ; gpio -g write 21 0");
+	$rpi = $rpi + array("CustomTriggerOn" => "Success");
+}
+if (isset($_POST['CustomTriggerOff'])) {
+	shell_exec("sudo gpio -g mode 21 out ; gpio -g write 21 1");
+	$rpi = $rpi + array("CustomTriggerOff" => "Success");
 }
 if (isset($_POST['RebootNow'])) {
 	shell_exec("sudo shutdown -r now");
@@ -116,7 +124,7 @@ body, pre	 {
 }
 .btn {
 	font-family: 'Open Sans'; font-weight: bold; font-size: 1.2em; foreground-color: white;
-	line-height: 3em; margin: 10px 0px; width: 240px; border-top: 1px solid #969696;
+	line-height: 2.4em; margin: 10px 0px; width: 240px; border-top: 1px solid #969696;
 	background: #000000; padding: 5px 10px;
 	background: -webkit-gradient(linear, left top, left bottom, from(#545454), to(#000000));
 	background: -webkit-linear-gradient(top, #545454, #000000); background: -moz-linear-gradient(top, #545454, #000000);
@@ -156,6 +164,8 @@ echo ($rpi['php5-gd']) ? "php5-gd=Installed\n" : "php5-gd=Not installed\n";
 if (isset($_POST['GateTrigger'])) { echo "GateTrigger=Success\n"; }
 if (isset($_POST['Test'])) { echo "Test=Success\n"; }
 if (isset($_POST['CustomTrigger'])) { echo "CustomTrigger=Success\n"; }
+if (isset($_POST['CustomTriggerOn'])) { echo "CustomTriggerOn=Success\n"; }
+if (isset($_POST['CustomTriggerOff'])) { echo "CustomTriggerOff=Success\n"; }
 if (isset($_POST['RebootNow'])) { echo "RebootNow=Success\n"; }
 ?>
 </pre>
@@ -164,6 +174,9 @@ if (isset($_POST['RebootNow'])) { echo "RebootNow=Success\n"; }
 	<button class="btn" name="GateTrigger">Gate Trigger</button>
 	<br/>
 	<button class="btn" name="CustomTrigger">Custom Trigger</button>
+	<br/>
+	<button class="btn" style="width: 110px; line-height: 1em;" name="CustomTriggerOn">Custom Trigger On</button>&nbsp;&nbsp;&nbsp;
+	<button class="btn" style="width: 110px; line-height: 1em;" name="CustomTriggerOff">Custom Trigger Off</button>
 	<br/>
 	<button class="btn" name="RebootNow" OnClick='return (confirm("Are you sure you want to reboot?"));'>Reboot Now</button>
 	<br/>

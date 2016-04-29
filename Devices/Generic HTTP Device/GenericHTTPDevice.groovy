@@ -1,5 +1,5 @@
 /**
- *  Generic HTTP Device v1.0.20160423
+ *  Generic HTTP Device v1.0.20160428
  *
  *  Source code can be found here: https://github.com/JZ-SmartThings/SmartThings/blob/master/Devices/Generic%20HTTP%20Device/GenericHTTPDevice.groovy
  *
@@ -46,6 +46,7 @@ metadata {
 		input("DevicePath", "string", title:"URL Path", description: "Rest of the URL, include forward slash.", displayDuringSetup: true)
 		input(name: "DevicePostGet", type: "enum", title: "POST or GET", options: ["POST","GET"], defaultValue: "POST", required: false, displayDuringSetup: true)
 		input("DeviceBodyText", "string", title:'Body Content', description: 'Empty assumes "GateTrigger="', required: false, displayDuringSetup: false)
+		input("DeviceCustomMomentary", "bool", title:"CustomTrigger is Momentary?", description: "False will provide on & off ability.", defaultValue: true, required: false, displayDuringSetup: true)
 		input("UseJSON", "bool", title:"Use JSON instead of HTML?", description: "Use JSON instead of HTML?", defaultValue: false, required: false, displayDuringSetup: true)
 		section() {
 			input("HTTPAuth", "bool", title:"Requires User Auth?", description: "Choose if the HTTP requires basic authentication", defaultValue: false, required: true, displayDuringSetup: true)
@@ -69,8 +70,8 @@ metadata {
 			state("default", label: 'Custom triggered:\n${currentValue}', backgroundColor:"#ffffff")
 		}
 		standardTile("CustomTrigger", "device.customswitch", width: 1, height: 1, decoration: "flat") {
-			state "default", label:'CUSTOM', action: "off", icon: "st.Lighting.light13", backgroundColor:"#53a7c0", nextState: "customrunning"
-			state "customrunning", label: 'RUNNING', action: "ResetTiles", icon: "st.Lighting.light13", backgroundColor: "#FF6600", nextState: "default"
+			state "off", label:'CUSTOM', action: "off", icon: "st.Lighting.light13", backgroundColor:"#53a7c0"
+			state "on", label: 'ON', action: "off", icon: "st.Lighting.light11", backgroundColor: "#FF6600"
 		}
 		valueTile("testTriggered", "device.testTriggered", width: 5, height: 1, decoration: "flat") {
 			state("default", label: 'Test triggered:\n${currentValue}', backgroundColor:"#ffffff")
@@ -153,12 +154,27 @@ def on() {
 	}
 }
 def off() {
-	if (UseJSON==true) {
-		log.debug "Custom Triggered!!!"
-		runCmd('CustomTrigger=&UseJSON=')
+	//log.debug device.currentState("customswitch").getValue() + " === customswitch state"
+	if (DeviceCustomMomentary==true) {
+		if (UseJSON==true) {
+			runCmd('CustomTrigger=&UseJSON=')
+		} else {
+			runCmd('CustomTrigger=')
+		}
 	} else {
-		log.debug "Custom JSON Triggered!!!"
-		runCmd('CustomTrigger=')
+		if (device.currentState("customswitch").getValue()=="off") {
+			if (UseJSON==true) {
+				runCmd('CustomTriggerOn=&UseJSON=')
+			} else {
+				runCmd('CustomTriggerOn=')
+			}
+		} else {
+			if (UseJSON==true) {
+				runCmd('CustomTriggerOff=&UseJSON=')
+			} else {
+				runCmd('CustomTriggerOff=')
+			}
+		}
 	}
 }
 def RebootNow() {
@@ -178,7 +194,9 @@ def ClearTiles() {
 def ResetTiles() {
 	//RETURN BUTTONS TO CORRECT STATE
 	sendEvent(name: "triggerswitch", value: "default", isStateChange: true)
-	sendEvent(name: "customswitch", value: "default", isStateChange: true)
+	if (DeviceCustomMomentary==false) {
+		sendEvent(name: "customswitch", value: "off", isStateChange: true)
+	}
 	sendEvent(name: "testswitch", value: "default", isStateChange: true)
 	sendEvent(name: "rebootnow", value: "default", isStateChange: true)
 	log.debug "Resetting tiles."
@@ -275,6 +293,10 @@ def parse(String description) {
 				if (line.contains(LocalDeviceBodyText + 'Failed : Authentication Required!')) { jsonlist.put (LocalDeviceBodyText.replace("=",""), "Authentication Required!") }
 				if (line.contains('CustomTrigger=Success')) { jsonlist.put ("CustomTrigger", "Success") }
 				if (line.contains('CustomTrigger=Failed : Authentication Required!')) { jsonlist.put ("CustomTrigger", "Authentication Required!") }
+				if (line.contains('CustomTriggerOn=Success')) { jsonlist.put ("CustomTriggerOn", "Success") }
+				if (line.contains('CustomTriggerOn=Failed : Authentication Required!')) { jsonlist.put ("CustomTriggerOn", "Authentication Required!") }
+				if (line.contains('CustomTriggerOff=Success')) { jsonlist.put ("CustomTriggerOff", "Success") }
+				if (line.contains('CustomTriggerOff=Failed : Authentication Required!')) { jsonlist.put ("CustomTriggerOff", "Authentication Required!") }
 				if (line.contains('Test=Success')) { jsonlist.put ("Test", "Success") }
 				if (line.contains('Test=Failed : Authentication Required!')) { jsonlist.put ("Test", "Authentication Required!") }
 				if (line.contains('RebootNow=Success')) { jsonlist.put ("RebootNow", "Success") }
@@ -294,11 +316,25 @@ def parse(String description) {
 		}
 		if (jsonlist."CustomTrigger"=="Authentication Required!") {
 			sendEvent(name: "customTriggered", value: "Use Authentication Credentials", unit: "")
-			whichTile = 'custom'
 		}
 		if (jsonlist."CustomTrigger"=="Success") {
+			sendEvent(name: "customswitch", value: "on", isStateChange: true)
 			sendEvent(name: "customTriggered", value: jsonlist."Date", unit: "")
-			whichTile = 'custom'
+			whichTile = 'customoff'
+		}
+		if (jsonlist."CustomTriggerOn"=="Success") {
+			sendEvent(name: "customTriggered", value: "ON @ " + jsonlist."Date", unit: "")
+			whichTile = 'customon'
+		}
+		if (jsonlist."CustomTriggerOn"=="Authentication Required!") {
+			sendEvent(name: "customTriggered", value: "Use Authentication Credentials", unit: "")
+		}
+		if (jsonlist."CustomTriggerOff"=="Success") {
+			sendEvent(name: "customTriggered", value: "OFF @ " + jsonlist."Date", unit: "")
+			whichTile = 'customoff'
+		}
+		if (jsonlist."CustomTriggerOff"=="Authentication Required!") {
+			sendEvent(name: "customTriggered", value: "Use Authentication Credentials", unit: "")
 		}
 		if (jsonlist."${LocalDeviceBodyText.replace("=","")}"=="Success") {
 			log.debug LocalDeviceBodyText.replace("=","") + " --- RETURNED SUCCESS!!!"
@@ -331,30 +367,35 @@ def parse(String description) {
 
 	log.debug jsonlist
 
-//	def result = createEvent(name: "testswitch", value: "default", isStateChange: true)
-//	log.debug "testswitch returned ${result?.descriptionText}"
-//	return result
-
 	//RESET THE DEVICE ID TO GENERIC/RANDOM NUMBER. THIS ALLOWS MULTIPLE DEVICES TO USE THE SAME ID/IP
 	device.deviceNetworkId = "ID_WILL_BE_CHANGED_AT_RUNTIME_" + (Math.abs(new Random().nextInt()) % 99999 + 1)
 
 	//RETURN BUTTONS TO CORRECT STATE
-	//log.debug 'whichTile: ' + whichTile
+	log.debug 'whichTile: ' + whichTile
     switch (whichTile) {
         case 'test':
+			sendEvent(name: "testswitch", value: "default", isStateChange: true)
 			def result = createEvent(name: "testswitch", value: "default", isStateChange: true)
 			//log.debug "testswitch returned ${result?.descriptionText}"
 			return result
-        case 'custom':
-			def result = createEvent(name: "customswitch", value: "default", isStateChange: true)
+        case 'customoff':
+			sendEvent(name: "customswitch", value: "off", isStateChange: true)
+			def result = createEvent(name: "customswitch", value: "off", isStateChange: true)
+			return result
+        case 'customon':
+			sendEvent(name: "customswitch", value: "on", isStateChange: true)
+			def result = createEvent(name: "customswitch", value: "on", isStateChange: true)
 			return result
         case 'main':
+			sendEvent(name: "triggerswitch", value: "default", isStateChange: true)
 			def result = createEvent(name: "triggerswitch", value: "default", isStateChange: true)
 			return result
         case 'RebootNow':
+			sendEvent(name: "rebootnow", value: "default", isStateChange: true)
 			def result = createEvent(name: "rebootnow", value: "default", isStateChange: true)
 			return result
         default:
+			sendEvent(name: "testswitch", value: "default", isStateChange: true)
 			def result = createEvent(name: "testswitch", value: "default", isStateChange: true)
 			//log.debug "testswitch returned ${result?.descriptionText}"
 			return result
