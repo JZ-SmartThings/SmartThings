@@ -1,4 +1,4 @@
-<?php //v1.0.20160428
+<?php //v1.0.20160430
 
 $perform_authentication=false;
 
@@ -11,11 +11,11 @@ if ($perform_authentication) {
 	if (!$validated) {
 		header('WWW-Authenticate: Basic realm="Generic HTTP Device"');
 		header('HTTP/1.0 401 Unauthorized');
-		if (isset($_POST['Test'])) {
-			echo "Test=Failed : ";
+		if (isset($_POST['Refresh'])) {
+			echo "Refresh=Failed : ";
 		}
-		if (isset($_POST['GateTrigger'])) {
-			echo "GateTrigger=Failed : ";
+		if (isset($_POST['MainTrigger']) || isset($_POST['MainTriggerOn']) || isset($_POST['MainTriggerOff'])) {
+			echo "MainTrigger=Failed : ";
 		}
 		if (isset($_POST['CustomTrigger']) || isset($_POST['CustomTriggerOn']) || isset($_POST['CustomTriggerOff'])) {
 			echo "CustomTrigger=Failed : ";
@@ -53,24 +53,57 @@ function CPUTemp() {
 	$fahrenheit = round(substr(str_replace("C","",$celcius), 0, -1) * 1.8 + 32, 0) . "'F";
     return $celcius .' '. $fahrenheit;
 }
-if (isset($_POST['GateTrigger'])) {
-	exec("sudo gpio -g mode 4 out ; gpio -g write 4 0 ; sleep 0.1 ; gpio -g write 4 1");
-	$rpi = $rpi + array("GateTrigger" => "Success");
+
+$main_pin=4;
+if (isset($_POST['MainPin'])) {
+	if (strlen($_POST['MainPin'])>0) { $main_pin=(int)substr(str_replace(";","",$_POST['MainPin']),0,2); }
 }
-if (isset($_POST['Test'])) {
-	$rpi = $rpi + array("Test" => "Success");
+$rpi = $rpi + array("MainPin" => $main_pin);
+if (isset($_POST['MainTrigger'])) {
+	exec("sudo gpio -g mode $main_pin out ; gpio -g write $main_pin 0 ; sleep 0.1 ; gpio -g write $main_pin 1");
+	$rpi = $rpi + array("MainTrigger" => "Success");
 }
+if (isset($_POST['MainTriggerOn'])) {
+	shell_exec("sudo gpio -g mode $main_pin out ; gpio -g write $main_pin 0");
+	$rpi = $rpi + array("MainTriggerOn" => "Success");
+}
+if (isset($_POST['MainTriggerOff'])) {
+	shell_exec("sudo gpio -g mode $main_pin out ; gpio -g write $main_pin 1");
+	$rpi = $rpi + array("MainTriggerOff" => "Success");
+}
+$main_pin_status = shell_exec("sudo raspi-gpio get $main_pin | grep 'func=OUTPUT' | grep 'level=1'");
+if (strlen($main_pin_status) > 5) {
+	$rpi = $rpi + array("MainPinStatus" => 0);
+} else {
+	$rpi = $rpi + array("MainPinStatus" => 1);
+}
+
+$custom_pin=21;
+if (isset($_POST['CustomPin'])) {
+	if (strlen($_POST['CustomPin'])>0) { $custom_pin=(int)substr(str_replace(";","",$_POST['CustomPin']),0,2); }
+}
+$rpi = $rpi + array("CustomPin" => $custom_pin);
 if (isset($_POST['CustomTrigger'])) {
-	shell_exec("sudo gpio -g mode 21 out ; gpio -g write 21 0 ; sleep 0.1 ; gpio -g write 21 1");
+	shell_exec("sudo gpio -g mode $custom_pin out ; gpio -g write $custom_pin 0 ; sleep 0.1 ; gpio -g write $custom_pin 1");
 	$rpi = $rpi + array("CustomTrigger" => "Success");
 }
 if (isset($_POST['CustomTriggerOn'])) {
-	shell_exec("sudo gpio -g mode 21 out ; gpio -g write 21 0");
+	shell_exec("sudo gpio -g mode $custom_pin out ; gpio -g write $custom_pin 0");
 	$rpi = $rpi + array("CustomTriggerOn" => "Success");
 }
 if (isset($_POST['CustomTriggerOff'])) {
-	shell_exec("sudo gpio -g mode 21 out ; gpio -g write 21 1");
+	shell_exec("sudo gpio -g mode $custom_pin out ; gpio -g write $custom_pin 1");
 	$rpi = $rpi + array("CustomTriggerOff" => "Success");
+}
+$custom_pin_status = shell_exec("sudo raspi-gpio get $custom_pin | grep 'func=OUTPUT' | grep 'level=1'");
+if (strlen($custom_pin_status) > 5) {
+	$rpi = $rpi + array("CustomPinStatus" => 0);
+} else {
+	$rpi = $rpi + array("CustomPinStatus" => 1);
+}
+
+if (isset($_POST['Refresh'])) {
+	$rpi = $rpi + array("Refresh" => "Success");
 }
 if (isset($_POST['RebootNow'])) {
 	shell_exec("sudo shutdown -r now");
@@ -120,12 +153,12 @@ if (isset($_POST['UseJSON'])) {
 <style type='text/css'>
 body, pre	 {
 	max-width: 640px; margin: 0 auto; font-family: Calibri,Arial,Helvetica,sans-serif;
-	background-color: #E3E3E3; font-size: 1.1em; line-height: 1.3em;
+	background-color: #E3E3E3; font-size: 1.1em; line-height: 1em;
 }
 .btn {
-	font-family: 'Open Sans'; font-weight: bold; font-size: 1.2em; foreground-color: white;
-	line-height: 2.4em; margin: 10px 0px; width: 240px; border-top: 1px solid #969696;
-	background: #000000; padding: 5px 10px;
+	font-family: 'Open Sans'; font-size: 1.1em; foreground-color: white;
+	line-height: 2.2em; margin: 5px 0px; width: 240px; border-top: 1px solid #969696;
+	background: #000000; padding: 3px 5px;
 	background: -webkit-gradient(linear, left top, left bottom, from(#545454), to(#000000));
 	background: -webkit-linear-gradient(top, #545454, #000000); background: -moz-linear-gradient(top, #545454, #000000);
 	background: -ms-linear-gradient(top, #545454, #000000); background: -o-linear-gradient(top, #545454, #000000);
@@ -161,26 +194,43 @@ echo "CPU Temp=".str_replace("'","°",$rpi['CPU Temp'])."\n";
 echo "Free Mem=".$rpi['Free Mem']."\n";
 
 echo ($rpi['php5-gd']) ? "php5-gd=Installed\n" : "php5-gd=Not installed\n";
-if (isset($_POST['GateTrigger'])) { echo "GateTrigger=Success\n"; }
-if (isset($_POST['Test'])) { echo "Test=Success\n"; }
-if (isset($_POST['CustomTrigger'])) { echo "CustomTrigger=Success\n"; }
-if (isset($_POST['CustomTriggerOn'])) { echo "CustomTriggerOn=Success\n"; }
-if (isset($_POST['CustomTriggerOff'])) { echo "CustomTriggerOff=Success\n"; }
-if (isset($_POST['RebootNow'])) { echo "RebootNow=Success\n"; }
+
+if ($rpi['MainPin']) { echo "MainPin=".$rpi['MainPin']."\n"; }
+echo "MainPinStatus=".$rpi['MainPinStatus']."\n";
+if ($rpi['CustomPin']) { echo "CustomPin=".$rpi['CustomPin']."\n"; }
+echo "CustomPinStatus=".$rpi['CustomPinStatus']."\n";
+
+if ($rpi['MainTrigger']) { echo "MainTrigger=Success\n"; }
+if ($rpi['MainTriggerOn']) { echo "MainTriggerOn=Success\n"; }
+if ($rpi['MainTriggerOff']) { echo "MainTriggerOff=Success\n"; }
+if ($rpi['CustomTrigger']) { echo "CustomTrigger=Success\n"; }
+if ($rpi['CustomTriggerOn']) { echo "CustomTriggerOn=Success\n"; }
+if ($rpi['CustomTriggerOff']) { echo "CustomTriggerOff=Success\n"; }
+if ($rpi['Refresh']) { echo "Refresh=Success\n"; }
+if ($rpi['RebootNow']) { echo "RebootNow=Success\n"; }
 ?>
 </pre>
 
 <form method="post">
-	<button class="btn" name="GateTrigger">Gate Trigger</button>
+	<button class="btn" name="Refresh">Refresh</button>
 	<br/>
-	<button class="btn" name="CustomTrigger">Custom Trigger</button>
-	<br/>
-	<button class="btn" style="width: 110px; line-height: 1em;" name="CustomTriggerOn">Custom Trigger On</button>&nbsp;&nbsp;&nbsp;
-	<button class="btn" style="width: 110px; line-height: 1em;" name="CustomTriggerOff">Custom Trigger Off</button>
-	<br/>
+	<div style="border: 2px dashed #969696;">
+		<button class="btn" name="MainTrigger">Main Trigger</button>
+		<br/>
+		<div class="center" style="transform: scale(1.0); -webkit-transform: scale(1.0); margin-top:6px; width:210px;border:1px solid;"><input type="text" name="MainPin" value="4" maxlength="2" size="2">&nbsp;&nbsp;&nbsp;Main Pin # in BCM</div>
+		<button class="btn" style="width: 110px; line-height: 1em;" name="MainTriggerOn">Main Trigger On</button>&nbsp;&nbsp;&nbsp;
+		<button class="btn" style="width: 110px; line-height: 1em;" name="MainTriggerOff">Main Trigger Off</button>
+		<br/>
+	</div>
+	<div style="border: 2px dashed #969696;">
+		<button class="btn" name="CustomTrigger">Custom Trigger</button>
+		<br/>
+		<div class="center" style="transform: scale(1.0); -webkit-transform: scale(1.0); margin-top:6px; width:210px;border:1px solid;"><input type="text" name="CustomPin" value="21" maxlength="2" size="2">&nbsp;&nbsp;&nbsp;Custom Pin # in BCM</div>
+		<button class="btn" style="width: 110px; line-height: 1em;" name="CustomTriggerOn">Custom Trigger On</button>&nbsp;&nbsp;&nbsp;
+		<button class="btn" style="width: 110px; line-height: 1em;" name="CustomTriggerOff">Custom Trigger Off</button>
+		<br/>
+	</div>
 	<button class="btn" name="RebootNow" OnClick='return (confirm("Are you sure you want to reboot?"));'>Reboot Now</button>
-	<br/>
-	<button class="btn" name="Test">Test</button>
 	<br/>
 	<?php if ($rpi['php5-gd'] == "Installed") { ?>
 		<button class="btn" name="GPIO" target="_blank">Show GPIO Pins</button>

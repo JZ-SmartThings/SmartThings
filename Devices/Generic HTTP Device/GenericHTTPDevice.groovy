@@ -1,5 +1,5 @@
 /**
- *  Generic HTTP Device v1.0.20160428
+ *  Generic HTTP Device v1.0.20160430
  *
  *  Source code can be found here: https://github.com/JZ-SmartThings/SmartThings/blob/master/Devices/Generic%20HTTP%20Device/GenericHTTPDevice.groovy
  *
@@ -23,8 +23,8 @@ metadata {
 		capability "Switch"
 		capability "Polling"
 		capability "Refresh"
-		attribute "lastTriggered", "string"
-		attribute "testTriggered", "string"
+		attribute "mainTriggered", "string"
+		attribute "refreshTriggered", "string"
 		attribute "customTriggered", "string"
 		attribute "cpuUsage", "string"
 		attribute "spaceUsed", "string"
@@ -32,7 +32,7 @@ metadata {
 		attribute "cpuTemp", "string"
 		attribute "freeMem", "string"
 		command "DeviceTrigger"
-		command "TestTrigger"
+		command "RefreshTrigger"
 		command "CustomTrigger"
 		command "RebootNow"
 		command "ResetTiles"
@@ -45,8 +45,12 @@ metadata {
 		input("DevicePort", "string", title:"Device Port", description: "Empty assumes port 80.", required: false, displayDuringSetup: true)
 		input("DevicePath", "string", title:"URL Path", description: "Rest of the URL, include forward slash.", displayDuringSetup: true)
 		input(name: "DevicePostGet", type: "enum", title: "POST or GET", options: ["POST","GET"], defaultValue: "POST", required: false, displayDuringSetup: true)
-		input("DeviceBodyText", "string", title:'Body Content', description: 'Empty assumes "GateTrigger="', required: false, displayDuringSetup: false)
+		//input("DeviceBodyText", "string", title:'Body Content', description: 'Empty assumes "MainTrigger="', required: false, displayDuringSetup: false)
+		input("StatefulMainControl", "bool", title:"Restrict On/Off commands (e.g. by Alexa) to only control the MAIN switch? Only works if MainTrigger is Momentary setting below is set to OFF.", description: "Restrict On/Off commands (e.g. by Alexa) to only control the MAIN switch? Only works if MainTrigger is Momentary setting below is set to OFF.", defaultValue: false, required: false, displayDuringSetup: true)
+		input("DeviceMainMomentary", "bool", title:"MainTrigger is Momentary?", description: "False will provide on & off ability.", defaultValue: true, required: false, displayDuringSetup: true) 		
+		input("DeviceMainPin", "number", title:'Main Pin Number in BCM Format', description: 'Empty assumes pin #4', required: false, displayDuringSetup: false)
 		input("DeviceCustomMomentary", "bool", title:"CustomTrigger is Momentary?", description: "False will provide on & off ability.", defaultValue: true, required: false, displayDuringSetup: true)
+		input("DeviceCustomPin", "number", title:'Custom Pin Number in BCM Format', description: 'Empty assumes pin #21', required: false, displayDuringSetup: false)
 		input("UseJSON", "bool", title:"Use JSON instead of HTML?", description: "Use JSON instead of HTML?", defaultValue: false, required: false, displayDuringSetup: true)
 		section() {
 			input("HTTPAuth", "bool", title:"Requires User Auth?", description: "Choose if the HTTP requires basic authentication", defaultValue: false, required: true, displayDuringSetup: true)
@@ -59,27 +63,30 @@ metadata {
 	}
 
 	tiles(scale: 2) {
-		valueTile("lastTriggered", "device.lastTriggered", width: 5, height: 1, decoration: "flat") {
-			state("default", label: 'Last triggered:\n${currentValue}', backgroundColor:"#ffffff")
+		valueTile("mainTriggered", "device.mainTriggered", width: 5, height: 1, decoration: "flat") {
+			state("default", label: 'Main triggered:\n${currentValue}', backgroundColor:"#ffffff")
 		}
-		standardTile("DeviceTrigger", "device.triggerswitch", width: 1, height: 1, canChangeIcon: true, canChangeBackground: true, decoration: "flat") {
-			state "default", label:'GATE' , action: "on", icon: "st.Outdoor.outdoor22", backgroundColor:"#53a7c0", nextState: "triggerrunning"
-			state "triggerrunning", label: 'OPENING', action: "ResetTiles", icon: "st.Outdoor.outdoor22", backgroundColor: "#FF6600", nextState: "default"
+		standardTile("DeviceTrigger", "device.mainswitch", width: 1, height: 1, canChangeIcon: true, canChangeBackground: true, decoration: "flat") {
+			state "off", label:'OFF' , action: "on", icon: "st.Outdoor.outdoor22", backgroundColor:"#53a7c0", nextState: "trying"
+			state "on", label: 'ON', action: "on", icon: "st.Outdoor.outdoor22", backgroundColor: "#FF6600", nextState: "trying"
+			state "trying", label: 'TRYING', action: "ResetTiles", icon: "st.Outdoor.outdoor22", backgroundColor: "#FFAA33"
 		}
 		valueTile("customTriggered", "device.customTriggered", width: 5, height: 1, decoration: "flat") {
 			state("default", label: 'Custom triggered:\n${currentValue}', backgroundColor:"#ffffff")
 		}
 		standardTile("CustomTrigger", "device.customswitch", width: 1, height: 1, decoration: "flat") {
-			state "off", label:'CUSTOM', action: "off", icon: "st.Lighting.light13", backgroundColor:"#53a7c0"
-			state "on", label: 'ON', action: "off", icon: "st.Lighting.light11", backgroundColor: "#FF6600"
+			state "off", label:'CUSTOM', action: "off", icon: "st.Lighting.light13", backgroundColor:"#53a7c0", nextState: "trying"
+			state "on", label: 'ON', action: "off", icon: "st.Lighting.light11", backgroundColor: "#FF6600", nextState: "trying"
+			state "trying", label: 'TRYING', action: "ResetTiles", icon: "st.Lighting.light11", backgroundColor: "#FFAA33"
 		}
-		valueTile("testTriggered", "device.testTriggered", width: 5, height: 1, decoration: "flat") {
-			state("default", label: 'Test triggered:\n${currentValue}', backgroundColor:"#ffffff")
+		valueTile("refreshTriggered", "device.refreshTriggered", width: 5, height: 1, decoration: "flat") {
+			state("default", label: 'Refreshed:\n${currentValue}', backgroundColor:"#ffffff")
 		}
-		standardTile("TestTrigger", "device.testswitch", width: 1, height: 1, decoration: "flat") {
-			state "default", label:'TEST', action: "poll", icon: "st.Office.office13", backgroundColor:"#53a7c0", nextState: "testrunning"
-			state "testrunning", label: 'TESTING', action: "ResetTiles", icon: "st.Office.office13", backgroundColor: "#FF6600", nextState: "default"
+		standardTile("RefreshTrigger", "device.refreshswitch", width: 1, height: 1, decoration: "flat") {
+			state "default", label:'REFRESH', action: "refresh.refresh", icon: "st.secondary.refresh-icon", backgroundColor:"#53a7c0", nextState: "refreshing"
+			state "refreshing", label: 'REFRESHING', action: "ResetTiles", icon: "st.secondary.refresh-icon", backgroundColor: "#FF6600", nextState: "default"
 		}
+
 		valueTile("cpuUsage", "device.cpuUsage", width: 2, height: 2) {
 			state("default", label: 'CPU\n ${currentValue}%',
 				backgroundColors:[
@@ -125,56 +132,47 @@ metadata {
 			state "rebooting", label: 'REBOOTING', action: "ResetTiles", icon: "st.Office.office13", backgroundColor: "#FF6600", nextState: "default"
 		}
 		main "DeviceTrigger"
-		details(["lastTriggered", "DeviceTrigger", "customTriggered", "CustomTrigger", "testTriggered", "TestTrigger", "cpuUsage", "cpuTemp", "upTime", "spaceUsed", "freeMem", "clearTiles", "RebootNow"])
+		details(["mainTriggered", "DeviceTrigger", "customTriggered", "CustomTrigger", "refreshTriggered", "RefreshTrigger", "cpuUsage", "cpuTemp", "upTime", "spaceUsed", "freeMem", "clearTiles", "RebootNow"])
 	}
 }
 
 def refresh() {
-    poll()
+	def FullCommand = 'Refresh='
+	if (DeviceMainPin) {FullCommand=FullCommand+"&MainPin="+DeviceMainPin} else {FullCommand=FullCommand+"&MainPin=4"}
+	if (DeviceCustomPin) {FullCommand=FullCommand+"&CustomPin="+DeviceCustomPin} else {FullCommand=FullCommand+"&CustomPin=21"}
+	if (UseJSON==true) { FullCommand=FullCommand+"&UseJSON=" }
+	runCmd(FullCommand)
 }
 def poll() {
-	if (UseJSON==true) {
-		log.debug "Test Triggered!!!"
-		runCmd('Test=&UseJSON=')
-	} else {
-		log.debug "Test JSON Triggered!!!"
-		runCmd('Test=')
-	}
+	refresh()
 }
 def on() {
-	def LocalDeviceBodyText = ''
-	if (DeviceBodyText==null) { LocalDeviceBodyText = "GateTrigger=" } else { LocalDeviceBodyText = DeviceBodyText }
-
-	if (UseJSON==true) {
-		log.debug LocalDeviceBodyText + " Triggered!!!"
-		runCmd(LocalDeviceBodyText + '&UseJSON=')
+	def FullCommand = ''
+	if (DeviceMainMomentary==true) {
+		FullCommand='MainTrigger='
 	} else {
-		log.debug LocalDeviceBodyText + " JSON Triggered!!!"
-		runCmd(LocalDeviceBodyText)
+		if (device.currentState("mainswitch").getValue()=="off") { FullCommand='MainTriggerOn=' } else { FullCommand='MainTriggerOff=' }
 	}
+	if (DeviceMainPin) {FullCommand=FullCommand+"&MainPin="+DeviceMainPin} else {FullCommand=FullCommand+"&MainPin=4"}
+	if (DeviceCustomPin) {FullCommand=FullCommand+"&CustomPin="+DeviceCustomPin} else {FullCommand=FullCommand+"&CustomPin=21"}
+	if (UseJSON==true) {FullCommand=FullCommand+"&UseJSON="}
+	runCmd(FullCommand)
 }
 def off() {
-	//log.debug device.currentState("customswitch").getValue() + " === customswitch state"
-	if (DeviceCustomMomentary==true) {
-		if (UseJSON==true) {
-			runCmd('CustomTrigger=&UseJSON=')
-		} else {
-			runCmd('CustomTrigger=')
-		}
+	if (StatefulMainControl==true && DeviceMainMomentary==false) {
+		on()
 	} else {
-		if (device.currentState("customswitch").getValue()=="off") {
-			if (UseJSON==true) {
-				runCmd('CustomTriggerOn=&UseJSON=')
-			} else {
-				runCmd('CustomTriggerOn=')
-			}
+		//log.debug device.currentState("customswitch").getValue() + " === customswitch state"
+		def FullCommand = ''
+		if (DeviceCustomMomentary==true) {
+			FullCommand='CustomTrigger='
 		} else {
-			if (UseJSON==true) {
-				runCmd('CustomTriggerOff=&UseJSON=')
-			} else {
-				runCmd('CustomTriggerOff=')
-			}
+			if (device.currentState("customswitch").getValue()=="off") { FullCommand='CustomTriggerOn=' } else { FullCommand='CustomTriggerOff=' }
 		}
+		if (DeviceMainPin) {FullCommand=FullCommand+"&MainPin="+DeviceMainPin} else {FullCommand=FullCommand+"&MainPin=4"}
+		if (DeviceCustomPin) {FullCommand=FullCommand+"&CustomPin="+DeviceCustomPin} else {FullCommand=FullCommand+"&CustomPin=21"}
+		if (UseJSON==true) {FullCommand=FullCommand+"&UseJSON="}
+		runCmd(FullCommand)
 	}
 }
 def RebootNow() {
@@ -182,9 +180,9 @@ def RebootNow() {
 	runCmd('RebootNow=')
 }
 def ClearTiles() {
-	sendEvent(name: "lastTriggered", value: "", unit: "")
+	sendEvent(name: "mainTriggered", value: "", unit: "")
 	sendEvent(name: "customTriggered", value: "", unit: "")
-	sendEvent(name: "testTriggered", value: "", unit: "")
+	sendEvent(name: "refreshTriggered", value: "", unit: "")
 	sendEvent(name: "cpuUsage", value: "", unit: "")
 	sendEvent(name: "cpuTemp", value: "", unit: "")
 	sendEvent(name: "spaceUsed", value: "", unit: "")
@@ -193,11 +191,13 @@ def ClearTiles() {
 }
 def ResetTiles() {
 	//RETURN BUTTONS TO CORRECT STATE
-	sendEvent(name: "triggerswitch", value: "default", isStateChange: true)
+	if (DeviceMainMomentary==false) {
+		sendEvent(name: "mainswitch", value: "off", isStateChange: true)
+	}
 	if (DeviceCustomMomentary==false) {
 		sendEvent(name: "customswitch", value: "off", isStateChange: true)
 	}
-	sendEvent(name: "testswitch", value: "default", isStateChange: true)
+	sendEvent(name: "refreshswitch", value: "default", isStateChange: true)
 	sendEvent(name: "rebootnow", value: "default", isStateChange: true)
 	log.debug "Resetting tiles."
 }
@@ -271,9 +271,6 @@ def parse(String description) {
 	//log.debug "BODY---" + bodyReturned
 	//log.debug "HEADERS---" + headersReturned
 
-	def LocalDeviceBodyText = ''
-	if (DeviceBodyText==null) { LocalDeviceBodyText = "GateTrigger=" } else { LocalDeviceBodyText = DeviceBodyText }
-
 	if (descMap["body"]) {
 		if (headersReturned.contains("application/json")) {
 			def body = new String(descMap["body"].decodeBase64())
@@ -289,16 +286,24 @@ def parse(String description) {
 				if (line.contains('UpTime=')) { jsonlist.put ("UpTime", line.replace("UpTime=","")) }
 				if (line.contains('CPU Temp=')) { jsonlist.put ("CPU Temp",line.replace("CPU Temp=","")) }
 				if (line.contains('Free Mem=')) { jsonlist.put ("Free Mem",line.replace("Free Mem=",""))  }
-				if (line.contains(LocalDeviceBodyText + 'Success')) { jsonlist.put (LocalDeviceBodyText.replace("=",""), "Success") }
-				if (line.contains(LocalDeviceBodyText + 'Failed : Authentication Required!')) { jsonlist.put (LocalDeviceBodyText.replace("=",""), "Authentication Required!") }
+				if (line.contains('MainTrigger=Success')) { jsonlist.put ("MainTrigger".replace("=",""), "Success") }
+				if (line.contains('MainTrigger=Failed : Authentication Required!')) { jsonlist.put ("MainTrigger".replace("=",""), "Authentication Required!") }
+				if (line.contains('MainTriggerOn=Success')) { jsonlist.put ("MainTriggerOn", "Success") }
+				if (line.contains('MainTriggerOn=Failed : Authentication Required!')) { jsonlist.put ("MainTriggerOn", "Authentication Required!") }
+				if (line.contains('MainTriggerOff=Success')) { jsonlist.put ("MainTriggerOff", "Success") }
+				if (line.contains('MainTriggerOff=Failed : Authentication Required!')) { jsonlist.put ("MainTriggerOff", "Authentication Required!") }
+				if (line.contains('MainPinStatus=1')) { jsonlist.put ("MainPinStatus".replace("=",""), 1) }
+				if (line.contains('MainPinStatus=0')) { jsonlist.put ("MainPinStatus".replace("=",""), 0) }
 				if (line.contains('CustomTrigger=Success')) { jsonlist.put ("CustomTrigger", "Success") }
 				if (line.contains('CustomTrigger=Failed : Authentication Required!')) { jsonlist.put ("CustomTrigger", "Authentication Required!") }
 				if (line.contains('CustomTriggerOn=Success')) { jsonlist.put ("CustomTriggerOn", "Success") }
 				if (line.contains('CustomTriggerOn=Failed : Authentication Required!')) { jsonlist.put ("CustomTriggerOn", "Authentication Required!") }
 				if (line.contains('CustomTriggerOff=Success')) { jsonlist.put ("CustomTriggerOff", "Success") }
 				if (line.contains('CustomTriggerOff=Failed : Authentication Required!')) { jsonlist.put ("CustomTriggerOff", "Authentication Required!") }
-				if (line.contains('Test=Success')) { jsonlist.put ("Test", "Success") }
-				if (line.contains('Test=Failed : Authentication Required!')) { jsonlist.put ("Test", "Authentication Required!") }
+				if (line.contains('CustomPinStatus=1')) { jsonlist.put ("CustomPinStatus".replace("=",""), 1) }
+				if (line.contains('CustomPinStatus=0')) { jsonlist.put ("CustomPinStatus".replace("=",""), 0) }
+				if (line.contains('Refresh=Success')) { jsonlist.put ("Refresh", "Success") }
+				if (line.contains('Refresh=Failed : Authentication Required!')) { jsonlist.put ("Refresh", "Authentication Required!") }
 				if (line.contains('RebootNow=Success')) { jsonlist.put ("RebootNow", "Success") }
 				if (line.contains('RebootNow=Failed : Authentication Required!')) { jsonlist.put ("RebootNow", "Authentication Required!") }
 			}
@@ -306,13 +311,13 @@ def parse(String description) {
 	}
 	if (descMap["body"] && (headersReturned.contains("application/json") || headersReturned.contains("text/html"))) {
 		//putImageInS3(descMap)
-		if (jsonlist."Test"=="Authentication Required!") {
-			sendEvent(name: "testTriggered", value: "Use Authentication Credentials", unit: "")
-			whichTile = 'test'
+		if (jsonlist."Refresh"=="Authentication Required!") {
+			sendEvent(name: "refreshTriggered", value: "Use Authentication Credentials", unit: "")
+			whichTile = 'refresh'
 		}
-		if (jsonlist."Test"=="Success") {
-			sendEvent(name: "testTriggered", value: jsonlist."Date", unit: "")
-			whichTile = 'test'
+		if (jsonlist."Refresh"=="Success") {
+			sendEvent(name: "refreshTriggered", value: jsonlist."Date", unit: "")
+			whichTile = 'refresh'
 		}
 		if (jsonlist."CustomTrigger"=="Authentication Required!") {
 			sendEvent(name: "customTriggered", value: "Use Authentication Credentials", unit: "")
@@ -322,29 +327,65 @@ def parse(String description) {
 			sendEvent(name: "customTriggered", value: jsonlist."Date", unit: "")
 			whichTile = 'customoff'
 		}
-		if (jsonlist."CustomTriggerOn"=="Success") {
+		if (jsonlist."CustomTriggerOn"=="Success" && jsonlist."CustomPinStatus"==1) {
 			sendEvent(name: "customTriggered", value: "ON @ " + jsonlist."Date", unit: "")
 			whichTile = 'customon'
 		}
 		if (jsonlist."CustomTriggerOn"=="Authentication Required!") {
 			sendEvent(name: "customTriggered", value: "Use Authentication Credentials", unit: "")
 		}
-		if (jsonlist."CustomTriggerOff"=="Success") {
+		if (jsonlist."CustomTriggerOff"=="Success" && jsonlist."CustomPinStatus"==0) {
 			sendEvent(name: "customTriggered", value: "OFF @ " + jsonlist."Date", unit: "")
 			whichTile = 'customoff'
 		}
 		if (jsonlist."CustomTriggerOff"=="Authentication Required!") {
 			sendEvent(name: "customTriggered", value: "Use Authentication Credentials", unit: "")
 		}
-		if (jsonlist."${LocalDeviceBodyText.replace("=","")}"=="Success") {
-			log.debug LocalDeviceBodyText.replace("=","") + " --- RETURNED SUCCESS!!!"
-			sendEvent(name: "lastTriggered", value: jsonlist."Date", unit: "")
-			whichTile = 'main'
+		if (jsonlist."CustomPinStatus"==1) {
+			sendEvent(name: "customswitch", value: "on", isStateChange: true)
+			sendEvent(name: "refreshswitch", value: "default", isStateChange: true)
+			whichTile = 'customon'
 		}
-		if (jsonlist."${LocalDeviceBodyText.replace("=","")}"=="Authentication Required!") {
-			sendEvent(name: "lastTriggered", value: "Use Authentication Credentials", unit: "")
-			whichTile = 'main'
+		else if (jsonlist."CustomPinStatus"==0) {
+			sendEvent(name: "customswitch", value: "off", isStateChange: true)
+			sendEvent(name: "refreshswitch", value: "default", isStateChange: true)
+			whichTile = 'customoff'
 		}
+
+		if (jsonlist."MainTrigger"=="Authentication Required!") {
+			sendEvent(name: "mainTriggered", value: "Use Authentication Credentials", unit: "")
+		}
+		if (jsonlist."MainTrigger"=="Success") {
+			sendEvent(name: "mainswitch", value: "on", isStateChange: true)
+			sendEvent(name: "mainTriggered", value: jsonlist."Date", unit: "")
+			whichTile = 'mainoff'
+		}
+		if (jsonlist."MainTriggerOn"=="Success" && jsonlist."MainPinStatus"==1) {
+			sendEvent(name: "mainTriggered", value: "ON @ " + jsonlist."Date", unit: "")
+			whichTile = 'mainon'
+		}
+		if (jsonlist."MainTriggerOn"=="Authentication Required!") {
+			sendEvent(name: "mainTriggered", value: "Use Authentication Credentials", unit: "")
+		}
+		if (jsonlist."MainTriggerOff"=="Success" && jsonlist."MainPinStatus"==0) {
+			sendEvent(name: "mainTriggered", value: "OFF @ " + jsonlist."Date", unit: "")
+			whichTile = 'mainoff'
+		}
+		if (jsonlist."MainTriggerOff"=="Authentication Required!") {
+			sendEvent(name: "mainTriggered", value: "Use Authentication Credentials", unit: "")
+			whichTile = 'mainoff'
+		}
+		if (jsonlist."MainPinStatus"==1) {
+			sendEvent(name: "mainswitch", value: "on", isStateChange: true)
+			sendEvent(name: "refreshswitch", value: "default", isStateChange: true)
+			whichTile = 'mainon'
+		}
+		else if (jsonlist."MainPinStatus"==0) {
+			sendEvent(name: "mainswitch", value: "off", isStateChange: true)
+			sendEvent(name: "refreshswitch", value: "default", isStateChange: true)
+			whichTile = 'mainoff'
+		}
+
 		if (jsonlist."CPU") {
 			sendEvent(name: "cpuUsage", value: jsonlist."CPU".replace("=","\n").replace("%",""), unit: "")
 		}
@@ -373,10 +414,10 @@ def parse(String description) {
 	//RETURN BUTTONS TO CORRECT STATE
 	log.debug 'whichTile: ' + whichTile
     switch (whichTile) {
-        case 'test':
-			sendEvent(name: "testswitch", value: "default", isStateChange: true)
-			def result = createEvent(name: "testswitch", value: "default", isStateChange: true)
-			//log.debug "testswitch returned ${result?.descriptionText}"
+        case 'refresh':
+			sendEvent(name: "refreshswitch", value: "default", isStateChange: true)
+			def result = createEvent(name: "refreshswitch", value: "default", isStateChange: true)
+			//log.debug "refreshswitch returned ${result?.descriptionText}"
 			return result
         case 'customoff':
 			sendEvent(name: "customswitch", value: "off", isStateChange: true)
@@ -386,18 +427,22 @@ def parse(String description) {
 			sendEvent(name: "customswitch", value: "on", isStateChange: true)
 			def result = createEvent(name: "customswitch", value: "on", isStateChange: true)
 			return result
-        case 'main':
-			sendEvent(name: "triggerswitch", value: "default", isStateChange: true)
-			def result = createEvent(name: "triggerswitch", value: "default", isStateChange: true)
+        case 'mainoff':
+			sendEvent(name: "mainswitch", value: "off", isStateChange: true)
+			def result = createEvent(name: "mainswitch", value: "off", isStateChange: true)
+			return result
+        case 'mainon':
+			sendEvent(name: "mainswitch", value: "on", isStateChange: true)
+			def result = createEvent(name: "mainswitch", value: "on", isStateChange: true)
 			return result
         case 'RebootNow':
 			sendEvent(name: "rebootnow", value: "default", isStateChange: true)
 			def result = createEvent(name: "rebootnow", value: "default", isStateChange: true)
 			return result
         default:
-			sendEvent(name: "testswitch", value: "default", isStateChange: true)
-			def result = createEvent(name: "testswitch", value: "default", isStateChange: true)
-			//log.debug "testswitch returned ${result?.descriptionText}"
+			sendEvent(name: "refreshswitch", value: "default", isStateChange: true)
+			def result = createEvent(name: "refreshswitch", value: "default", isStateChange: true)
+			//log.debug "refreshswitch returned ${result?.descriptionText}"
 			return result
     }
 }
