@@ -46,7 +46,7 @@ metadata {
 		input("DevicePath", "string", title:"URL Path", description: "Rest of the URL, include forward slash.", displayDuringSetup: true)
 		input(name: "DevicePostGet", type: "enum", title: "POST or GET", options: ["POST","GET"], defaultValue: "POST", required: false, displayDuringSetup: true)
 		//input("DeviceBodyText", "string", title:'Body Content', description: 'Empty assumes "MainTrigger="', required: false, displayDuringSetup: false)
-		input("StatefulMainControl", "bool", title:"Restrict On/Off commands (e.g. by Alexa) to only control the MAIN switch? Only works if MainTrigger is Momentary setting below is set to OFF.", description: "Restrict On/Off commands (e.g. by Alexa) to only control the MAIN switch? Only works if MainTrigger is Momentary setting below is set to OFF.", defaultValue: false, required: false, displayDuringSetup: true)
+		input("StatefulMainControl", "bool", title:"Restrict On/Off commands (e.g. by Alexa) to only control the MAIN switch? Only works if MainTrigger is Momentary OFF and CustomTrigger is Momentary ON.", description: "Restrict On/Off commands (e.g. by Alexa) to only control the MAIN switch? Only works if MainTrigger is Momentary OFF and CustomTrigger is Momentary ON.", defaultValue: false, required: false, displayDuringSetup: true)
 		input("DeviceMainMomentary", "bool", title:"MainTrigger is Momentary?", description: "False will provide on & off ability.", defaultValue: true, required: false, displayDuringSetup: true) 		
 		input("DeviceMainPin", "number", title:'Main Pin Number in BCM Format', description: 'Empty assumes pin #4', required: false, displayDuringSetup: false)
 		input("DeviceCustomMomentary", "bool", title:"CustomTrigger is Momentary?", description: "False will provide on & off ability.", defaultValue: true, required: false, displayDuringSetup: true)
@@ -159,7 +159,7 @@ def on() {
 	runCmd(FullCommand)
 }
 def off() {
-	if (StatefulMainControl==true && DeviceMainMomentary==false) {
+	if (StatefulMainControl==true && DeviceMainMomentary==false && DeviceCustomMomentary==true) {
 		on()
 	} else {
 		//log.debug device.currentState("customswitch").getValue() + " === customswitch state"
@@ -191,10 +191,10 @@ def ClearTiles() {
 }
 def ResetTiles() {
 	//RETURN BUTTONS TO CORRECT STATE
-	if (DeviceMainMomentary==false) {
+	if (DeviceMainMomentary==true) {
 		sendEvent(name: "mainswitch", value: "off", isStateChange: true)
 	}
-	if (DeviceCustomMomentary==false) {
+	if (DeviceCustomMomentary==true) {
 		sendEvent(name: "customswitch", value: "off", isStateChange: true)
 	}
 	sendEvent(name: "refreshswitch", value: "default", isStateChange: true)
