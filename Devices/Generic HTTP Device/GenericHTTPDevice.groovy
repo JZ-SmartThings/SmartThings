@@ -1,5 +1,5 @@
 /**
- *  Generic HTTP Device v1.0.20160430
+ *  Generic HTTP Device v1.0.20160501
  *
  *  Source code can be found here: https://github.com/JZ-SmartThings/SmartThings/blob/master/Devices/Generic%20HTTP%20Device/GenericHTTPDevice.groovy
  *
@@ -40,17 +40,15 @@ metadata {
 	}
 
 	preferences {
-//		input("DeviceButtonName", "string", title:"Button Name", description: "Please enter button name", required: false, displayDuringSetup: true)
 		input("DeviceIP", "string", title:"Device IP Address", description: "Please enter your device's IP Address", required: true, displayDuringSetup: true)
 		input("DevicePort", "string", title:"Device Port", description: "Empty assumes port 80.", required: false, displayDuringSetup: true)
 		input("DevicePath", "string", title:"URL Path", description: "Rest of the URL, include forward slash.", displayDuringSetup: true)
 		input(name: "DevicePostGet", type: "enum", title: "POST or GET", options: ["POST","GET"], defaultValue: "POST", required: false, displayDuringSetup: true)
-		//input("DeviceBodyText", "string", title:'Body Content', description: 'Empty assumes "MainTrigger="', required: false, displayDuringSetup: false)
 		input("StatefulMainControl", "bool", title:"Restrict On/Off commands (e.g. by Alexa) to only control the MAIN switch? Only works if MainTrigger is Momentary OFF and CustomTrigger is Momentary ON.", description: "Restrict On/Off commands (e.g. by Alexa) to only control the MAIN switch? Only works if MainTrigger is Momentary OFF and CustomTrigger is Momentary ON.", defaultValue: false, required: false, displayDuringSetup: true)
-		input("DeviceMainMomentary", "bool", title:"MainTrigger is Momentary?", description: "False will provide on & off ability.", defaultValue: true, required: false, displayDuringSetup: true) 		
-		input("DeviceMainPin", "number", title:'Main Pin Number in BCM Format', description: 'Empty assumes pin #4', required: false, displayDuringSetup: false)
+		input("DeviceMainMomentary", "bool", title:"MainTrigger is Momentary?", description: "False will provide on & off ability.", defaultValue: true, required: false, displayDuringSetup: true)	
+		input("DeviceMainPin", "number", title:'Main Pin Number in BCM Format', description: 'Empty assumes pin #4.', required: false, displayDuringSetup: false)
 		input("DeviceCustomMomentary", "bool", title:"CustomTrigger is Momentary?", description: "False will provide on & off ability.", defaultValue: true, required: false, displayDuringSetup: true)
-		input("DeviceCustomPin", "number", title:'Custom Pin Number in BCM Format', description: 'Empty assumes pin #21', required: false, displayDuringSetup: false)
+		input("DeviceCustomPin", "number", title:'Custom Pin Number in BCM Format', description: 'Empty assumes pin #21.', required: false, displayDuringSetup: false)
 		input("UseJSON", "bool", title:"Use JSON instead of HTML?", description: "Use JSON instead of HTML?", defaultValue: false, required: false, displayDuringSetup: true)
 		section() {
 			input("HTTPAuth", "bool", title:"Requires User Auth?", description: "Choose if the HTTP requires basic authentication", defaultValue: false, required: true, displayDuringSetup: true)
@@ -64,7 +62,7 @@ metadata {
 
 	tiles(scale: 2) {
 		valueTile("mainTriggered", "device.mainTriggered", width: 5, height: 1, decoration: "flat") {
-			state("default", label: 'Main triggered:\n${currentValue}', backgroundColor:"#ffffff")
+			state("default", label: 'Main triggered:\r\n${currentValue}', backgroundColor:"#ffffff")
 		}
 		standardTile("DeviceTrigger", "device.mainswitch", width: 1, height: 1, canChangeIcon: true, canChangeBackground: true, decoration: "flat") {
 			state "off", label:'OFF' , action: "on", icon: "st.Outdoor.outdoor22", backgroundColor:"#53a7c0", nextState: "trying"
@@ -72,7 +70,7 @@ metadata {
 			state "trying", label: 'TRYING', action: "ResetTiles", icon: "st.Outdoor.outdoor22", backgroundColor: "#FFAA33"
 		}
 		valueTile("customTriggered", "device.customTriggered", width: 5, height: 1, decoration: "flat") {
-			state("default", label: 'Custom triggered:\n${currentValue}', backgroundColor:"#ffffff")
+			state("default", label: 'Custom triggered:\r\n${currentValue}', backgroundColor:"#ffffff")
 		}
 		standardTile("CustomTrigger", "device.customswitch", width: 1, height: 1, decoration: "flat") {
 			state "off", label:'CUSTOM', action: "off", icon: "st.Lighting.light13", backgroundColor:"#53a7c0", nextState: "trying"
@@ -80,7 +78,7 @@ metadata {
 			state "trying", label: 'TRYING', action: "ResetTiles", icon: "st.Lighting.light11", backgroundColor: "#FFAA33"
 		}
 		valueTile("refreshTriggered", "device.refreshTriggered", width: 5, height: 1, decoration: "flat") {
-			state("default", label: 'Refreshed:\n${currentValue}', backgroundColor:"#ffffff")
+			state("default", label: 'Refreshed:\r\n${currentValue}', backgroundColor:"#ffffff")
 		}
 		standardTile("RefreshTrigger", "device.refreshswitch", width: 1, height: 1, decoration: "flat") {
 			state "default", label:'REFRESH', action: "refresh.refresh", icon: "st.secondary.refresh-icon", backgroundColor:"#53a7c0", nextState: "refreshing"
@@ -88,7 +86,7 @@ metadata {
 		}
 
 		valueTile("cpuUsage", "device.cpuUsage", width: 2, height: 2) {
-			state("default", label: 'CPU\n ${currentValue}%',
+			state("default", label: 'CPU\r\n ${currentValue}%',
 				backgroundColors:[
 					[value: 0, color: "#00cc33"],
 					[value: 10, color: "#99ff33"],
@@ -109,7 +107,7 @@ metadata {
 			)
 		}
 		valueTile("spaceUsed", "device.spaceUsed", width: 2, height: 2) {
-			state("default", label: 'Space Used\n ${currentValue}%',
+			state("default", label: 'Space Used\r\n ${currentValue}%',
 				backgroundColors:[
 					[value: 50, color: "#00cc33"],
 					[value: 75, color: "#ffcc66"],
@@ -119,10 +117,10 @@ metadata {
 			)
 		}
 		valueTile("upTime", "device.upTime", width: 2, height: 2, decoration: "flat") {
-			state("default", label: 'UpTime\n ${currentValue}', backgroundColor:"#ffffff")
+			state("default", label: 'UpTime\r\n ${currentValue}', backgroundColor:"#ffffff")
 		}
 		valueTile("freeMem", "device.freeMem", width: 2, height: 2, decoration: "flat") {
-			state("default", label: 'Free Mem\n ${currentValue}', backgroundColor:"#ffffff")
+			state("default", label: 'Free Mem\r\n ${currentValue}', backgroundColor:"#ffffff")
 		}
 		standardTile("clearTiles", "device.clear", width: 2, height: 2, decoration: "flat") {
 			state "default", label:'Clear Tiles', action:"ClearTiles", icon:"st.Bath.bath9"
@@ -159,7 +157,9 @@ def on() {
 	runCmd(FullCommand)
 }
 def off() {
-	if (StatefulMainControl==true && DeviceMainMomentary==false && DeviceCustomMomentary==true) {
+	log.debug "StatefulMainControl="+StatefulMainControl+'\r\n'+"DeviceMainMomentary="+DeviceMainMomentary+'\r\n'+"DeviceCustomMomentary="+DeviceCustomMomentary
+	if (StatefulMainControl==true && DeviceMainMomentary==false && DeviceCustomMomentary==false) {
+		log.debug "Running ON() Function."
 		on()
 	} else {
 		//log.debug device.currentState("customswitch").getValue() + " === customswitch state"
@@ -324,7 +324,7 @@ def parse(String description) {
 		}
 		if (jsonlist."CustomTrigger"=="Success") {
 			sendEvent(name: "customswitch", value: "on", isStateChange: true)
-			sendEvent(name: "customTriggered", value: jsonlist."Date", unit: "")
+			sendEvent(name: "customTriggered", value: "MEMENTARY @ " + jsonlist."Date", unit: "")
 			whichTile = 'customoff'
 		}
 		if (jsonlist."CustomTriggerOn"=="Success" && jsonlist."CustomPinStatus"==1) {
@@ -357,7 +357,7 @@ def parse(String description) {
 		}
 		if (jsonlist."MainTrigger"=="Success") {
 			sendEvent(name: "mainswitch", value: "on", isStateChange: true)
-			sendEvent(name: "mainTriggered", value: jsonlist."Date", unit: "")
+			sendEvent(name: "mainTriggered", value: "MEMENTARY @ " + jsonlist."Date", unit: "")
 			whichTile = 'mainoff'
 		}
 		if (jsonlist."MainTriggerOn"=="Success" && jsonlist."MainPinStatus"==1) {
