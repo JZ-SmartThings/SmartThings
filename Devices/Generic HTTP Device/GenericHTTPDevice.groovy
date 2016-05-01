@@ -44,7 +44,8 @@ metadata {
 		input("DevicePort", "string", title:"Device Port", description: "Empty assumes port 80.", required: false, displayDuringSetup: true)
 		input("DevicePath", "string", title:"URL Path", description: "Rest of the URL, include forward slash.", displayDuringSetup: true)
 		input(name: "DevicePostGet", type: "enum", title: "POST or GET", options: ["POST","GET"], defaultValue: "POST", required: false, displayDuringSetup: true)
-		input("StatefulMainControl", "bool", title:"Restrict On/Off commands (e.g. by Alexa) to only control the MAIN switch? Only works if MainTrigger is Momentary OFF and CustomTrigger is Momentary ON.", description: "Restrict On/Off commands (e.g. by Alexa) to only control the MAIN switch? Only works if MainTrigger is Momentary OFF and CustomTrigger is Momentary ON.", defaultValue: false, required: false, displayDuringSetup: true)
+		input("StatefulMainControl", "bool", title:"Restrict On/Off commands (e.g. by Alexa) to strictly apply to the Main switch? Only works if MainTrigger is Momentary OFF. Use the below to restrict this setting based on what Custom is set to. Default is OFF.", description: "Restrict On/Off commands (e.g. by Alexa) to strictly apply to the Main switch? Only works if MainTrigger is Momentary OFF. Use the below to restrict this setting based on what Custom is set to. Default is OFF.", defaultValue: false, required: false, displayDuringSetup: true)
+		input("StatefulMainRequireMementaryCustom", "bool", title:"Require CustomSwitch is Momentary ON for ON/OFF (voice) commands to strictly apply to the Main switch. Default is OFF.", description: "Require CustomSwitch is Momentary ON for ON/OFF (voice) commands to strictly apply to the Main switch. Default is OFF.", defaultValue: true, required: false, displayDuringSetup: true)
 		input("DeviceMainMomentary", "bool", title:"MainTrigger is Momentary?", description: "False will provide on & off ability.", defaultValue: true, required: false, displayDuringSetup: true)	
 		input("DeviceMainPin", "number", title:'Main Pin Number in BCM Format', description: 'Empty assumes pin #4.', required: false, displayDuringSetup: false)
 		input("DeviceCustomMomentary", "bool", title:"CustomTrigger is Momentary?", description: "False will provide on & off ability.", defaultValue: true, required: false, displayDuringSetup: true)
@@ -157,8 +158,8 @@ def on() {
 	runCmd(FullCommand)
 }
 def off() {
-	log.debug "StatefulMainControl="+StatefulMainControl+'\r\n'+"DeviceMainMomentary="+DeviceMainMomentary+'\r\n'+"DeviceCustomMomentary="+DeviceCustomMomentary
-	if (StatefulMainControl==true && DeviceMainMomentary==false && DeviceCustomMomentary==false) {
+	log.debug "\r\nStatefulMainControl="+StatefulMainControl+'\r\n'+"StatefulMainRequireMementaryCustom="+StatefulMainRequireMementaryCustom+'\r\n'+"StatefulMainControl="+StatefulMainControl+'\r\n'+"DeviceMainMomentary="+DeviceMainMomentary+'DeviceMainMomentary==false \r\n'+"DeviceCustomMomentary="+DeviceCustomMomentary
+	if (DeviceMainMomentary==false && StatefulMainControl==true && (StatefulMainRequireMementaryCustom==false || (StatefulMainRequireMementaryCustom==true && DeviceCustomMomentary==true))) {
 		log.debug "Running ON() Function."
 		on()
 	} else {
