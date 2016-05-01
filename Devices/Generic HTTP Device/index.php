@@ -214,20 +214,20 @@ if ($rpi['RebootNow']) { echo "RebootNow=Success\n"; }
 <form method="post">
 	<button class="btn" name="Refresh">Refresh</button>
 	<br/>
-	<div style="border: 2px dashed #969696;">
+	<div style="border: 2px dashed #969696; background-color: #D0D0D0;">
 		<button class="btn" name="MainTrigger">Main Trigger</button>
 		<br/>
-		<div class="center" style="transform: scale(1.0); -webkit-transform: scale(1.0); margin-top:6px; width:210px;border:1px solid;"><input type="text" name="MainPin" value="4" maxlength="2" size="2">&nbsp;&nbsp;&nbsp;Main Pin # in BCM</div>
-		<button class="btn" style="width: 110px; line-height: 1em;" name="MainTriggerOn">Main Trigger On</button>&nbsp;&nbsp;&nbsp;
-		<button class="btn" style="width: 110px; line-height: 1em;" name="MainTriggerOff">Main Trigger Off</button>
+		<div class="center" style="transform: scale(1.0); -webkit-transform: scale(1.0); margin-top:6px; width:230px;border:1px solid; padding:3px;"><input type="text" name="MainPin" value="4" maxlength="2" size="2">&nbsp;&nbsp;&nbsp;Main Pin # in BCM</div>
+		<button class="btn" style="width: 115px; line-height: 1em;" name="MainTriggerOn">Main Trigger On</button>&nbsp;
+		<button class="btn" style="width: 115px; line-height: 1em;" name="MainTriggerOff">Main Trigger Off</button>
 		<br/>
 	</div>
-	<div style="border: 2px dashed #969696;">
+	<div style="border: 2px dashed #969696; background-color: #D0D0D0; margin-top: 5px;">
 		<button class="btn" name="CustomTrigger">Custom Trigger</button>
 		<br/>
-		<div class="center" style="transform: scale(1.0); -webkit-transform: scale(1.0); margin-top:6px; width:210px;border:1px solid;"><input type="text" name="CustomPin" value="21" maxlength="2" size="2">&nbsp;&nbsp;&nbsp;Custom Pin # in BCM</div>
-		<button class="btn" style="width: 110px; line-height: 1em;" name="CustomTriggerOn">Custom Trigger On</button>&nbsp;&nbsp;&nbsp;
-		<button class="btn" style="width: 110px; line-height: 1em;" name="CustomTriggerOff">Custom Trigger Off</button>
+		<div class="center" style="transform: scale(1.0); -webkit-transform: scale(1.0); margin-top:6px; width:230px;border:1px solid; padding:3px;"><input type="text" name="CustomPin" value="21" maxlength="2" size="2">&nbsp;&nbsp;&nbsp;Custom Pin # in BCM</div>
+		<button class="btn" style="width: 115px; line-height: 1em;" name="CustomTriggerOn">Custom Trigger On</button>&nbsp;
+		<button class="btn" style="width: 115px; line-height: 1em;" name="CustomTriggerOff">Custom Trigger Off</button>
 		<br/>
 	</div>
 	<button class="btn" name="RebootNow" OnClick='return (confirm("Are you sure you want to reboot?"));'>Reboot Now</button>
