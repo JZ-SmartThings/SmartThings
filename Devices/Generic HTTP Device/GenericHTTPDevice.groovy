@@ -324,7 +324,7 @@ def parse(String description) {
 		}
 		if (jsonlist."CustomTrigger"=="Success") {
 			sendEvent(name: "customswitch", value: "on", isStateChange: true)
-			sendEvent(name: "customTriggered", value: "MEMENTARY @ " + jsonlist."Date", unit: "")
+			sendEvent(name: "customTriggered", value: "MOMENTARY @ " + jsonlist."Date", unit: "")
 			whichTile = 'customoff'
 		}
 		if (jsonlist."CustomTriggerOn"=="Success" && jsonlist."CustomPinStatus"==1) {
@@ -357,7 +357,7 @@ def parse(String description) {
 		}
 		if (jsonlist."MainTrigger"=="Success") {
 			sendEvent(name: "mainswitch", value: "on", isStateChange: true)
-			sendEvent(name: "mainTriggered", value: "MEMENTARY @ " + jsonlist."Date", unit: "")
+			sendEvent(name: "mainTriggered", value: "MOMENTARY @ " + jsonlist."Date", unit: "")
 			whichTile = 'mainoff'
 		}
 		if (jsonlist."MainTriggerOn"=="Success" && jsonlist."MainPinStatus"==1) {
