@@ -243,7 +243,8 @@ if ($rpi['RebootNow']) { echo "RebootNow=Success\n"; }
 	<br/>
 </form>
 <div>
-<a target="_blank" href="https://github.com/JZ-SmartThings/SmartThings/tree/master/Devices/Generic%20HTTP%20Device">Project on GitHub</a>
+<a target="_blank" href="https://community.smartthings.com/t/raspberry-pi-to-php-to-gpio-to-relay-to-gate-garage-trigger/43335">Project on SmartThings Community</a></br>
+<a target="_blank" href="https://github.com/JZ-SmartThings/SmartThings/tree/master/Devices/Generic%20HTTP%20Device">Project on GitHub</a></br>
 </div>
 
 </div>
