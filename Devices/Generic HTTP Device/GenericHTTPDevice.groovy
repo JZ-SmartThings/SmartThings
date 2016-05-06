@@ -1,5 +1,5 @@
 /**
- *  Generic HTTP Device v1.0.20160501
+ *  Generic HTTP Device v1.0.20160505
  *
  *  Source code can be found here: https://github.com/JZ-SmartThings/SmartThings/blob/master/Devices/Generic%20HTTP%20Device/GenericHTTPDevice.groovy
  *
@@ -150,7 +150,11 @@ def on() {
 	if (DeviceMainMomentary==true) {
 		FullCommand='MainTrigger='
 	} else {
-		if (device.currentState("mainswitch").getValue()=="off") { FullCommand='MainTriggerOn=' } else { FullCommand='MainTriggerOff=' }
+		if (device.currentState("mainswitch").getValue()==null) {
+			FullCommand='MainTriggerOff='
+		} else {
+			if (device.currentState("mainswitch").getValue()=="off") { FullCommand='MainTriggerOn=' } else { FullCommand='MainTriggerOff=' }
+		}
 	}
 	if (DeviceMainPin) {FullCommand=FullCommand+"&MainPin="+DeviceMainPin} else {FullCommand=FullCommand+"&MainPin=4"}
 	if (DeviceCustomPin) {FullCommand=FullCommand+"&CustomPin="+DeviceCustomPin} else {FullCommand=FullCommand+"&CustomPin=21"}
@@ -168,7 +172,11 @@ def off() {
 		if (DeviceCustomMomentary==true) {
 			FullCommand='CustomTrigger='
 		} else {
-			if (device.currentState("customswitch").getValue()=="off") { FullCommand='CustomTriggerOn=' } else { FullCommand='CustomTriggerOff=' }
+			if (device.currentState("mainswitch").getValue()==null) {
+				FullCommand='CustomTriggerOff='
+			} else {
+				if (device.currentState("customswitch").getValue()=="off") { FullCommand='CustomTriggerOn=' } else { FullCommand='CustomTriggerOff=' }
+			}
 		}
 		if (DeviceMainPin) {FullCommand=FullCommand+"&MainPin="+DeviceMainPin} else {FullCommand=FullCommand+"&MainPin=4"}
 		if (DeviceCustomPin) {FullCommand=FullCommand+"&CustomPin="+DeviceCustomPin} else {FullCommand=FullCommand+"&CustomPin=21"}
