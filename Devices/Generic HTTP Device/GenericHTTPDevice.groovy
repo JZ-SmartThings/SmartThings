@@ -1,5 +1,5 @@
 /**
- *  Generic HTTP Device v1.0.20160506
+ *  Generic HTTP Device v1.0.20160507
  *
  *  Source code can be found here: https://github.com/JZ-SmartThings/SmartThings/blob/master/Devices/Generic%20HTTP%20Device/GenericHTTPDevice.groovy
  *
@@ -44,14 +44,12 @@ metadata {
 		input("DevicePort", "string", title:"Device Port", description: "Empty assumes port 80.", required: false, displayDuringSetup: true)
 		input("DevicePath", "string", title:"URL Path", description: "Rest of the URL, include forward slash.", displayDuringSetup: true)
 		input(name: "DevicePostGet", type: "enum", title: "POST or GET", options: ["POST","GET"], defaultValue: "POST", required: false, displayDuringSetup: true)
-		input("UseOffVoiceCommandForCustom", "bool", title:"Use the OFF voice command (e.g. by Alexa) to control the Custom command?", description: "Use the OFF voice command (e.g. by Alexa) to control the Custom command?", defaultValue: false, required: false, displayDuringSetup: true)
-//		input("StatefulMainControl", "bool", title:"Restrict On/Off commands (e.g. by Alexa) to strictly apply to the Main switch? Only works if MainTrigger is Momentary OFF. Use the below to restrict this setting based on what Custom is set to. Default is OFF.", description: "Restrict On/Off commands (e.g. by Alexa) to strictly apply to the Main switch? Only works if MainTrigger is Momentary OFF. Use the below to restrict this setting based on what Custom is set to. Default is OFF.", defaultValue: false, required: false, displayDuringSetup: true)
-//		input("StatefulMainRequireMomentaryCustom", "bool", title:"Require CustomSwitch is Momentary ON for ON/OFF (voice) commands to strictly apply to the Main switch. Default is OFF.", description: "Require CustomSwitch is Momentary ON for ON/OFF (voice) commands to strictly apply to the Main switch. Default is OFF.", defaultValue: false, required: false, displayDuringSetup: true)
-		input("DeviceMainMomentary", "bool", title:"MainTrigger is Momentary?", description: "False will provide on & off ability.", defaultValue: true, required: false, displayDuringSetup: true)	
+		input("UseOffVoiceCommandForCustom", "bool", title:"Use the OFF voice command (e.g. by Alexa) to control the Custom command? Assumed ON if MainTrigger is Momentary setting below is ON.", description: "", defaultValue: false, required: false, displayDuringSetup: true)
+		input("DeviceMainMomentary", "bool", title:"MainTrigger is Momentary?", description: "", defaultValue: true, required: false, displayDuringSetup: true)	
 		input("DeviceMainPin", "number", title:'Main Pin Number in BCM Format', description: 'Empty assumes pin #4.', required: false, displayDuringSetup: false)
-		input("DeviceCustomMomentary", "bool", title:"CustomTrigger is Momentary?", description: "False will provide on & off ability.", defaultValue: true, required: false, displayDuringSetup: true)
+		input("DeviceCustomMomentary", "bool", title:"CustomTrigger is Momentary?", description: "", defaultValue: true, required: false, displayDuringSetup: true)
 		input("DeviceCustomPin", "number", title:'Custom Pin Number in BCM Format', description: 'Empty assumes pin #21.', required: false, displayDuringSetup: false)
-		input("UseJSON", "bool", title:"Use JSON instead of HTML?", description: "Use JSON instead of HTML?", defaultValue: false, required: false, displayDuringSetup: true)
+		input("UseJSON", "bool", title:"Use JSON instead of HTML?", description: "", defaultValue: false, required: false, displayDuringSetup: true)
 		section() {
 			input("HTTPAuth", "bool", title:"Requires User Auth?", description: "Choose if the HTTP requires basic authentication", defaultValue: false, required: true, displayDuringSetup: true)
 			input("HTTPUser", "string", title:"HTTP User", description: "Enter your basic username", required: false, displayDuringSetup: true)
