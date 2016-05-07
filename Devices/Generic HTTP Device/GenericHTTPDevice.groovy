@@ -1,5 +1,5 @@
 /**
- *  Generic HTTP Device v1.0.20160505
+ *  Generic HTTP Device v1.0.20160506
  *
  *  Source code can be found here: https://github.com/JZ-SmartThings/SmartThings/blob/master/Devices/Generic%20HTTP%20Device/GenericHTTPDevice.groovy
  *
@@ -44,8 +44,9 @@ metadata {
 		input("DevicePort", "string", title:"Device Port", description: "Empty assumes port 80.", required: false, displayDuringSetup: true)
 		input("DevicePath", "string", title:"URL Path", description: "Rest of the URL, include forward slash.", displayDuringSetup: true)
 		input(name: "DevicePostGet", type: "enum", title: "POST or GET", options: ["POST","GET"], defaultValue: "POST", required: false, displayDuringSetup: true)
-		input("StatefulMainControl", "bool", title:"Restrict On/Off commands (e.g. by Alexa) to strictly apply to the Main switch? Only works if MainTrigger is Momentary OFF. Use the below to restrict this setting based on what Custom is set to. Default is OFF.", description: "Restrict On/Off commands (e.g. by Alexa) to strictly apply to the Main switch? Only works if MainTrigger is Momentary OFF. Use the below to restrict this setting based on what Custom is set to. Default is OFF.", defaultValue: false, required: false, displayDuringSetup: true)
-		input("StatefulMainRequireMementaryCustom", "bool", title:"Require CustomSwitch is Momentary ON for ON/OFF (voice) commands to strictly apply to the Main switch. Default is OFF.", description: "Require CustomSwitch is Momentary ON for ON/OFF (voice) commands to strictly apply to the Main switch. Default is OFF.", defaultValue: false, required: false, displayDuringSetup: true)
+		input("UseOffVoiceCommandForCustom", "bool", title:"Use the OFF voice command (e.g. by Alexa) to control the Custom command?", description: "Use the OFF voice command (e.g. by Alexa) to control the Custom command?", defaultValue: false, required: false, displayDuringSetup: true)
+//		input("StatefulMainControl", "bool", title:"Restrict On/Off commands (e.g. by Alexa) to strictly apply to the Main switch? Only works if MainTrigger is Momentary OFF. Use the below to restrict this setting based on what Custom is set to. Default is OFF.", description: "Restrict On/Off commands (e.g. by Alexa) to strictly apply to the Main switch? Only works if MainTrigger is Momentary OFF. Use the below to restrict this setting based on what Custom is set to. Default is OFF.", defaultValue: false, required: false, displayDuringSetup: true)
+//		input("StatefulMainRequireMomentaryCustom", "bool", title:"Require CustomSwitch is Momentary ON for ON/OFF (voice) commands to strictly apply to the Main switch. Default is OFF.", description: "Require CustomSwitch is Momentary ON for ON/OFF (voice) commands to strictly apply to the Main switch. Default is OFF.", defaultValue: false, required: false, displayDuringSetup: true)
 		input("DeviceMainMomentary", "bool", title:"MainTrigger is Momentary?", description: "False will provide on & off ability.", defaultValue: true, required: false, displayDuringSetup: true)	
 		input("DeviceMainPin", "number", title:'Main Pin Number in BCM Format', description: 'Empty assumes pin #4.', required: false, displayDuringSetup: false)
 		input("DeviceCustomMomentary", "bool", title:"CustomTrigger is Momentary?", description: "False will provide on & off ability.", defaultValue: true, required: false, displayDuringSetup: true)
@@ -65,7 +66,7 @@ metadata {
 		valueTile("mainTriggered", "device.mainTriggered", width: 5, height: 1, decoration: "flat") {
 			state("default", label: 'Main triggered:\r\n${currentValue}', backgroundColor:"#ffffff")
 		}
-		standardTile("DeviceTrigger", "device.mainswitch", width: 1, height: 1, canChangeIcon: true, canChangeBackground: true, decoration: "flat") {
+		standardTile("DeviceTrigger", "device.switch", width: 1, height: 1, canChangeIcon: true, canChangeBackground: true, decoration: "flat") {
 			state "off", label:'OFF' , action: "on", icon: "st.Outdoor.outdoor22", backgroundColor:"#53a7c0", nextState: "trying"
 			state "on", label: 'ON', action: "on", icon: "st.Outdoor.outdoor22", backgroundColor: "#FF6600", nextState: "trying"
 			state "trying", label: 'TRYING', action: "ResetTiles", icon: "st.Outdoor.outdoor22", backgroundColor: "#FFAA33"
@@ -74,8 +75,8 @@ metadata {
 			state("default", label: 'Custom triggered:\r\n${currentValue}', backgroundColor:"#ffffff")
 		}
 		standardTile("CustomTrigger", "device.customswitch", width: 1, height: 1, decoration: "flat") {
-			state "off", label:'CUSTOM', action: "off", icon: "st.Lighting.light13", backgroundColor:"#53a7c0", nextState: "trying"
-			state "on", label: 'ON', action: "off", icon: "st.Lighting.light11", backgroundColor: "#FF6600", nextState: "trying"
+			state "off", label:'CUSTOM', action: "CustomTrigger", icon: "st.Lighting.light13", backgroundColor:"#53a7c0", nextState: "trying"
+			state "on", label: 'ON', action: "CustomTrigger", icon: "st.Lighting.light11", backgroundColor: "#FF6600", nextState: "trying"
 			state "trying", label: 'TRYING', action: "ResetTiles", icon: "st.Lighting.light11", backgroundColor: "#FFAA33"
 		}
 		valueTile("refreshTriggered", "device.refreshTriggered", width: 5, height: 1, decoration: "flat") {
@@ -150,7 +151,7 @@ def on() {
 	if (DeviceMainMomentary==true) {
 		FullCommand='MainTrigger='
 	} else {
-		if (device.currentState("mainswitch").getValue()==null && device.currentState("mainswitch").getValue()=="off") { FullCommand='MainTriggerOn=' } else { FullCommand='MainTriggerOff=' }
+		if (device.currentState("switch")!=null && device.currentState("switch").getValue()=="off") { FullCommand='MainTriggerOn=' } else { FullCommand='MainTriggerOff=' }
 	}
 	if (DeviceMainPin) {FullCommand=FullCommand+"&MainPin="+DeviceMainPin} else {FullCommand=FullCommand+"&MainPin=4"}
 	if (DeviceCustomPin) {FullCommand=FullCommand+"&CustomPin="+DeviceCustomPin} else {FullCommand=FullCommand+"&CustomPin=21"}
@@ -158,23 +159,26 @@ def on() {
 	runCmd(FullCommand)
 }
 def off() {
-	log.debug "\r\nStatefulMainControl="+StatefulMainControl+'\r\n'+"StatefulMainRequireMementaryCustom="+StatefulMainRequireMementaryCustom+'\r\n'+"StatefulMainControl="+StatefulMainControl+'\r\n'+"DeviceMainMomentary="+DeviceMainMomentary+'DeviceMainMomentary==false \r\n'+"DeviceCustomMomentary="+DeviceCustomMomentary
-	if (DeviceMainMomentary==false && StatefulMainControl==true && (StatefulMainRequireMementaryCustom==false || (StatefulMainRequireMementaryCustom==true && DeviceCustomMomentary==true))) {
-		log.debug "Running ON() Function."
-		on()
+	if (DeviceMainMomentary==true || UseOffVoiceCommandForCustom==true) {
+		CustomTrigger()
 	} else {
-		//log.debug device.currentState("customswitch").getValue() + " === customswitch state"
-		def FullCommand = ''
-		if (DeviceCustomMomentary==true) {
-			FullCommand='CustomTrigger='
-		} else {
-			if (device.currentState("mainswitch").getValue()==null && device.currentState("customswitch").getValue()=="off") { FullCommand='CustomTriggerOn=' } else { FullCommand='CustomTriggerOff=' }
-		}
-		if (DeviceMainPin) {FullCommand=FullCommand+"&MainPin="+DeviceMainPin} else {FullCommand=FullCommand+"&MainPin=4"}
-		if (DeviceCustomPin) {FullCommand=FullCommand+"&CustomPin="+DeviceCustomPin} else {FullCommand=FullCommand+"&CustomPin=21"}
-		if (UseJSON==true) {FullCommand=FullCommand+"&UseJSON="}
-		runCmd(FullCommand)
+		log.debug "Running ON() Function for MAIN Command Handling."
+		on()
 	}
+}
+def CustomTrigger() {
+	//log.debug device.currentState("customswitch").getValue() + " === customswitch state"
+	def FullCommand = ''
+	if (DeviceCustomMomentary==true) {
+		FullCommand='CustomTrigger='
+	} else {
+		log.debug "mainswtich currentState===" + device.currentState("switch")
+		if (device.currentState("switch")!=null && device.currentState("customswitch").getValue()=="off") { FullCommand='CustomTriggerOn=' } else { FullCommand='CustomTriggerOff=' }
+	}
+	if (DeviceMainPin) {FullCommand=FullCommand+"&MainPin="+DeviceMainPin} else {FullCommand=FullCommand+"&MainPin=4"}
+	if (DeviceCustomPin) {FullCommand=FullCommand+"&CustomPin="+DeviceCustomPin} else {FullCommand=FullCommand+"&CustomPin=21"}
+	if (UseJSON==true) {FullCommand=FullCommand+"&UseJSON="}
+	runCmd(FullCommand)
 }
 def RebootNow() {
 	log.debug "Reboot Triggered!!!"
@@ -193,7 +197,7 @@ def ClearTiles() {
 def ResetTiles() {
 	//RETURN BUTTONS TO CORRECT STATE
 	if (DeviceMainMomentary==true) {
-		sendEvent(name: "mainswitch", value: "off", isStateChange: true)
+		sendEvent(name: "switch", value: "off", isStateChange: true)
 	}
 	if (DeviceCustomMomentary==true) {
 		sendEvent(name: "customswitch", value: "off", isStateChange: true)
@@ -357,7 +361,7 @@ def parse(String description) {
 			sendEvent(name: "mainTriggered", value: "Use Authentication Credentials", unit: "")
 		}
 		if (jsonlist."MainTrigger"=="Success") {
-			sendEvent(name: "mainswitch", value: "on", isStateChange: true)
+			sendEvent(name: "switch", value: "on", isStateChange: true)
 			sendEvent(name: "mainTriggered", value: "MOMENTARY @ " + jsonlist."Date", unit: "")
 			whichTile = 'mainoff'
 		}
@@ -377,12 +381,12 @@ def parse(String description) {
 			whichTile = 'mainoff'
 		}
 		if (jsonlist."MainPinStatus"==1) {
-			sendEvent(name: "mainswitch", value: "on", isStateChange: true)
+			sendEvent(name: "switch", value: "on", isStateChange: true)
 			sendEvent(name: "refreshswitch", value: "default", isStateChange: true)
 			whichTile = 'mainon'
 		}
 		else if (jsonlist."MainPinStatus"==0) {
-			sendEvent(name: "mainswitch", value: "off", isStateChange: true)
+			sendEvent(name: "switch", value: "off", isStateChange: true)
 			sendEvent(name: "refreshswitch", value: "default", isStateChange: true)
 			whichTile = 'mainoff'
 		}
@@ -429,12 +433,14 @@ def parse(String description) {
 			def result = createEvent(name: "customswitch", value: "on", isStateChange: true)
 			return result
         case 'mainoff':
-			sendEvent(name: "mainswitch", value: "off", isStateChange: true)
-			def result = createEvent(name: "mainswitch", value: "off", isStateChange: true)
+			//sendEvent(name: "mainswitch", value: "off", isStateChange: true)
+			//def result = createEvent(name: "mainswitch", value: "off", isStateChange: true)
+			def result = createEvent(name: "switch", value: "off", isStateChange: true)
 			return result
         case 'mainon':
-			sendEvent(name: "mainswitch", value: "on", isStateChange: true)
-			def result = createEvent(name: "mainswitch", value: "on", isStateChange: true)
+			//sendEvent(name: "mainswitch", value: "on", isStateChange: true)
+			//def result = createEvent(name: "mainswitch", value: "on", isStateChange: true)
+			def result = createEvent(name: "switch", value: "on", isStateChange: true)
 			return result
         case 'RebootNow':
 			sendEvent(name: "rebootnow", value: "default", isStateChange: true)
