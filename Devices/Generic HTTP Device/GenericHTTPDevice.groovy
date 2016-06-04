@@ -1,19 +1,14 @@
 /**
- *  Generic HTTP Device v1.0.20160507
- *
+ *  Generic HTTP Device v1.0.20160603
  *  Source code can be found here: https://github.com/JZ-SmartThings/SmartThings/blob/master/Devices/Generic%20HTTP%20Device/GenericHTTPDevice.groovy
- *
  *  Copyright 2016 JZ
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  *  in compliance with the License. You may obtain a copy of the License at:
- *
  *      http://www.apache.org/licenses/LICENSE-2.0
- *
  *  Unless required by applicable law or agreed to in writing, software distributed under the License is distributed
  *  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
  *  for the specific language governing permissions and limitations under the License.
- *
  */
 
 import groovy.json.JsonSlurper
@@ -136,8 +131,8 @@ metadata {
 
 def refresh() {
 	def FullCommand = 'Refresh='
-	if (DeviceMainPin) {FullCommand=FullCommand+"&MainPin="+DeviceMainPin} else {FullCommand=FullCommand+"&MainPin=4"}
-	if (DeviceCustomPin) {FullCommand=FullCommand+"&CustomPin="+DeviceCustomPin} else {FullCommand=FullCommand+"&CustomPin=21"}
+	if (DeviceMainPin) {FullCommand=FullCommand+"&MainPin="+DeviceMainPin} //else {FullCommand=FullCommand+"&MainPin=4"}
+	if (DeviceCustomPin) {FullCommand=FullCommand+"&CustomPin="+DeviceCustomPin} //else {FullCommand=FullCommand+"&CustomPin=21"}
 	if (UseJSON==true) { FullCommand=FullCommand+"&UseJSON=" }
 	runCmd(FullCommand)
 }
@@ -151,8 +146,8 @@ def on() {
 	} else {
 		if (device.currentState("switch")!=null && device.currentState("switch").getValue()=="off") { FullCommand='MainTriggerOn=' } else { FullCommand='MainTriggerOff=' }
 	}
-	if (DeviceMainPin) {FullCommand=FullCommand+"&MainPin="+DeviceMainPin} else {FullCommand=FullCommand+"&MainPin=4"}
-	if (DeviceCustomPin) {FullCommand=FullCommand+"&CustomPin="+DeviceCustomPin} else {FullCommand=FullCommand+"&CustomPin=21"}
+	if (DeviceMainPin) {FullCommand=FullCommand+"&MainPin="+DeviceMainPin} //else {FullCommand=FullCommand+"&MainPin=4"}
+	if (DeviceCustomPin) {FullCommand=FullCommand+"&CustomPin="+DeviceCustomPin} //else {FullCommand=FullCommand+"&CustomPin=21"}
 	if (UseJSON==true) {FullCommand=FullCommand+"&UseJSON="}
 	runCmd(FullCommand)
 }
@@ -170,11 +165,11 @@ def CustomTrigger() {
 	if (DeviceCustomMomentary==true) {
 		FullCommand='CustomTrigger='
 	} else {
-		log.debug "mainswtich currentState===" + device.currentState("switch")
+		log.debug "main swtich currentState===" + device.currentState("switch")
 		if (device.currentState("switch")!=null && device.currentState("customswitch").getValue()=="off") { FullCommand='CustomTriggerOn=' } else { FullCommand='CustomTriggerOff=' }
 	}
-	if (DeviceMainPin) {FullCommand=FullCommand+"&MainPin="+DeviceMainPin} else {FullCommand=FullCommand+"&MainPin=4"}
-	if (DeviceCustomPin) {FullCommand=FullCommand+"&CustomPin="+DeviceCustomPin} else {FullCommand=FullCommand+"&CustomPin=21"}
+	if (DeviceMainPin) {FullCommand=FullCommand+"&MainPin="+DeviceMainPin} //else {FullCommand=FullCommand+"&MainPin=4"}
+	if (DeviceCustomPin) {FullCommand=FullCommand+"&CustomPin="+DeviceCustomPin} //else {FullCommand=FullCommand+"&CustomPin=21"}
 	if (UseJSON==true) {FullCommand=FullCommand+"&UseJSON="}
 	runCmd(FullCommand)
 }
@@ -217,12 +212,6 @@ def runCmd(String varCommand) {
 
 	log.debug "The device id configured is: $device.deviceNetworkId"
 
-	def path = DevicePath
-	log.debug "path is: $path"
-	log.debug "Uses which method: $DevicePostGet"
-	def body = varCommand 
-	log.debug "body is: $body"
-
 	def headers = [:] 
 	headers.put("HOST", "$host:$LocalDevicePort")
 	headers.put("Content-Type", "application/x-www-form-urlencoded")
@@ -230,18 +219,30 @@ def runCmd(String varCommand) {
 		headers.put("Authorization", userpass)
 	}
 	log.debug "The Header is $headers"
+
+	def path = ''
+	def body = ''
+	log.debug "Uses which method: $DevicePostGet"
 	def method = "POST"
 	try {
 		if (DevicePostGet.toUpperCase() == "GET") {
 			method = "GET"
-			}
+			path = varCommand
+			if (path.substring(0,1) != "/") { path = "/" + path }
+			log.debug "GET path is: $path"
+		} else {
+			path = DevicePath
+			body = varCommand 
+			log.debug "POST body is: $body"
 		}
+		log.debug "The method is $method"
+	}
 	catch (Exception e) {
 		settings.DevicePostGet = "POST"
 		log.debug e
 		log.debug "You must not have set the preference for the DevicePOSTGET option"
 	}
-	log.debug "The method is $method"
+
 	try {
 		def hubAction = new physicalgraph.device.HubAction(
 			method: method,
@@ -309,6 +310,18 @@ def parse(String description) {
 				if (line.contains('Refresh=Failed : Authentication Required!')) { jsonlist.put ("Refresh", "Authentication Required!") }
 				if (line.contains('RebootNow=Success')) { jsonlist.put ("RebootNow", "Success") }
 				if (line.contains('RebootNow=Failed : Authentication Required!')) { jsonlist.put ("RebootNow", "Authentication Required!") }
+				//ARDUINO CHECKS
+				if (line.contains('/MainTrigger=')) { jsonlist.put ("MainTrigger".replace("=",""), "Success") }
+				if (line.contains('/MainTriggerOn=')) { jsonlist.put ("MainTriggerOn", "Success") }
+				if (line.contains('/MainTriggerOff=')) { jsonlist.put ("MainTriggerOff", "Success") }
+				if (line.contains('RELAY1 pin is now: On')) { jsonlist.put ("MainPinStatus".replace("=",""), 1) }
+				if (line.contains('RELAY1 pin is now: Off')) { jsonlist.put ("MainPinStatus".replace("=",""), 0) }
+				if (line.contains('/CustomTrigger=')) { jsonlist.put ("CustomTrigger".replace("=",""), "Success") }
+				if (line.contains('/CustomTriggerOn=')) { jsonlist.put ("CustomTriggerOn", "Success") }
+				if (line.contains('/CustomTriggerOff=')) { jsonlist.put ("CustomTriggerOff", "Success") }
+				if (line.contains('RELAY2 pin is now: On')) { jsonlist.put ("CustomPinStatus".replace("=",""), 1) }
+				if (line.contains('RELAY2 pin is now: Off')) { jsonlist.put ("CustomPinStatus".replace("=",""), 0) }
+				if (line == '/Refresh=') { jsonlist.put ("Refresh", "Success") }
 			}
 		}
 	}
@@ -354,7 +367,6 @@ def parse(String description) {
 			sendEvent(name: "refreshswitch", value: "default", isStateChange: true)
 			whichTile = 'customoff'
 		}
-
 		if (jsonlist."MainTrigger"=="Authentication Required!") {
 			sendEvent(name: "mainTriggered", value: "Use Authentication Credentials", unit: "")
 		}
@@ -388,7 +400,6 @@ def parse(String description) {
 			sendEvent(name: "refreshswitch", value: "default", isStateChange: true)
 			whichTile = 'mainoff'
 		}
-
 		if (jsonlist."CPU") {
 			sendEvent(name: "cpuUsage", value: jsonlist."CPU".replace("=","\n").replace("%",""), unit: "")
 		}
@@ -431,13 +442,9 @@ def parse(String description) {
 			def result = createEvent(name: "customswitch", value: "on", isStateChange: true)
 			return result
         case 'mainoff':
-			//sendEvent(name: "mainswitch", value: "off", isStateChange: true)
-			//def result = createEvent(name: "mainswitch", value: "off", isStateChange: true)
 			def result = createEvent(name: "switch", value: "off", isStateChange: true)
 			return result
         case 'mainon':
-			//sendEvent(name: "mainswitch", value: "on", isStateChange: true)
-			//def result = createEvent(name: "mainswitch", value: "on", isStateChange: true)
 			def result = createEvent(name: "switch", value: "on", isStateChange: true)
 			return result
         case 'RebootNow':
