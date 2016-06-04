@@ -10,6 +10,7 @@ At the top of index.php, change the first variable to "true" instead of "false" 
 
 This project was tested successfully via an external IP, Pollster and with an Amazon Echo/Alexa. Echo can run TWO functions in my app. The ON command triggers the main function and OFF triggers the custom function but can be changed to only control the Main switch.
 
+</br>v1.0.20160604 - Added Arduino / ESP8266-12E / NodeMCU Support and a code sample to GitHub.
 </br>v1.0.20160430 - Main and Custom switches can now be momentary or have on/off states. GPIO pin numbers for Main/Custom is now configurable. Ability to force Echo/Alexa to be restricted in controlling the Main switch when running ON/OFF commands when configured to be stateful ON/OFF (not momentary). Refresh works and updates Main/Custom tile per the GPIO pin status. Version contains lots of enhancements, bug fixes and future proofing.
 </br>v1.0.20160428 - Now able to control in preferences whether CustomTrigger is momentary or has states like on/off. This is the CUSTOM tile, which can easily be made as the MAIN/primary tile, search top of ST code for MAIN designation & change to CustomTrigger.
 </br>v1.0.20160423 - Small changes: using second line of df -h for space used. Scaling GPIO image better for RPi 3 with more lines on gpio readall command.
