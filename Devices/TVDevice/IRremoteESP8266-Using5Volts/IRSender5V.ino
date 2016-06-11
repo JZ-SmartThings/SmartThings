@@ -121,6 +121,14 @@ void handleNotFound(){
 }
  
 void setup(void){
+  //TURN OFF BUILTIN LEDS
+  int redLED = LED_BUILTIN; //GPIO16 also D0 also LED_BUILTIN
+  int blueLED = D4; //GPIO2 also D4
+  pinMode(redLED, OUTPUT);     // Initialize the LED_BUILTIN pin as an output
+  pinMode(blueLED, OUTPUT);     // Initialize the LED_BUILTIN pin as an output
+  digitalWrite(blueLED, HIGH); 
+  digitalWrite(redLED, HIGH); 
+
   irsend.begin();
   
   Serial.begin(9600);
