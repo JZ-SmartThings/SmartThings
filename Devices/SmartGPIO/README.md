@@ -2,7 +2,7 @@
 
 This project consists of a Raspberry Pi running Raspbian OS. It runs HTTPD with index.php as the source. The PHP has many functions but this device driver is specifically to see the GPIO status of all pins in a picture format.
 
-Link to the project: https://community.smartthings.com/t/smartgpio-raspberry-pi-with-php-returns-gpio-pin-status-to-st-image-tile/44803
+Link to the project: https://community.smartthings.com/t/44803
 
 Grab index.php file from here: https://github.com/JZ-SmartThings/SmartThings/tree/master/Devices/Generic%20HTTP%20Device
 
