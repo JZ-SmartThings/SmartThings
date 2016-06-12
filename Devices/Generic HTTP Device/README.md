@@ -2,7 +2,7 @@
 
 This project consists of a Raspberry Pi running Raspbian OS. It runs HTTPD with index.php as the source. The PHP runs the gpio command in order to enable the pins on the Pi. The code sample in the PHP file causes a relay to momentarily turn on then off. I'm using this on a gate so the short/momentary capability was key. However, it's very customizable and now offers on/off states for both switches. For advanced/full instructions on installing and configuring Raspbian OS, see the project link below.
 
-Link to the project: https://community.smartthings.com/t/raspberry-pi-to-php-to-gpio-to-relay-to-gate-garage-trigger/43335
+Link to the project: https://community.smartthings.com/t/43335
 
 The Groovy file is the Device Handler for SmartThings.
 index.php is meant to reside in /var/www/html folder of the Raspbery Pi and runs the external gpio command in Linux.
