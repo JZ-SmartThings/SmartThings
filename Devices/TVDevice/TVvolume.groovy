@@ -1,5 +1,5 @@
 /**
- *  TVDevice v1.0.20160616
+ *  TVvolume v1.0.20160615
  *
  *  Source code can be found here: https://github.com/JZ-SmartThings/SmartThings/blob/master/Devices/TVDevice/TVDevice.groovy
  *
@@ -19,12 +19,8 @@
 import groovy.json.JsonSlurper
 
 metadata {
-	definition (name: "TVDevice", author: "JZ", namespace:"JZ") {
+	definition (name: "TVvolume", author: "JZ", namespace:"JZ") {
 		capability "Switch"
-		capability "Switch Level"
-		
-		command "tvinput"
-		command "tvprev"
 		command "ResetTiles"
 	}
 
@@ -45,36 +41,19 @@ metadata {
 	}
 
 	tiles(scale: 2) {
-		valueTile("name", "device.name", width: 6, height: 1, decoration: "flat") {
-			state("default", label: 'DEVICE NAME:\r\n${currentValue}', backgroundColor:"#DDDDDD")
-		}
-		standardTile("switch", "device.switch", width: 2, height: 2, canChangeIcon: true, canChangeBackground: true, decoration: "flat") {
-			state "off", label:'OFF' , action: "on", icon: "st.Electronics.electronics18", backgroundColor:"#53a7c0", nextState: "trying"
-			state "on", label: 'ON', action: "off", icon: "st.Electronics.electronics18", backgroundColor: "#FF6600", nextState: "trying"
-			state "trying", label: 'TRYING', icon: "st.Electronics.electronics18", backgroundColor: "#FFAA33"
+		valueTile("name", "device.name", width: 4, height: 4, decoration: "flat") {
+			state("default", label: 'TV Volume\n{currentValue}')
 		}
 		standardTile("switchon", "device.switch", width: 2, height: 2, canChangeIcon: true, canChangeBackground: true, decoration: "flat") {
-			state "default", label: 'ON', action: "on", icon: "st.Electronics.electronics18", backgroundColor: "#FF6600", nextState: "trying"
-			state "trying", label: 'TRYING', action: "ResetTiles", icon: "st.Electronics.electronics18", backgroundColor: "#FFAA33"
+			state "default", label: 'ON', action: "on", icon: "st.custom.buttons.add-icon", backgroundColor: "#FF6600", nextState: "trying"
+			state "trying", label: 'TRYING', action: "ResetTiles", icon: "st.custom.buttons.add-icon", backgroundColor: "#FFAA33"
 		}
 		standardTile("switchoff", "device.switch", width: 2, height: 2, canChangeIcon: true, canChangeBackground: true, decoration: "flat") {
-			state "default", label:'OFF' , action: "off", icon: "st.Electronics.electronics18", backgroundColor:"#53a7c0", nextState: "trying"
-			state "trying", label: 'TRYING', action: "ResetTiles", icon: "st.Electronics.electronics18", backgroundColor: "#FFAA33"
+			state "default", label:'OFF' , action: "off", icon: "st.custom.buttons.subtract-icon", backgroundColor:"#53a7c0", nextState: "trying"
+			state "trying", label: 'TRYING', action: "ResetTiles", icon: "st.custom.buttons.subtract-icon", backgroundColor: "#FFAA33"
 		}
-		standardTile("tvinput", "device.switch", width: 2, height: 2, canChangeIcon: true, canChangeBackground: true, decoration: "flat") {
-			state "default", label: 'TV INPUT', action: "tvinput", icon: "st.Electronics.electronics6", backgroundColor: "#79b821", nextState: "trying"
-			state "trying", label: 'TRYING', action: "ResetTiles", icon: "st.Electronics.electronics6", backgroundColor: "#FFAA33"
-		}
-		standardTile("tvprev", "device.switch", width: 2, height: 2, canChangeIcon: true, canChangeBackground: true, decoration: "flat") {
-			state "default", label: 'PREVIOUS', action: "tvprev", icon: "st.motion.motion.active", backgroundColor: "#79b821", nextState: "trying"
-			state "trying", label: 'TRYING', action: "ResetTiles", icon: "st.motion.motion.active", backgroundColor: "#FFAA33"
-		}
-		controlTile("levelSliderControl", "device.level", "slider", height: 2, width: 6, inactiveLabel: false, range:"(1..4)") {
-			state "level", label:'HDMI Input', action:"switch level.setLevel"
-		}
-		
-		main "switch"
-		details(["name","levelSliderControl", "switchon", "switchoff", "tvinput", "tvprev" ])
+		main "name"
+		details(["name","switchon", "switchoff"])
 	}
 }
 
@@ -82,37 +61,17 @@ def ResetTiles() {
 	sendEvent(name: "switchon", value: "default", isStateChange: true)
 	sendEvent(name: "switchoff", value: "default", isStateChange: true)
 	sendEvent(name: "tvinput", value: "default", isStateChange: true)
-	sendEvent(name: "tvprev", value: "default", isStateChange: true)
 	log.debug "Resetting tiles."
-}
-
-
-def setLevel(value) {
-    def level = Math.min(value as Integer, 99)
-	log.debug level + "---test"
-	runCmd("/ir?hdmi=" + value)
-//	sendEvent(name: "level", value: value, unit: "")
-//	sendEvent(name: "switch", value: "on", unit: "")
 }
 
 def on() {
 	log.debug "---ON COMMAND---"
-	runCmd("/ir?tv=on")
+	runCmd("/ir?tv=volup")
 }
 
 def off() {
 	log.debug "---OFF COMMAND---"
-	runCmd("/ir?tv=off")
-}
-
-def tvinput() {
-	log.debug "---TVINPUT COMMAND---"
-	runCmd("/ir?tv=input")
-}
-
-def tvprev() {
-	log.debug "---TVPREVIOUS COMMAND---"
-	runCmd("/ir?tv=prev")
+	runCmd("/ir?tv=voldown")
 }
 
 def runCmd(String varCommand) {
@@ -199,43 +158,20 @@ def parse(String description) {
 			
 				if (line.length()<15 && !line.contains("<") && !line.contains(">") && !line.contains("/")) {
 					log.trace "---" + line
-					if (line.contains('tv=')) { jsonlist.put ("tv", line.replace("tv=","")) }
-					if (line.contains('hdmi=')) { jsonlist.put ("hdmi", line.replace("hdmi=","")) }
+					if (line.contains('tv=volup')) { jsonlist.put ("tv", line.replace("tv=","")) }
+					if (line.contains('tv=voldown')) { jsonlist.put ("tv", line.replace("tv=","")) }
 				}
 			}
 		}
 	}
 	if (descMap["body"] && (headersReturned.contains("application/json") || headersReturned.contains("text/html"))) {
 		//putImageInS3(descMap)
-		if (jsonlist."tv"=="on") {
+		if (jsonlist."tv"=="volup") {
 			sendEvent(name: "switchon", value: "default", isStateChange: true)
 			whichTile = 'mainon'
 		}
-		if (jsonlist."tv"=="off") {
+		if (jsonlist."tv"=="voldown") {
 			sendEvent(name: "switchoff", value: "default", isStateChange: true)
-			whichTile = 'mainoff'
-		}
-		if (jsonlist."tv"=="input") {
-			sendEvent(name: "tvinput", value: "default", isStateChange: true)
-			whichTile = 'tvinput'
-		}
-		if (jsonlist."tv"=="prev") {
-			sendEvent(name: "tvprev", value: "default", isStateChange: true)
-			whichTile = 'tvprev'
-		}
-		if (jsonlist."CustomTrigger"=="Authentication Required!") {
-			sendEvent(name: "customTriggered", value: "Use Authentication Credentials", unit: "")
-		}
-		if (jsonlist."MainTrigger"=="Authentication Required!") {
-			sendEvent(name: "mainTriggered", value: "Use Authentication Credentials", unit: "")
-		}
-		if (jsonlist."MainPinStatus"==1) {
-			sendEvent(name: "switch", value: "on", isStateChange: true)
-			sendEvent(name: "refreshswitch", value: "default", isStateChange: true)
-			whichTile = 'mainon'
-		} else if (jsonlist."MainPinStatus"==0) {
-			sendEvent(name: "switch", value: "off", isStateChange: true)
-			sendEvent(name: "refreshswitch", value: "default", isStateChange: true)
 			whichTile = 'mainoff'
 		}
 	}
@@ -249,38 +185,14 @@ def parse(String description) {
 	log.debug 'whichTile: ' + whichTile
     switch (whichTile) {
         case 'mainoff':
-			//sendEvent(name: "mainswitch", value: "off", isStateChange: true)
-			//def result = createEvent(name: "mainswitch", value: "off", isStateChange: true)
 			sendEvent(name: "switch", value: "off", isStateChange: true)
 			def result = createEvent(name: "switchon", value: "default", isStateChange: true)
 			return result
         case 'mainon':
-			//sendEvent(name: "mainswitch", value: "on", isStateChange: true)
-			//def result = createEvent(name: "mainswitch", value: "on", isStateChange: true)
 			sendEvent(name: "switch", value: "on", isStateChange: true)
 			def result = createEvent(name: "switchon", value: "default", isStateChange: true)
 			return result
-        case 'tvinput':
-			sendEvent(name: "tvinput", value: "default", isStateChange: true)
-			def result = createEvent(name: "switch", value: "default", isStateChange: true)
-			return result
-        case 'tvprev':
-			sendEvent(name: "tvprev", value: "default", isStateChange: true)
-			def result = createEvent(name: "switch", value: "default", isStateChange: true)
-			return result
-        case 'RebootNow':
-			sendEvent(name: "rebootnow", value: "default", isStateChange: true)
-			def result = createEvent(name: "rebootnow", value: "default", isStateChange: true)
-			return result
-        // default:
-			// sendEvent(name: "refreshswitch", value: "default", isStateChange: true)
-			// def result = createEvent(name: "refreshswitch", value: "default", isStateChange: true)
-			// // log.debug "refreshswitch returned ${result?.descriptionText}"
-			// return result
     }
-	
-//	sendEvent(name: "switch", value: "on", unit: "")
-//	sendEvent(name: "level", value: value, unit: "")
 }
 
 def parseDescriptionAsMap(description) {
