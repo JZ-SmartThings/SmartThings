@@ -1,5 +1,5 @@
 /**
- *  TVDevice v1.0.20160616
+ *  TVDevice v1.0.20160617
  *
  *  Source code can be found here: https://github.com/JZ-SmartThings/SmartThings/blob/master/Devices/TVDevice/TVDevice.groovy
  *
@@ -25,6 +25,7 @@ metadata {
 		
 		command "tvinput"
 		command "tvprev"
+		command "tvmute"
 		command "ResetTiles"
 	}
 
@@ -69,12 +70,16 @@ metadata {
 			state "default", label: 'PREVIOUS', action: "tvprev", icon: "st.motion.motion.active", backgroundColor: "#79b821", nextState: "trying"
 			state "trying", label: 'TRYING', action: "ResetTiles", icon: "st.motion.motion.active", backgroundColor: "#FFAA33"
 		}
+		standardTile("tvmute", "device.switch", width: 2, height: 2, canChangeIcon: true, canChangeBackground: true, decoration: "flat") {
+			state "default", label: 'MUTE', action: "tvmute", icon: "st.custom.sonos.muted", backgroundColor: "#9966CC", nextState: "trying"
+			state "trying", label: 'TRYING', action: "ResetTiles", icon: "st.custom.sonos.muted", backgroundColor: "#FFAA33"
+		}
 		controlTile("levelSliderControl", "device.level", "slider", height: 2, width: 6, inactiveLabel: false, range:"(1..4)") {
 			state "level", label:'HDMI Input', action:"switch level.setLevel"
 		}
 		
 		main "switch"
-		details(["name","levelSliderControl", "switchon", "switchoff", "tvinput", "tvprev" ])
+		details(["name","levelSliderControl", "switchon", "switchoff", "tvinput", "tvprev", "tvmute" ])
 	}
 }
 
@@ -83,6 +88,7 @@ def ResetTiles() {
 	sendEvent(name: "switchoff", value: "default", isStateChange: true)
 	sendEvent(name: "tvinput", value: "default", isStateChange: true)
 	sendEvent(name: "tvprev", value: "default", isStateChange: true)
+	sendEvent(name: "tvmute", value: "default", isStateChange: true)
 	log.debug "Resetting tiles."
 }
 
@@ -99,20 +105,17 @@ def on() {
 	log.debug "---ON COMMAND---"
 	runCmd("/ir?tv=on")
 }
-
 def off() {
-	log.debug "---OFF COMMAND---"
 	runCmd("/ir?tv=off")
 }
-
 def tvinput() {
-	log.debug "---TVINPUT COMMAND---"
 	runCmd("/ir?tv=input")
 }
-
 def tvprev() {
-	log.debug "---TVPREVIOUS COMMAND---"
 	runCmd("/ir?tv=prev")
+}
+def tvmute() {
+	runCmd("/ir?tv=mute")
 }
 
 def runCmd(String varCommand) {
@@ -223,20 +226,9 @@ def parse(String description) {
 			sendEvent(name: "tvprev", value: "default", isStateChange: true)
 			whichTile = 'tvprev'
 		}
-		if (jsonlist."CustomTrigger"=="Authentication Required!") {
-			sendEvent(name: "customTriggered", value: "Use Authentication Credentials", unit: "")
-		}
-		if (jsonlist."MainTrigger"=="Authentication Required!") {
-			sendEvent(name: "mainTriggered", value: "Use Authentication Credentials", unit: "")
-		}
-		if (jsonlist."MainPinStatus"==1) {
-			sendEvent(name: "switch", value: "on", isStateChange: true)
-			sendEvent(name: "refreshswitch", value: "default", isStateChange: true)
-			whichTile = 'mainon'
-		} else if (jsonlist."MainPinStatus"==0) {
-			sendEvent(name: "switch", value: "off", isStateChange: true)
-			sendEvent(name: "refreshswitch", value: "default", isStateChange: true)
-			whichTile = 'mainoff'
+		if (jsonlist."tv"=="mute") {
+			sendEvent(name: "tvmute", value: "default", isStateChange: true)
+			whichTile = 'tvmute'
 		}
 	}
 
@@ -262,11 +254,15 @@ def parse(String description) {
 			return result
         case 'tvinput':
 			sendEvent(name: "tvinput", value: "default", isStateChange: true)
-			def result = createEvent(name: "switch", value: "default", isStateChange: true)
+			def result = createEvent(name: "tvinput", value: "default", isStateChange: true)
 			return result
         case 'tvprev':
 			sendEvent(name: "tvprev", value: "default", isStateChange: true)
-			def result = createEvent(name: "switch", value: "default", isStateChange: true)
+			def result = createEvent(name: "tvprev", value: "default", isStateChange: true)
+			return result
+        case 'tvmute':
+			sendEvent(name: "tvmute", value: "default", isStateChange: true)
+			def result = createEvent(name: "tvmute", value: "default", isStateChange: true)
 			return result
         case 'RebootNow':
 			sendEvent(name: "rebootnow", value: "default", isStateChange: true)
