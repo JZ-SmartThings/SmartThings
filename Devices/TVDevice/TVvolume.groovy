@@ -1,5 +1,5 @@
 /**
- *  TVvolume v1.0.20160615
+ *  TVvolume v1.0.20160617
  *
  *  Source code can be found here: https://github.com/JZ-SmartThings/SmartThings/blob/master/Devices/TVDevice/TVDevice.groovy
  *
@@ -21,6 +21,8 @@ import groovy.json.JsonSlurper
 metadata {
 	definition (name: "TVvolume", author: "JZ", namespace:"JZ") {
 		capability "Switch"
+
+		command "tvmute"
 		command "ResetTiles"
 	}
 
@@ -28,7 +30,7 @@ metadata {
 		input("DeviceIP", "string", title:"Device IP Address", description: "Please enter your device's IP Address", required: true, displayDuringSetup: true)
 		input("DevicePort", "string", title:"Device Port", description: "Empty assumes port 80.", required: false, displayDuringSetup: true)
 		input("DevicePathOn", "string", title:"URL Path for ON", description: "Rest of the URL, include forward slash.", displayDuringSetup: true)
-		input("DevicePathOff", "string", title:"URL Path for ON", description: "Rest of the URL, include forward slash.", displayDuringSetup: true)
+		input("DevicePathOff", "string", title:"URL Path for OFF", description: "Rest of the URL, include forward slash.", displayDuringSetup: true)
 		input(name: "DevicePostGet", type: "enum", title: "POST or GET", options: ["POST","GET"], defaultValue: "POST", required: false, displayDuringSetup: true)
 		section() {
 			input("HTTPAuth", "bool", title:"Requires User Auth?", description: "Choose if the HTTP requires basic authentication", defaultValue: false, required: true, displayDuringSetup: true)
@@ -41,8 +43,8 @@ metadata {
 	}
 
 	tiles(scale: 2) {
-		valueTile("name", "device.name", width: 4, height: 4, decoration: "flat") {
-			state("default", label: 'TV Volume\n{currentValue}')
+		valueTile("devicename", "device.devicename", width: 4, height: 4, decoration: "flat") {
+			state("devicename", label: 'TV Volume on: \n {currentValue}')
 		}
 		standardTile("switchon", "device.switch", width: 2, height: 2, canChangeIcon: true, canChangeBackground: true, decoration: "flat") {
 			state "default", label: 'ON', action: "on", icon: "st.custom.buttons.add-icon", backgroundColor: "#FF6600", nextState: "trying"
@@ -52,15 +54,19 @@ metadata {
 			state "default", label:'OFF' , action: "off", icon: "st.custom.buttons.subtract-icon", backgroundColor:"#53a7c0", nextState: "trying"
 			state "trying", label: 'TRYING', action: "ResetTiles", icon: "st.custom.buttons.subtract-icon", backgroundColor: "#FFAA33"
 		}
-		main "name"
-		details(["name","switchon", "switchoff"])
+		standardTile("tvmute", "device.switch", width: 2, height: 2, canChangeIcon: true, canChangeBackground: true, decoration: "flat") {
+			state "default", label: 'MUTE', action: "tvmute", icon: "st.custom.sonos.muted", backgroundColor: "#9966CC", nextState: "trying"
+			state "trying", label: 'TRYING', action: "ResetTiles", icon: "st.custom.sonos.muted", backgroundColor: "#FFAA33"
+		}
+		main "devicename"
+		details(["devicename","switchon", "switchoff", "tvmute"])
 	}
 }
 
 def ResetTiles() {
 	sendEvent(name: "switchon", value: "default", isStateChange: true)
 	sendEvent(name: "switchoff", value: "default", isStateChange: true)
-	sendEvent(name: "tvinput", value: "default", isStateChange: true)
+	sendEvent(name: "tvmute", value: "default", isStateChange: true)
 	log.debug "Resetting tiles."
 }
 
@@ -68,10 +74,12 @@ def on() {
 	log.debug "---ON COMMAND---"
 	runCmd("/ir?tv=volup")
 }
-
 def off() {
 	log.debug "---OFF COMMAND---"
 	runCmd("/ir?tv=voldown")
+}
+def tvmute() {
+	runCmd("/ir?tv=mute")
 }
 
 def runCmd(String varCommand) {
@@ -158,8 +166,7 @@ def parse(String description) {
 			
 				if (line.length()<15 && !line.contains("<") && !line.contains(">") && !line.contains("/")) {
 					log.trace "---" + line
-					if (line.contains('tv=volup')) { jsonlist.put ("tv", line.replace("tv=","")) }
-					if (line.contains('tv=voldown')) { jsonlist.put ("tv", line.replace("tv=","")) }
+					if (line.contains('tv=')) { jsonlist.put ("tv", line.replace("tv=","")) }
 				}
 			}
 		}
@@ -174,12 +181,19 @@ def parse(String description) {
 			sendEvent(name: "switchoff", value: "default", isStateChange: true)
 			whichTile = 'mainoff'
 		}
+		if (jsonlist."tv"=="mute") {
+			sendEvent(name: "tvmute", value: "default", isStateChange: true)
+			whichTile = 'tvmute'
+		}
 	}
 
 	log.debug jsonlist
 
 	//RESET THE DEVICE ID TO GENERIC/RANDOM NUMBER. THIS ALLOWS MULTIPLE DEVICES TO USE THE SAME ID/IP
 	device.deviceNetworkId = "ID_WILL_BE_CHANGED_AT_RUNTIME_" + (Math.abs(new Random().nextInt()) % 99999 + 1)
+
+	//CHANGE NAME TILE
+	sendEvent(name: "devicename", value: DeviceIP, unit: "")
 
 	//RETURN BUTTONS TO CORRECT STATE
 	log.debug 'whichTile: ' + whichTile
@@ -191,6 +205,10 @@ def parse(String description) {
         case 'mainon':
 			sendEvent(name: "switch", value: "on", isStateChange: true)
 			def result = createEvent(name: "switchon", value: "default", isStateChange: true)
+			return result
+        case 'tvmute':
+			sendEvent(name: "switch", value: "default", isStateChange: true)
+			def result = createEvent(name: "tvmute", value: "default", isStateChange: true)
 			return result
     }
 }
