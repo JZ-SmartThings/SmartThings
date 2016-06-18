@@ -68,13 +68,13 @@ void loop() {
   while(!client.available()){
     delay(1);
   }
-  //Serial.println(client.readString());
+  Serial.println(client.readString());
   //client.readString();
 
   // Read the first line of the request
   String request = client.readStringUntil('\r');
   String fullrequest = client.readString();
-  //Serial.println(request);
+  Serial.println(request);
   client.flush();
 
 /*
