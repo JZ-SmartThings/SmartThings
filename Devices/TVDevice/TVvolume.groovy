@@ -1,5 +1,5 @@
 /**
- *  TVvolume v1.0.20160617
+ *  TVvolume v1.0.20160619
  *
  *  Source code can be found here: https://github.com/JZ-SmartThings/SmartThings/blob/master/Devices/TVDevice/TVDevice.groovy
  *
@@ -21,7 +21,7 @@ import groovy.json.JsonSlurper
 metadata {
 	definition (name: "TVvolume", author: "JZ", namespace:"JZ") {
 		capability "Switch"
-
+		attribute "displayName", "string"
 		command "tvmute"
 		command "ResetTiles"
 	}
@@ -43,8 +43,8 @@ metadata {
 	}
 
 	tiles(scale: 2) {
-		valueTile("devicename", "device.devicename", width: 4, height: 4, decoration: "flat") {
-			state("devicename", label: 'TV Volume on: \n {currentValue}')
+		valueTile("displayName", "device.displayName", width: 4, height: 4, decoration: "flat") {
+			state("default", label: 'TV Volume: \n${currentValue}', backgroundColor:"#ffffff")
 		}
 		standardTile("switchon", "device.switch", width: 2, height: 2, canChangeIcon: true, canChangeBackground: true, decoration: "flat") {
 			state "default", label: 'ON', action: "on", icon: "st.custom.buttons.add-icon", backgroundColor: "#FF6600", nextState: "trying"
@@ -58,8 +58,8 @@ metadata {
 			state "default", label: 'MUTE', action: "tvmute", icon: "st.custom.sonos.muted", backgroundColor: "#9966CC", nextState: "trying"
 			state "trying", label: 'TRYING', action: "ResetTiles", icon: "st.custom.sonos.muted", backgroundColor: "#FFAA33"
 		}
-		main "devicename"
-		details(["devicename","switchon", "switchoff", "tvmute"])
+		main "tvmute"
+		details(["displayName","switchon", "switchoff", "tvmute"])
 	}
 }
 
@@ -136,8 +136,6 @@ def runCmd(String varCommand) {
 }
 
 def parse(String description) {
-//	sendEvent(name: "level", value: 1, unit: "")
-
 //	log.debug "Parsing '${description}'"
 	def whichTile = ''
 	def map = [:]
@@ -150,8 +148,8 @@ def parse(String description) {
 		bodyReturned = new String(descMap["body"].decodeBase64())
 		headersReturned = new String(descMap["headers"].decodeBase64())
 	}
-	log.debug "BODY---" + bodyReturned
-	log.debug "HEADERS---" + headersReturned
+//	log.debug "BODY---" + bodyReturned
+//	log.debug "HEADERS---" + headersReturned
 
 	if (descMap["body"]) {
 		if (headersReturned.contains("application/json")) {
@@ -193,7 +191,7 @@ def parse(String description) {
 	device.deviceNetworkId = "ID_WILL_BE_CHANGED_AT_RUNTIME_" + (Math.abs(new Random().nextInt()) % 99999 + 1)
 
 	//CHANGE NAME TILE
-	sendEvent(name: "devicename", value: DeviceIP, unit: "")
+	sendEvent(name: "displayName", value: DeviceIP, unit: "")
 
 	//RETURN BUTTONS TO CORRECT STATE
 	log.debug 'whichTile: ' + whichTile
