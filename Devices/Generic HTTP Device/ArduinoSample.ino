@@ -68,8 +68,9 @@ void loop() {
   while(!client.available()){
     delay(1);
   }
-  Serial.println(client.readString());
-  //client.readString();
+  //Serial.println("---FULL REQUEST---");
+  //Serial.println(client.readString());
+  //Serial.println("---END OF FULL REQUEST---");
 
   // Read the first line of the request
   String request = client.readStringUntil('\r');
@@ -126,28 +127,31 @@ void loop() {
   client.println(""); //  do not forget this one
   client.println("<!DOCTYPE HTML>");
   client.println("<html><head><title>ESP8266 Dual 5V Relay</title></head><meta name=viewport content='width=500'><style type='text/css'>button {line-height: 2.2em; margin: 10px;} body {text-align:center;}");
-  client.println("div {border:solid 1px; margin: 3px; width:150px;} .center { margin: auto; width: 300px; border: 3px solid #73AD21; padding: 10px;");
-  client.println("</style></head>");
+  client.println("div {border:solid 1px; margin: 3px; width:150px;} .center { margin: auto; width: 350px; border: 3px solid #73AD21; padding: 10px;");
+  client.println("</style></head><h1>ESP8266 DUAL RELAY</h1>");
 
   String requestIn;
   requestIn = request;
   requestIn.replace("GET ", ""); requestIn.replace(" HTTP/1.1", "");
+  Serial.println("---WEB PAGE OUTPUT---");
+  Serial.println(request);
+  Serial.println("---END OF WEB PAGE OUTPUT---");
   client.println("<i>Current Request:</i><br><b>");
   client.println(requestIn);
   client.println("</b><hr>");
 
   client.print("<div class='center'>RELAY1 pin is now: ");
   if(digitalRead(relayPin1) == LOW) { client.print("On"); } else { client.print("Off"); }
-  client.println("<br><a href=\"/RELAY1=ON\"><button>Turn On</button></a>");
-  client.println("<a href=\"/RELAY1=OFF\"><button>Turn Off</button></a><br/>");  
-  client.println("<a href=\"/RELAY1=MOMENTARY\"><button>MOMENTARY</button></a><br/></div>");  
+  client.println("<br><a href=\"/RELAY1=ON\"><button onClick=\"parent.location='/RELAY1=ON'\">Turn On</button></a>");
+  client.println("<a href=\"/RELAY1=OFF\"><button onClick=\"parent.location='/RELAY1=OFF'\">Turn Off</button></a><br/>");  
+  client.println("<a href=\"/RELAY1=MOMENTARY\"><button onClick=\"parent.location='/RELAY1=MOMENTARY'\">MOMENTARY</button></a><br/></div>");  
 
   client.println("<hr>");
   client.print("<div class='center'>RELAY2 pin is now: ");
   if(digitalRead(relayPin2) == LOW) { client.print("On"); } else { client.print("Off"); }
-  client.println("<br><a href=\"/RELAY2=ON\"><button>Turn On</button></a>");
-  client.println("<a href=\"/RELAY2=OFF\"><button>Turn Off</button></a><br/>");  
-  client.println("<a href=\"/RELAY2=MOMENTARY\"><button>MOMENTARY</button></a><br/></div>");  
+  client.println("<br><a href=\"/RELAY2=ON\"><button onClick=\"parent.location='/RELAY2=ON'\">Turn On</button></a>");
+  client.println("<a href=\"/RELAY2=OFF\"><button onClick=\"parent.location='/RELAY2=OFF'\">Turn Off</button></a><br/>");  
+  client.println("<a href=\"/RELAY2=MOMENTARY\"><button onClick=\"parent.location='/RELAY2=MOMENTARY'\">MOMENTARY</button></a><br/></div>");  
 
   client.println("<hr><div class='center'><a target='_blank' href='https://community.smartthings.com/t/raspberry-pi-to-php-to-gpio-to-relay-to-gate-garage-trigger/43335'>Project on SmartThings Community</a></br>");
   client.println("<a target='_blank' href='https://github.com/JZ-SmartThings/SmartThings/tree/master/Devices/Generic%20HTTP%20Device'>Project on GitHub</a></br></div></html>");
