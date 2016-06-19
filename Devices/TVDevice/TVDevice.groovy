@@ -1,5 +1,5 @@
 /**
- *  TVDevice v1.0.20160617
+ *  TVDevice v1.0.20160619
  *
  *  Source code can be found here: https://github.com/JZ-SmartThings/SmartThings/blob/master/Devices/TVDevice/TVDevice.groovy
  *
@@ -22,7 +22,7 @@ metadata {
 	definition (name: "TVDevice", author: "JZ", namespace:"JZ") {
 		capability "Switch"
 		capability "Switch Level"
-		
+		attribute "displayName", "string"
 		command "tvinput"
 		command "tvprev"
 		command "tvmute"
@@ -46,9 +46,12 @@ metadata {
 	}
 
 	tiles(scale: 2) {
-		valueTile("name", "device.name", width: 6, height: 1, decoration: "flat") {
-			state("default", label: 'DEVICE NAME:\r\n${currentValue}', backgroundColor:"#DDDDDD")
+		valueTile("displayName", "device.displayName", width: 6, height: 1, decoration: "flat") {
+			state("default", label: '${currentValue}', backgroundColor:"#DDDDDD")
 		}
+		//valueTile("displayName", "device.displayName", width: 6, height: 1, decoration: "flat") {
+		//	state("default", label: '{currentValue}', backgroundColor:"#ffffff")
+		//}
 		standardTile("switch", "device.switch", width: 2, height: 2, canChangeIcon: true, canChangeBackground: true, decoration: "flat") {
 			state "off", label:'OFF' , action: "on", icon: "st.Electronics.electronics18", backgroundColor:"#53a7c0", nextState: "trying"
 			state "on", label: 'ON', action: "off", icon: "st.Electronics.electronics18", backgroundColor: "#FF6600", nextState: "trying"
@@ -79,7 +82,7 @@ metadata {
 		}
 		
 		main "switch"
-		details(["name","levelSliderControl", "switchon", "switchoff", "tvinput", "tvprev", "tvmute" ])
+		details(["displayName","levelSliderControl", "switchon", "switchoff", "tvinput", "tvprev", "tvmute" ])
 	}
 }
 
@@ -172,8 +175,6 @@ def runCmd(String varCommand) {
 }
 
 def parse(String description) {
-//	sendEvent(name: "level", value: 1, unit: "")
-
 //	log.debug "Parsing '${description}'"
 	def whichTile = ''
 	def map = [:]
@@ -186,8 +187,8 @@ def parse(String description) {
 		bodyReturned = new String(descMap["body"].decodeBase64())
 		headersReturned = new String(descMap["headers"].decodeBase64())
 	}
-	log.debug "BODY---" + bodyReturned
-	log.debug "HEADERS---" + headersReturned
+//	log.debug "BODY---" + bodyReturned
+//	log.debug "HEADERS---" + headersReturned
 
 	if (descMap["body"]) {
 		if (headersReturned.contains("application/json")) {
@@ -237,6 +238,9 @@ def parse(String description) {
 	//RESET THE DEVICE ID TO GENERIC/RANDOM NUMBER. THIS ALLOWS MULTIPLE DEVICES TO USE THE SAME ID/IP
 	device.deviceNetworkId = "ID_WILL_BE_CHANGED_AT_RUNTIME_" + (Math.abs(new Random().nextInt()) % 99999 + 1)
 
+	//CHANGE NAME TILE
+	sendEvent(name: "displayName", value: DeviceIP, unit: "")
+
 	//RETURN BUTTONS TO CORRECT STATE
 	log.debug 'whichTile: ' + whichTile
     switch (whichTile) {
@@ -253,19 +257,19 @@ def parse(String description) {
 			def result = createEvent(name: "switchon", value: "default", isStateChange: true)
 			return result
         case 'tvinput':
-			sendEvent(name: "tvinput", value: "default", isStateChange: true)
+			//sendEvent(name: "tvinput", value: "default", isStateChange: true)
 			def result = createEvent(name: "tvinput", value: "default", isStateChange: true)
 			return result
         case 'tvprev':
-			sendEvent(name: "tvprev", value: "default", isStateChange: true)
+			//sendEvent(name: "tvprev", value: "default", isStateChange: true)
 			def result = createEvent(name: "tvprev", value: "default", isStateChange: true)
 			return result
         case 'tvmute':
-			sendEvent(name: "tvmute", value: "default", isStateChange: true)
+			//sendEvent(name: "tvmute", value: "default", isStateChange: true)
 			def result = createEvent(name: "tvmute", value: "default", isStateChange: true)
 			return result
         case 'RebootNow':
-			sendEvent(name: "rebootnow", value: "default", isStateChange: true)
+			//sendEvent(name: "rebootnow", value: "default", isStateChange: true)
 			def result = createEvent(name: "rebootnow", value: "default", isStateChange: true)
 			return result
         // default:
