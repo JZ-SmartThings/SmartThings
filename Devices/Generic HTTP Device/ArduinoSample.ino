@@ -1,5 +1,5 @@
 /**
- *  Arduino / ESP8266-12E / NodeMCU Sample v1.0.20160618
+ *  Arduino / ESP8266-12E / NodeMCU Sample v1.0.20160719
  *  Source code can be found here: https://github.com/JZ-SmartThings/SmartThings/blob/master/Devices/Generic%20HTTP%20Device
  *  Copyright 2016 JZ
  *
@@ -12,12 +12,24 @@
  */
 
 #include <ESP8266WiFi.h>
+#include <DHT.h>
 
 const char* ssid = "WIFI_SSID";
 const char* password = "WIFI_PASSWORD";
 
+const bool use5Vrelay = false;
+
 int relayPin1 = D1; // GPIO5 = D1
 int relayPin2 = D2; // GPIO4 = D2
+
+#define DHTPIN D3     // what pin we're connected to  // GPIO0 = D2
+
+// Uncomment whatever type you're using!
+#define DHTTYPE DHT11   // DHT 11
+//#define DHTTYPE DHT22   // DHT 22  (AM2302)
+//#define DHTTYPE DHT21   // DHT 21 (AM2301)
+DHT dht(DHTPIN, DHTTYPE);
+
 WiFiServer server(80);
 
 void(* resetFunction) (void) = 0;
@@ -26,10 +38,12 @@ void setup() {
   Serial.begin(115200);
   delay(10);
 
+  dht.begin();
+
   pinMode(relayPin1, OUTPUT);
   pinMode(relayPin2, OUTPUT);
-  digitalWrite(relayPin1, HIGH);
-  digitalWrite(relayPin2, HIGH);
+  digitalWrite(relayPin1, use5Vrelay==true ? HIGH : LOW);
+  digitalWrite(relayPin2, use5Vrelay==true ? HIGH : LOW);
 
   // Connect to WiFi network
   Serial.println();
@@ -57,6 +71,11 @@ void setup() {
 }
 
 void loop() {
+  //RESET EVERY 8 HOURS
+  if (millis () >= 28800000) {
+    resetFunction();
+  }
+
   // Check if a client has connected
   WiFiClient client = server.available();
   if (!client) {
@@ -97,28 +116,29 @@ void loop() {
     resetFunction();
   }
 
+  Serial.print("use5Vrelay == "); Serial.println(use5Vrelay);
   if (request.indexOf("RELAY1=ON") != -1 || request.indexOf("MainTriggerOn=") != -1)  {
-    digitalWrite(relayPin1, LOW);
+    digitalWrite(relayPin1, use5Vrelay==true ? LOW : HIGH);
   }
   if (request.indexOf("RELAY1=OFF") != -1 || request.indexOf("MainTriggerOff=") != -1)  {
-    digitalWrite(relayPin1, HIGH);
+    digitalWrite(relayPin1, use5Vrelay==true ? HIGH : LOW);
   }
   if (request.indexOf("RELAY1=MOMENTARY") != -1 || request.indexOf("MainTrigger=") != -1)  {
-    digitalWrite(relayPin1, LOW);
+    digitalWrite(relayPin1, use5Vrelay==true ? LOW : HIGH);
     delay(100);
-    digitalWrite(relayPin1, HIGH);
+    digitalWrite(relayPin1, use5Vrelay==true ? HIGH : LOW);
   }
 
   if (request.indexOf("RELAY2=ON") != -1 || request.indexOf("CustomTriggerOn=") != -1)  {
-    digitalWrite(relayPin2, LOW);
+    digitalWrite(relayPin2, use5Vrelay==true ? LOW : HIGH);
   }
   if (request.indexOf("RELAY2=OFF") != -1 || request.indexOf("CustomTriggerOff=") != -1)  {
-    digitalWrite(relayPin2, HIGH);
+    digitalWrite(relayPin2, use5Vrelay==true ? HIGH : LOW);
   }
   if (request.indexOf("RELAY2=MOMENTARY") != -1 || request.indexOf("CustomTrigger=") != -1)  {
-    digitalWrite(relayPin2, LOW);
+    digitalWrite(relayPin2, use5Vrelay==true ? LOW : HIGH);
     delay(100);
-    digitalWrite(relayPin2, HIGH);
+    digitalWrite(relayPin2, use5Vrelay==true ? HIGH : LOW);
   }
 
   // Return the response
@@ -128,7 +148,7 @@ void loop() {
   client.println("<!DOCTYPE HTML>");
   client.println("<html><head><title>ESP8266 Dual 5V Relay</title></head><meta name=viewport content='width=500'><style type='text/css'>button {line-height: 2.2em; margin: 10px;} body {text-align:center;}");
   client.println("div {border:solid 1px; margin: 3px; width:150px;} .center { margin: auto; width: 350px; border: 3px solid #73AD21; padding: 10px;");
-  client.println("</style></head><h1>ESP8266 DUAL RELAY</h1>");
+  client.println("</style></head><h1><a href='/'>ESP8266 DUAL RELAY</a></h1>");
 
   String requestIn;
   requestIn = request;
@@ -140,18 +160,42 @@ void loop() {
   client.println(requestIn);
   client.println("</b><hr>");
 
-  client.print("<div class='center'>RELAY1 pin is now: ");
-  if(digitalRead(relayPin1) == LOW) { client.print("On"); } else { client.print("Off"); }
+  // Reading temperature or humidity takes about 250 milliseconds!
+  // Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
+  float h = dht.readHumidity();
+  float tc = dht.readTemperature();
+  float tf = (tc * 9.0 / 5.0) + 32.0;
+
+  // check if returns are valid, if they are NaN (not a number) then something went wrong!
+  if (isnan(tc) || isnan(h)) {
+    Serial.println("Failed to read from DHT");
+  } else {
+    client.println("<pre>");
+    client.print("Temperature="); client.print(tc,1); client.print((char)176); client.print("C "); client.print(round(tf)); client.print((char)176); client.println("F");
+    client.print("Humidity="); client.print(round(h)); client.println("%");
+    client.println("</pre>"); client.println("<hr>");
+  }
+
+  client.println("<div class='center'>RELAY1 pin is now: ");
+  if(use5Vrelay==true) {
+    if(digitalRead(relayPin1) == LOW) { client.print("On"); } else { client.print("Off"); }
+  } else {
+    if(digitalRead(relayPin1) == HIGH) { client.print("On"); } else { client.print("Off"); }
+  }
   client.println("<br><a href=\"/RELAY1=ON\"><button onClick=\"parent.location='/RELAY1=ON'\">Turn On</button></a>");
-  client.println("<a href=\"/RELAY1=OFF\"><button onClick=\"parent.location='/RELAY1=OFF'\">Turn Off</button></a><br/>");  
-  client.println("<a href=\"/RELAY1=MOMENTARY\"><button onClick=\"parent.location='/RELAY1=MOMENTARY'\">MOMENTARY</button></a><br/></div>");  
+  client.println("<a href=\"/RELAY1=OFF\"><button onClick=\"parent.location='/RELAY1=OFF'\">Turn Off</button></a><br/>");
+  client.println("<a href=\"/RELAY1=MOMENTARY\"><button onClick=\"parent.location='/RELAY1=MOMENTARY'\">MOMENTARY</button></a><br/></div>");
 
   client.println("<hr>");
-  client.print("<div class='center'>RELAY2 pin is now: ");
-  if(digitalRead(relayPin2) == LOW) { client.print("On"); } else { client.print("Off"); }
+  client.println("<div class='center'>RELAY2 pin is now: ");
+  if(use5Vrelay==true) {
+    if(digitalRead(relayPin2) == LOW) { client.print("On"); } else { client.print("Off"); }
+  } else {
+    if(digitalRead(relayPin2) == HIGH) { client.print("On"); } else { client.print("Off"); }
+  }
   client.println("<br><a href=\"/RELAY2=ON\"><button onClick=\"parent.location='/RELAY2=ON'\">Turn On</button></a>");
-  client.println("<a href=\"/RELAY2=OFF\"><button onClick=\"parent.location='/RELAY2=OFF'\">Turn Off</button></a><br/>");  
-  client.println("<a href=\"/RELAY2=MOMENTARY\"><button onClick=\"parent.location='/RELAY2=MOMENTARY'\">MOMENTARY</button></a><br/></div>");  
+  client.println("<a href=\"/RELAY2=OFF\"><button onClick=\"parent.location='/RELAY2=OFF'\">Turn Off</button></a><br/>");
+  client.println("<a href=\"/RELAY2=MOMENTARY\"><button onClick=\"parent.location='/RELAY2=MOMENTARY'\">MOMENTARY</button></a><br/></div>");
 
   client.println("<hr><div class='center'><a target='_blank' href='https://community.smartthings.com/t/raspberry-pi-to-php-to-gpio-to-relay-to-gate-garage-trigger/43335'>Project on SmartThings Community</a></br>");
   client.println("<a target='_blank' href='https://github.com/JZ-SmartThings/SmartThings/tree/master/Devices/Generic%20HTTP%20Device'>Project on GitHub</a></br></div></html>");

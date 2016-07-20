@@ -1,5 +1,5 @@
 /**
- *  Generic HTTP Device v1.0.20160603
+ *  Generic HTTP Device v1.0.20160719
  *  Source code can be found here: https://github.com/JZ-SmartThings/SmartThings/blob/master/Devices/Generic%20HTTP%20Device/GenericHTTPDevice.groovy
  *  Copyright 2016 JZ
  *
@@ -16,6 +16,7 @@ import groovy.json.JsonSlurper
 metadata {
 	definition (name: "Generic HTTP Device", author: "JZ", namespace:"JZ") {
 		capability "Switch"
+		capability "Temperature Measurement"
 		capability "Polling"
 		capability "Refresh"
 		attribute "mainTriggered", "string"
@@ -26,6 +27,8 @@ metadata {
 		attribute "upTime", "string"
 		attribute "cpuTemp", "string"
 		attribute "freeMem", "string"
+		attribute "temperature", "string"
+		attribute "humidity", "string"
 		command "DeviceTrigger"
 		command "RefreshTrigger"
 		command "CustomTrigger"
@@ -120,12 +123,35 @@ metadata {
 		standardTile("clearTiles", "device.clear", width: 2, height: 2, decoration: "flat") {
 			state "default", label:'Clear Tiles', action:"ClearTiles", icon:"st.Bath.bath9"
 		}
+		valueTile("temperature", "device.temperature", width: 2, height: 2) {
+			state("default", label:'Temp\n ${currentValue}',
+				backgroundColors:[
+					[value: 32, color: "#153591"],
+					[value: 44, color: "#1e9cbb"],
+					[value: 59, color: "#90d2a7"],
+					[value: 74, color: "#44b621"],
+					[value: 84, color: "#f1d801"],
+					[value: 92, color: "#d04e00"],
+					[value: 98, color: "#bc2323"]
+				]
+			)
+		}
+		valueTile("humidity", "device.humidity", width: 2, height: 2) {
+			state("default", label: 'Humidity\n ${currentValue}',
+				backgroundColors:[
+					[value: 50, color: "#00cc33"],
+					[value: 60, color: "#99ff33"],
+					[value: 67, color: "#ff6600"],
+					[value: 75, color: "#ff0000"]
+				]
+			)
+		}
 		standardTile("RebootNow", "device.rebootnow", width: 1, height: 1, decoration: "flat") {
 			state "default", label:'REBOOT' , action: "RebootNow", icon: "st.Seasonal Winter.seasonal-winter-014", backgroundColor:"#ff0000", nextState: "rebooting"
 			state "rebooting", label: 'REBOOTING', action: "ResetTiles", icon: "st.Office.office13", backgroundColor: "#FF6600", nextState: "default"
 		}
 		main "DeviceTrigger"
-		details(["mainTriggered", "DeviceTrigger", "customTriggered", "CustomTrigger", "refreshTriggered", "RefreshTrigger", "cpuUsage", "cpuTemp", "upTime", "spaceUsed", "freeMem", "clearTiles", "RebootNow"])
+		details(["mainTriggered", "DeviceTrigger", "customTriggered", "CustomTrigger", "refreshTriggered", "RefreshTrigger", "cpuUsage", "cpuTemp", "upTime", "spaceUsed", "freeMem", "clearTiles", "temperature", "humidity" , "RebootNow"])
 	}
 }
 
@@ -186,6 +212,8 @@ def ClearTiles() {
 	sendEvent(name: "spaceUsed", value: "", unit: "")
 	sendEvent(name: "upTime", value: "", unit: "")
 	sendEvent(name: "freeMem", value: "", unit: "")
+	sendEvent(name: "temperature", value: "", unit: "")
+	sendEvent(name: "humidity", value: "", unit: "")
 }
 def ResetTiles() {
 	//RETURN BUTTONS TO CORRECT STATE
@@ -290,6 +318,8 @@ def parse(String description) {
 				if (line.contains('UpTime=')) { jsonlist.put ("UpTime", line.replace("UpTime=","")) }
 				if (line.contains('CPU Temp=')) { jsonlist.put ("CPU Temp",line.replace("CPU Temp=","")) }
 				if (line.contains('Free Mem=')) { jsonlist.put ("Free Mem",line.replace("Free Mem=",""))  }
+				if (line.contains('Temperature=')) { jsonlist.put ("Temperature",line.replace("Temperature=","").replaceAll("[^\\p{ASCII}]", "°")) }
+				if (line.contains('Humidity=')) { jsonlist.put ("Humidity",line.replace("Humidity=","")) }
 				if (line.contains('MainTrigger=Success')) { jsonlist.put ("MainTrigger".replace("=",""), "Success") }
 				if (line.contains('MainTrigger=Failed : Authentication Required!')) { jsonlist.put ("MainTrigger".replace("=",""), "Authentication Required!") }
 				if (line.contains('MainTriggerOn=Success')) { jsonlist.put ("MainTriggerOn", "Success") }
@@ -414,6 +444,17 @@ def parse(String description) {
 		}
 		if (jsonlist."Free Mem") {
 			sendEvent(name: "freeMem", value: jsonlist."Free Mem".replace("=","\n"), unit: "")
+		}
+		if (jsonlist."Temperature") {
+			sendEvent(name: "temperature", value: jsonlist."Temperature".replace("=","\n").replace("\'","°").replace("C ","C="), unit: "")
+			//String s = jsonlist."Temperature"
+			//for(int i = 0; i < s.length(); i++)	{
+			//   int c = s.charAt(i);
+			//   log.trace "'${c}'\n"
+			//}
+		}
+		if (jsonlist."Humidity") {
+			sendEvent(name: "humidity", value: jsonlist."Humidity".replace("=","\n"), unit: "")
 		}
 		if (jsonlist."RebootNow") {
 			whichTile = 'RebootNow'
