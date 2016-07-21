@@ -1,22 +1,30 @@
-/*
- * IRremoteESP8266: IRServer - demonstrates sending IR codes controlled from a webserver
- * An IR LED must be connected to ESP8266 pin 0.
- * Version 0.1 June, 2015
+/**
+ *  Arduino / ESP8266-12E / NodeMCU Sample v1.0.20160721
+ *  Source code can be found here: https://github.com/JZ-SmartThings/SmartThings/blob/master/Devices/Generic%20HTTP%20Device
+ *  Copyright 2016 JZ
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ *  in compliance with the License. You may obtain a copy of the License at:
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *  Unless required by applicable law or agreed to in writing, software distributed under the License is distributed
+ *  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
+ *  for the specific language governing permissions and limitations under the License.
  */
+
 
 #include <ESP8266WiFi.h>
 #include <WiFiClient.h>
 #include <ESP8266WebServer.h>
 #include <ESP8266mDNS.h>
+//#include <IRremoteESP8266at5V.h>
 #include <IRremoteESP8266.h>
  
 const char* ssid = "WIFI_SSID";
 const char* password = "WIFI_PASSWORD";
+
 MDNSResponder mdns;
-
 ESP8266WebServer server(80);
-
-IRsend irsend(D4);
+IRsend irsend(D2);
 
 void handleRoot() {
  String htmlContent = "<html><head><title>ESP8266 IR Remote</title></head><body><h1>ESP8266 IR Remote</h1></br>";
@@ -82,8 +90,10 @@ void handleIr(){
       }
       if (server.arg(i) == "input") {
         irsend.sendNEC(0x20DFD02F, 38);
-        delay(500);
+        delay(300);
         irsend.sendNEC(0x20DFD02F, 38);
+        delay(300);
+        irsend.sendNEC(0x20DF22DD, 38);
       }
     }
     else if(server.argName(i) == "hdmi") 
@@ -125,7 +135,7 @@ void setup(void){
   pinMode(LED_BUILTIN, OUTPUT);     //GPIO16 also D0 also LED_BUILTIN
   pinMode(D4, OUTPUT);              //GPIO2 also D4
   digitalWrite(LED_BUILTIN, HIGH);
-  digitalWrite(D4, HIGH); 
+  digitalWrite(D4, HIGH);
 
   irsend.begin();
   
@@ -164,4 +174,3 @@ void setup(void){
 void loop(void){
   server.handleClient();
 } 
-
