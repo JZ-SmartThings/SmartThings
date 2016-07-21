@@ -1,6 +1,6 @@
 /**
- *  Arduino / ESP8266-12E / NodeMCU Sample v1.0.20160721
- *  Source code can be found here: https://github.com/JZ-SmartThings/SmartThings/blob/master/Devices/Generic%20HTTP%20Device
+ *  TV Device Sample v1.0.20160721
+ *  Source code can be found here: https://github.com/JZ-SmartThings/SmartThings/blob/master/Devices/TVDevice
  *  Copyright 2016 JZ
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
