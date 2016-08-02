@@ -1,5 +1,5 @@
 /**
- *  TVDevice v1.0.20160619
+ *  TVDevice v1.0.20160802
  *
  *  Source code can be found here: https://github.com/JZ-SmartThings/SmartThings/blob/master/Devices/TVDevice/TVDevice.groovy
  *
@@ -97,11 +97,9 @@ def ResetTiles() {
 
 
 def setLevel(value) {
-    def level = Math.min(value as Integer, 99)
-	log.debug level + "---test"
-	runCmd("/ir?hdmi=" + value)
-//	sendEvent(name: "level", value: value, unit: "")
-//	sendEvent(name: "switch", value: "on", unit: "")
+	def level=value as int
+	//log.debug level + "---test"
+	runCmd("/ir?hdmi=" + level)
 }
 
 def on() {
