@@ -1,5 +1,5 @@
 /**
- *  Arduino / ESP8266-12E / NodeMCU Sample v1.0.20160719
+ *  Arduino / ESP8266-12E / NodeMCU Sample v1.0.20160806
  *  Source code can be found here: https://github.com/JZ-SmartThings/SmartThings/blob/master/Devices/Generic%20HTTP%20Device
  *  Copyright 2016 JZ
  *
@@ -17,7 +17,7 @@
 const char* ssid = "WIFI_SSID";
 const char* password = "WIFI_PASSWORD";
 
-const bool use5Vrelay = false;
+const bool use5Vrelay = true;
 
 int relayPin1 = D1; // GPIO5 = D1
 int relayPin2 = D2; // GPIO4 = D2
@@ -25,8 +25,8 @@ int relayPin2 = D2; // GPIO4 = D2
 #define DHTPIN D3     // what pin we're connected to  // GPIO0 = D2
 
 // Uncomment whatever type you're using!
-#define DHTTYPE DHT11   // DHT 11
-//#define DHTTYPE DHT22   // DHT 22  (AM2302)
+//#define DHTTYPE DHT11   // DHT 11
+#define DHTTYPE DHT22   // DHT 22  (AM2302)
 //#define DHTTYPE DHT21   // DHT 21 (AM2301)
 DHT dht(DHTPIN, DHTTYPE);
 
@@ -50,6 +50,7 @@ void setup() {
   Serial.print("Connecting to ");
   Serial.println(ssid);
 
+  WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
 
   while (WiFi.status() != WL_CONNECTED) {
@@ -150,8 +151,7 @@ void loop() {
   client.println("div {border:solid 1px; margin: 3px; width:150px;} .center { margin: auto; width: 350px; border: 3px solid #73AD21; padding: 10px;");
   client.println("</style></head><h1><a href='/'>ESP8266 DUAL RELAY</a></h1>");
 
-  String requestIn;
-  requestIn = request;
+  String requestIn = request;
   requestIn.replace("GET ", ""); requestIn.replace(" HTTP/1.1", "");
   Serial.println("---WEB PAGE OUTPUT---");
   Serial.println(request);
