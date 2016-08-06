@@ -1,5 +1,5 @@
 /**
- *  TV Device Sample v1.0.20160721
+ *  TV Device Sample v1.0.20160806
  *  Source code can be found here: https://github.com/JZ-SmartThings/SmartThings/blob/master/Devices/TVDevice
  *  Copyright 2016 JZ
  *
@@ -139,6 +139,7 @@ void setup(void){
   irsend.begin();
   
   Serial.begin(9600);
+  WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
   Serial.println("");
 

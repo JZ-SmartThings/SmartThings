@@ -1,5 +1,5 @@
 /**
- *  TV Device Sample v1.0.20160721
+ *  TV Device Sample v1.0.20160806
  *  Source code can be found here: https://github.com/JZ-SmartThings/SmartThings/blob/master/Devices/TVDevice
  *  Copyright 2016 JZ
  *
@@ -10,7 +10,6 @@
  *  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
  *  for the specific language governing permissions and limitations under the License.
  */
-
 
 #include <ESP8266WiFi.h>
 #include <WiFiClient.h>
@@ -140,6 +139,7 @@ void setup(void){
   irsend.begin();
   
   Serial.begin(9600);
+  WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
   Serial.println("");
 
