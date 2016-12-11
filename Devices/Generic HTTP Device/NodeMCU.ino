@@ -1,5 +1,5 @@
 /**
- *  Arduino / ESP8266-12E / NodeMCU Sample v1.0.20160806
+ *  Arduino / ESP8266-12E / NodeMCU Sample v1.0.20161210
  *  Source code can be found here: https://github.com/JZ-SmartThings/SmartThings/blob/master/Devices/Generic%20HTTP%20Device
  *  Copyright 2016 JZ
  *
@@ -176,22 +176,22 @@ void loop() {
     client.println("</pre>"); client.println("<hr>");
   }
 
-  client.println("<div class='center'>RELAY1 pin is now: ");
+  client.print("<div class='center'>RELAY1 pin is now: ");
   if(use5Vrelay==true) {
-    if(digitalRead(relayPin1) == LOW) { client.print("On"); } else { client.print("Off"); }
+    if(digitalRead(relayPin1) == LOW) { client.println("On"); } else { client.println("Off"); }
   } else {
-    if(digitalRead(relayPin1) == HIGH) { client.print("On"); } else { client.print("Off"); }
+    if(digitalRead(relayPin1) == HIGH) { client.println("On"); } else { client.println("Off"); }
   }
   client.println("<br><a href=\"/RELAY1=ON\"><button onClick=\"parent.location='/RELAY1=ON'\">Turn On</button></a>");
   client.println("<a href=\"/RELAY1=OFF\"><button onClick=\"parent.location='/RELAY1=OFF'\">Turn Off</button></a><br/>");
   client.println("<a href=\"/RELAY1=MOMENTARY\"><button onClick=\"parent.location='/RELAY1=MOMENTARY'\">MOMENTARY</button></a><br/></div>");
 
   client.println("<hr>");
-  client.println("<div class='center'>RELAY2 pin is now: ");
+  client.print("<div class='center'>RELAY2 pin is now: ");
   if(use5Vrelay==true) {
-    if(digitalRead(relayPin2) == LOW) { client.print("On"); } else { client.print("Off"); }
+    if(digitalRead(relayPin2) == LOW) { client.println("On"); } else { client.println("Off"); }
   } else {
-    if(digitalRead(relayPin2) == HIGH) { client.print("On"); } else { client.print("Off"); }
+    if(digitalRead(relayPin2) == HIGH) { client.println("On"); } else { client.println("Off"); }
   }
   client.println("<br><a href=\"/RELAY2=ON\"><button onClick=\"parent.location='/RELAY2=ON'\">Turn On</button></a>");
   client.println("<a href=\"/RELAY2=OFF\"><button onClick=\"parent.location='/RELAY2=OFF'\">Turn Off</button></a><br/>");

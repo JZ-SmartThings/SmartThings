@@ -121,22 +121,22 @@ void loop()
                     client.println(request);
                     client.println(F("</b><hr>"));
 
-                    client.println(F("<div class='center'>RELAY1 pin is now: "));
+                    client.print(F("<div class='center'>RELAY1 pin is now: "));
                     if(use5Vrelay==true) {
-                      if(digitalRead(relayPin1) == LOW) { client.print(F("On")); } else { client.print(F("Off")); }
+                      if(digitalRead(relayPin1) == LOW) { client.println(F("On")); } else { client.println(F("Off")); }
                     } else {
-                      if(digitalRead(relayPin1) == HIGH) { client.print(F("On")); } else { client.print(F("Off")); }
+                      if(digitalRead(relayPin1) == HIGH) { client.println(F("On")); } else { client.println(F("Off")); }
                     }
                     client.println(F("<br><a href=\"/RELAY1=ON\"><button onClick=\"parent.location='/RELAY1=ON'\">Turn On</button></a>"));
                     client.println(F("<a href=\"/RELAY1=OFF\"><button onClick=\"parent.location='/RELAY1=OFF'\">Turn Off</button></a><br/>"));
                     client.println(F("<a href=\"/RELAY1=MOMENTARY\"><button onClick=\"parent.location='/RELAY1=MOMENTARY'\">MOMENTARY</button></a><br/></div>"));
 
                     client.println(F("<hr>"));
-                    client.println(F("<div class='center'>RELAY2 pin is now: "));
+                    client.print(F("<div class='center'>RELAY2 pin is now: "));
                     if(use5Vrelay==true) {
-                      if(digitalRead(relayPin2) == LOW) { client.print(F("On")); } else { client.print(F("Off")); }
+                      if(digitalRead(relayPin2) == LOW) { client.println(F("On")); } else { client.println(F("Off")); }
                     } else {
-                      if(digitalRead(relayPin2) == HIGH) { client.print(F("On")); } else { client.print(F("Off")); }
+                      if(digitalRead(relayPin2) == HIGH) { client.println(F("On")); } else { client.println(F("Off")); }
                     }
                     client.println(F("<br><a href=\"/RELAY2=ON\"><button onClick=\"parent.location='/RELAY2=ON'\">Turn On</button></a>"));
                     client.println(F("<a href=\"/RELAY2=OFF\"><button onClick=\"parent.location='/RELAY2=OFF'\">Turn Off</button></a><br/>"));
