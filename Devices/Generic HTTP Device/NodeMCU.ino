@@ -1,5 +1,5 @@
 /**
- *  Arduino / ESP8266-12E / NodeMCU Sample v1.0.20161210
+ *  Arduino / ESP8266-12E / NodeMCU Sample v1.0.20161215
  *  Source code can be found here: https://github.com/JZ-SmartThings/SmartThings/blob/master/Devices/Generic%20HTTP%20Device
  *  Copyright 2016 JZ
  *
@@ -126,7 +126,7 @@ void loop() {
   }
   if (request.indexOf("RELAY1=MOMENTARY") != -1 || request.indexOf("MainTrigger=") != -1)  {
     digitalWrite(relayPin1, use5Vrelay==true ? LOW : HIGH);
-    delay(100);
+    delay(300);
     digitalWrite(relayPin1, use5Vrelay==true ? HIGH : LOW);
   }
 
@@ -138,7 +138,7 @@ void loop() {
   }
   if (request.indexOf("RELAY2=MOMENTARY") != -1 || request.indexOf("CustomTrigger=") != -1)  {
     digitalWrite(relayPin2, use5Vrelay==true ? LOW : HIGH);
-    delay(100);
+    delay(300);
     digitalWrite(relayPin2, use5Vrelay==true ? HIGH : LOW);
   }
 
