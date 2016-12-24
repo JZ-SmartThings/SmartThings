@@ -1,5 +1,5 @@
 /**
- *  Generic HTTP Device v1.0.20160719
+ *  Generic HTTP Device v1.0.20161223
  *  Source code can be found here: https://github.com/JZ-SmartThings/SmartThings/blob/master/Devices/Generic%20HTTP%20Device/GenericHTTPDevice.groovy
  *  Copyright 2016 JZ
  *
@@ -59,6 +59,9 @@ metadata {
 	}
 
 	tiles(scale: 2) {
+		valueTile("displayName", "device.displayName", width: 6, height: 1, decoration: "flat") {
+			state("default", label: '${currentValue}', backgroundColor:"#DDDDDD")
+		}
 		valueTile("mainTriggered", "device.mainTriggered", width: 5, height: 1, decoration: "flat") {
 			state("default", label: 'Main triggered:\r\n${currentValue}', backgroundColor:"#ffffff")
 		}
@@ -151,7 +154,7 @@ metadata {
 			state "rebooting", label: 'REBOOTING', action: "ResetTiles", icon: "st.Office.office13", backgroundColor: "#FF6600", nextState: "default"
 		}
 		main "DeviceTrigger"
-		details(["mainTriggered", "DeviceTrigger", "customTriggered", "CustomTrigger", "refreshTriggered", "RefreshTrigger", "cpuUsage", "cpuTemp", "upTime", "spaceUsed", "freeMem", "clearTiles", "temperature", "humidity" , "RebootNow"])
+		details(["displayName","mainTriggered", "DeviceTrigger", "customTriggered", "CustomTrigger", "refreshTriggered", "RefreshTrigger", "cpuUsage", "cpuTemp", "upTime", "spaceUsed", "freeMem", "clearTiles", "temperature", "humidity" , "RebootNow"])
 	}
 }
 
@@ -465,6 +468,9 @@ def parse(String description) {
 
 	//RESET THE DEVICE ID TO GENERIC/RANDOM NUMBER. THIS ALLOWS MULTIPLE DEVICES TO USE THE SAME ID/IP
 	device.deviceNetworkId = "ID_WILL_BE_CHANGED_AT_RUNTIME_" + (Math.abs(new Random().nextInt()) % 99999 + 1)
+
+	//CHANGE NAME TILE
+	sendEvent(name: "displayName", value: DeviceIP, unit: "")
 
 	//RETURN BUTTONS TO CORRECT STATE
 	log.debug 'whichTile: ' + whichTile

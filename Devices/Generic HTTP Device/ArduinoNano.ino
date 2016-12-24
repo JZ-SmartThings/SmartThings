@@ -1,5 +1,5 @@
-/**
- *  Arduino Nano & Ethernet Shield Sample v1.0.20161215
+ /**
+ *  Arduino Nano & Ethernet Shield Sample v1.0.20161223
  *  Source code can be found here: https://github.com/JZ-SmartThings/SmartThings/blob/master/Devices/Generic%20HTTP%20Device
  *  Copyright 2016 JZ
  *
@@ -13,7 +13,7 @@
 
 #include <UIPEthernet.h>
 
-const bool use5Vrelay = true;
+const bool use5Vrelay = false;
 
 int relayPin1 = 2; // GPIO5 = D2
 int relayPin2 = 3; // GPIO6 = D3
@@ -32,7 +32,7 @@ void setup()
   digitalWrite(relayPin2, use5Vrelay==true ? HIGH : LOW);
 
   uint8_t mac[6] = {0xFF,0x01,0x02,0x03,0x04,0x05};
-  IPAddress myIP(192,168,0,171);
+  IPAddress myIP(192,168,0,225);
   Ethernet.begin(mac,myIP);
   /* //DHCP NOT WORKING
   if (Ethernet.begin(mac) == 0) {
@@ -121,22 +121,26 @@ void loop()
                     client.println(request);
                     client.println(F("</b><hr>"));
 
-                    client.print(F("<div class='center'>RELAY1 pin is now: "));
+                    client.println(F("<pre>"));
+                    client.print(F("UpTime=")); client.println(uptime());
+                    client.println(F("</pre>")); client.println(F("<hr>"));
+  
+                    client.println(F("<div class='center'>RELAY1 pin is now: "));
                     if(use5Vrelay==true) {
-                      if(digitalRead(relayPin1) == LOW) { client.println(F("On")); } else { client.println(F("Off")); }
+                      if(digitalRead(relayPin1) == LOW) { client.print(F("On")); } else { client.print(F("Off")); }
                     } else {
-                      if(digitalRead(relayPin1) == HIGH) { client.println(F("On")); } else { client.println(F("Off")); }
+                      if(digitalRead(relayPin1) == HIGH) { client.print(F("On")); } else { client.print(F("Off")); }
                     }
                     client.println(F("<br><a href=\"/RELAY1=ON\"><button onClick=\"parent.location='/RELAY1=ON'\">Turn On</button></a>"));
                     client.println(F("<a href=\"/RELAY1=OFF\"><button onClick=\"parent.location='/RELAY1=OFF'\">Turn Off</button></a><br/>"));
                     client.println(F("<a href=\"/RELAY1=MOMENTARY\"><button onClick=\"parent.location='/RELAY1=MOMENTARY'\">MOMENTARY</button></a><br/></div>"));
 
                     client.println(F("<hr>"));
-                    client.print(F("<div class='center'>RELAY2 pin is now: "));
+                    client.println(F("<div class='center'>RELAY2 pin is now: "));
                     if(use5Vrelay==true) {
-                      if(digitalRead(relayPin2) == LOW) { client.println(F("On")); } else { client.println(F("Off")); }
+                      if(digitalRead(relayPin2) == LOW) { client.print(F("On")); } else { client.print(F("Off")); }
                     } else {
-                      if(digitalRead(relayPin2) == HIGH) { client.println(F("On")); } else { client.println(F("Off")); }
+                      if(digitalRead(relayPin2) == HIGH) { client.print(F("On")); } else { client.print(F("Off")); }
                     }
                     client.println(F("<br><a href=\"/RELAY2=ON\"><button onClick=\"parent.location='/RELAY2=ON'\">Turn On</button></a>"));
                     client.println(F("<a href=\"/RELAY2=OFF\"><button onClick=\"parent.location='/RELAY2=OFF'\">Turn Off</button></a><br/>"));
@@ -161,4 +165,34 @@ void loop()
         delay(1);      // give the web browser time to receive the data
         client.stop(); // close the connection
     } // end if (client)
+}
+
+String uptime() {
+  float d,hr,m,s,ms;
+  String dstr,hrstr, mstr, sstr;
+  unsigned long over;
+  d=int(millis()/3600000*24);
+  dstr=String(hr,0);
+  dstr.replace(" ", "");
+  over=millis()%(3600000*24);
+  hr=int(over/3600000);
+  hrstr=String(hr,0);
+  if (hr<10) {hrstr=hrstr="0"+hrstr;}
+  hrstr.replace(" ", "");
+  over=over%3600000;
+  m=int(over/60000);
+  mstr=String(m,0);
+  if (m<10) {mstr=mstr="0"+mstr;}
+  mstr.replace(" ", "");
+  over=over%60000;
+  s=int(over/1000);
+  sstr=String(s,0);
+  if (s<10) {sstr="0"+sstr;}
+  sstr.replace(" ", "");
+  ms=over%1000;
+  if (dstr!="0") {
+    return dstr + " Days " + hrstr + ":" + mstr + ":" + sstr;
+  } else {
+    return hrstr + ":" + mstr + ":" + sstr;
+  }
 }

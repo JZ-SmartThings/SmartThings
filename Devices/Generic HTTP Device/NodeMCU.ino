@@ -1,5 +1,5 @@
 /**
- *  Arduino / ESP8266-12E / NodeMCU Sample v1.0.20161215
+ *  Arduino / ESP8266-12E / NodeMCU Sample v1.0.20161223
  *  Source code can be found here: https://github.com/JZ-SmartThings/SmartThings/blob/master/Devices/Generic%20HTTP%20Device
  *  Copyright 2016 JZ
  *
@@ -17,7 +17,7 @@
 const char* ssid = "WIFI_SSID";
 const char* password = "WIFI_PASSWORD";
 
-const bool use5Vrelay = true;
+const bool use5Vrelay = false;
 
 int relayPin1 = D1; // GPIO5 = D1
 int relayPin2 = D2; // GPIO4 = D2
@@ -167,14 +167,15 @@ void loop() {
   float tf = (tc * 9.0 / 5.0) + 32.0;
 
   // check if returns are valid, if they are NaN (not a number) then something went wrong!
+  client.println("<pre>");
   if (isnan(tc) || isnan(h)) {
     Serial.println("Failed to read from DHT");
   } else {
-    client.println("<pre>");
     client.print("Temperature="); client.print(tc,1); client.print((char)176); client.print("C "); client.print(round(tf)); client.print((char)176); client.println("F");
     client.print("Humidity="); client.print(round(h)); client.println("%");
-    client.println("</pre>"); client.println("<hr>");
   }
+  client.print("UpTime="); client.println(uptime());
+  client.println("</pre>"); client.println("<hr>");
 
   client.print("<div class='center'>RELAY1 pin is now: ");
   if(use5Vrelay==true) {
@@ -203,4 +204,34 @@ void loop() {
   delay(1);
   Serial.println("Client disonnected");
   Serial.println("");
+}
+
+String uptime() {
+  float d,hr,m,s,ms;
+  String dstr,hrstr, mstr, sstr;
+  unsigned long over;
+  d=int(millis()/3600000*24);
+  dstr=String(hr,0);
+  dstr.replace(" ", "");
+  over=millis()%(3600000*24);
+  hr=int(over/3600000);
+  hrstr=String(hr,0);
+  if (hr<10) {hrstr=hrstr="0"+hrstr;}
+  hrstr.replace(" ", "");
+  over=over%3600000;
+  m=int(over/60000);
+  mstr=String(m,0);
+  if (m<10) {mstr=mstr="0"+mstr;}
+  mstr.replace(" ", "");
+  over=over%60000;
+  s=int(over/1000);
+  sstr=String(s,0);
+  if (s<10) {sstr="0"+sstr;}
+  sstr.replace(" ", "");
+  ms=over%1000;
+  if (dstr!="0") {
+    return dstr + " Days " + hrstr + ":" + mstr + ":" + sstr;
+  } else {
+    return hrstr + ":" + mstr + ":" + sstr;
+  }
 }
