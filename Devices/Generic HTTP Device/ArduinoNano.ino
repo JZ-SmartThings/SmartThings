@@ -1,5 +1,5 @@
  /**
- *  Arduino Nano & Ethernet Shield Sample v1.0.20161223
+ *  Arduino Nano & Ethernet Shield Sample v1.0.20161227
  *  Source code can be found here: https://github.com/JZ-SmartThings/SmartThings/blob/master/Devices/Generic%20HTTP%20Device
  *  Copyright 2016 JZ
  *
@@ -172,7 +172,7 @@ String uptime() {
   String dstr,hrstr, mstr, sstr;
   unsigned long over;
   d=int(millis()/3600000*24);
-  dstr=String(hr,0);
+  dstr=String(d,0);
   dstr.replace(" ", "");
   over=millis()%(3600000*24);
   hr=int(over/3600000);
