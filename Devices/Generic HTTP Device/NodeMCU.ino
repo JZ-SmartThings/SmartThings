@@ -1,5 +1,5 @@
 /**
- *  Arduino / ESP8266-12E / NodeMCU Sample v1.0.20161227
+ *  Arduino / ESP8266-12E / NodeMCU Sample v1.0.20161231
  *  Source code can be found here: https://github.com/JZ-SmartThings/SmartThings/blob/master/Devices/Generic%20HTTP%20Device
  *  Copyright 2016 JZ
  *
@@ -17,7 +17,7 @@
 const char* ssid = "WIFI_SSID";
 const char* password = "WIFI_PASSWORD";
 
-const bool use5Vrelay = false;
+const bool use5Vrelay = true;
 
 int relayPin1 = D1; // GPIO5 = D1
 int relayPin2 = D2; // GPIO4 = D2
@@ -31,8 +31,6 @@ int relayPin2 = D2; // GPIO4 = D2
 DHT dht(DHTPIN, DHTTYPE);
 
 WiFiServer server(80);
-
-void(* resetFunction) (void) = 0;
 
 void setup() {
   Serial.begin(115200);
@@ -74,7 +72,7 @@ void setup() {
 void loop() {
   //RESET EVERY 8 HOURS
   if (millis () >= 28800000) {
-    resetFunction();
+    while(true);
   }
 
   // Check if a client has connected
@@ -84,7 +82,7 @@ void loop() {
   }
  
   // Wait until the client sends some data
-  Serial.println("new client");
+  Serial.println("New client");
   while(!client.available()){
     delay(1);
   }
@@ -113,11 +111,14 @@ void loop() {
 */
 
   // Match the request
+  if (request.indexOf("/favicon.ico") > -1)  {
+    return;
+  }
   if (request.indexOf("/RebootNow") != -1)  {
-    resetFunction();
+    while(true);
   }
 
-  Serial.print("use5Vrelay == "); Serial.println(use5Vrelay);
+  //Serial.print("use5Vrelay == "); Serial.println(use5Vrelay);
   if (request.indexOf("RELAY1=ON") != -1 || request.indexOf("MainTriggerOn=") != -1)  {
     digitalWrite(relayPin1, use5Vrelay==true ? LOW : HIGH);
   }
@@ -175,6 +176,7 @@ void loop() {
     client.print("Humidity="); client.print(round(h)); client.println("%");
   }
   client.print("UpTime="); client.println(uptime());
+  client.println(freeRam());
   client.println("</pre>"); client.println("<hr>");
 
   client.print("<div class='center'>RELAY1 pin is now: ");
@@ -206,11 +208,21 @@ void loop() {
   Serial.println("");
 }
 
+String freeRam () {
+  #if defined(ARDUINO_ARCH_AVR)
+    extern int __heap_start, *__brkval;
+    int v;
+    return "Free Mem="+String((int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval))+"B of 2048B";
+  #elif defined(ESP8266)
+    return "Free Mem="+String(ESP.getFreeHeap()/1024)+"KB of 80KB";
+  #endif
+}
+
 String uptime() {
-  float d,hr,m,s,ms;
+  float d,hr,m,s;
   String dstr,hrstr, mstr, sstr;
   unsigned long over;
-  d=int(millis()/3600000*24);
+  d=int(millis()/(3600000*24));
   dstr=String(d,0);
   dstr.replace(" ", "");
   over=millis()%(3600000*24);
@@ -228,10 +240,11 @@ String uptime() {
   sstr=String(s,0);
   if (s<10) {sstr="0"+sstr;}
   sstr.replace(" ", "");
-  ms=over%1000;
-  if (dstr!="0") {
-    return dstr + " Days " + hrstr + ":" + mstr + ":" + sstr;
-  } else {
+  if (dstr=="0") {
     return hrstr + ":" + mstr + ":" + sstr;
+  } else if (dstr=="1") {
+    return dstr + " Day " + hrstr + ":" + mstr + ":" + sstr;
+  } else {
+    return dstr + " Days " + hrstr + ":" + mstr + ":" + sstr;
   }
 }

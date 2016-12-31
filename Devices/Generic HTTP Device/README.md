@@ -10,6 +10,7 @@ At the top of index.php, change the first variable to "true" instead of "false" 
 
 This project was tested successfully via an external IP, Pollster and with an Amazon Echo/Alexa. Echo can run TWO functions in my app. The ON command triggers the main function and OFF triggers the custom function but can be changed to only control the Main switch.
 
+</br>v1.0.20161231 - Arduino sketch enhancements & fixes: Added free memory/heap logic. UpTime reports day/days correctly now. Replaced reboot logic with a simple while loop to cause a soft watchdog reset. Switched to use5Vrelay=true to match wiring diagrams. Added abort when favicon.ico request is sent.
 </br>v1.0.20161223 - Added UpTime for the Arduino IDE samples. Added device name & IP at the top of SmartThings screen. Added wiring for Arduino Nano & a generic ENC28J60 ethernet board.
 </br>v1.0.20160806 - Security issue with the ESP8266 library, read this post: https://community.smartthings.com/t/esp8266-nodemcu-arduino-based-tv-remote/50161/22
 </br>v1.0.20160731 - Added Arduino Nano v3 plus ENC28J60 Ethenet Shield sample code. Updated wiring diagrams.

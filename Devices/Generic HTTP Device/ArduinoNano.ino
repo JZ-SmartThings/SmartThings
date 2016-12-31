@@ -1,5 +1,5 @@
  /**
- *  Arduino Nano & Ethernet Shield Sample v1.0.20161227
+ *  Arduino Nano & Ethernet Shield Sample v1.0.20161231
  *  Source code can be found here: https://github.com/JZ-SmartThings/SmartThings/blob/master/Devices/Generic%20HTTP%20Device
  *  Copyright 2016 JZ
  *
@@ -13,18 +13,16 @@
 
 #include <UIPEthernet.h>
 
-const bool use5Vrelay = false;
+const bool use5Vrelay = true;
 
 int relayPin1 = 2; // GPIO5 = D2
 int relayPin2 = 3; // GPIO6 = D3
 
 EthernetServer server = EthernetServer(80);
 
-void(* resetFunction) (void) = 0;
-
 void setup()
 {
-  Serial.begin(9600);
+  Serial.begin(115200);
 
   pinMode(relayPin1, OUTPUT);
   pinMode(relayPin2, OUTPUT);
@@ -79,8 +77,11 @@ void loop()
                     request.replace(" HTTP/1.1", "");
 
                     // Match the request
+                    if (request.indexOf("/favicon.ico") > -1)  {
+                      return;
+                    }
                     if (request.indexOf("/RebootNow") != -1)  {
-                      resetFunction();
+                      while(true);
                     }
 
                     //Serial.print("use5Vrelay == "); Serial.println(use5Vrelay);
@@ -123,6 +124,7 @@ void loop()
 
                     client.println(F("<pre>"));
                     client.print(F("UpTime=")); client.println(uptime());
+                    client.println(freeRam());
                     client.println(F("</pre>")); client.println(F("<hr>"));
   
                     client.println(F("<div class='center'>RELAY1 pin is now: "));
@@ -167,11 +169,21 @@ void loop()
     } // end if (client)
 }
 
+String freeRam () {
+  #if defined(ARDUINO_ARCH_AVR)
+    extern int __heap_start, *__brkval;
+    int v;
+    return "Free Mem="+String((int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval))+"B of 2048B";
+  #elif defined(ESP8266)
+    return "Free Mem="+String(ESP.getFreeHeap()/1024)+"KB of 80KB";
+  #endif
+}
+
 String uptime() {
-  float d,hr,m,s,ms;
+  float d,hr,m,s;
   String dstr,hrstr, mstr, sstr;
   unsigned long over;
-  d=int(millis()/3600000*24);
+  d=int(millis()/(3600000*24));
   dstr=String(d,0);
   dstr.replace(" ", "");
   over=millis()%(3600000*24);
@@ -189,10 +201,11 @@ String uptime() {
   sstr=String(s,0);
   if (s<10) {sstr="0"+sstr;}
   sstr.replace(" ", "");
-  ms=over%1000;
-  if (dstr!="0") {
-    return dstr + " Days " + hrstr + ":" + mstr + ":" + sstr;
-  } else {
+  if (dstr=="0") {
     return hrstr + ":" + mstr + ":" + sstr;
+  } else if (dstr=="1") {
+    return dstr + " Day " + hrstr + ":" + mstr + ":" + sstr;
+  } else {
+    return dstr + " Days " + hrstr + ":" + mstr + ":" + sstr;
   }
 }
