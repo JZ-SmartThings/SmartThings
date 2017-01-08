@@ -1,7 +1,7 @@
 /**
- *  Arduino / ESP8266-12E / NodeMCU Sample v1.0.20161231
+ *  ESP8266-12E / NodeMCU / WeMos D1 Mini WiFi & ENC28J60 Sample v1.0.20170108
  *  Source code can be found here: https://github.com/JZ-SmartThings/SmartThings/blob/master/Devices/Generic%20HTTP%20Device
- *  Copyright 2016 JZ
+ *  Copyright 2017 JZ
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  *  in compliance with the License. You may obtain a copy of the License at:
@@ -11,105 +11,183 @@
  *  for the specific language governing permissions and limitations under the License.
  */
 
-#include <ESP8266WiFi.h>
-#include <DHT.h>
+#include <EEPROM.h>
 
+// SET YOUR NETWORK MODE TO USE WIFI OR ENC28J60
+#define useWIFI true
 const char* ssid = "WIFI_SSID";
 const char* password = "WIFI_PASSWORD";
 
-const bool use5Vrelay = true;
-
+// DECIDE WHETHER TO SEND HIGH OR LOW TO THE PINS AND WHICH PINS ARE USED FOR TRIGGERS
+// IF USING 3.3V RELAY, TRANSISTOR OR MOSFET THEN SET THE BELOW VARIABLE TO FALSE
+const bool use5Vrelay = false;
 int relayPin1 = D1; // GPIO5 = D1
 int relayPin2 = D2; // GPIO4 = D2
 
-#define DHTPIN D3     // what pin we're connected to  // GPIO0 = D2
+// USE BASIC HTTP AUTH?
+const bool useAuth = false;
 
-// Uncomment whatever type you're using!
-//#define DHTTYPE DHT11   // DHT 11
-#define DHTTYPE DHT22   // DHT 22  (AM2302)
-//#define DHTTYPE DHT21   // DHT 21 (AM2301)
-DHT dht(DHTPIN, DHTTYPE);
+// USE DHT TEMP/HUMIDITY SENSOR? WHICH PIN? MAKE SURE TO DEFINE WHICH SENSOR MODEL BELOW.
+#define useDHT false
+#define DHTPIN D3     // what pin is the DHT on?
+#if useDHT==true
+  #include <DHT.h>
+  // Uncomment whatever type of temperature sensor you're using!
+  //#define DHTTYPE DHT11   // DHT 11
+  #define DHTTYPE DHT22   // DHT 22  (AM2302)
+  //#define DHTTYPE DHT21   // DHT 21 (AM2301)
+  DHT dht(DHTPIN, DHTTYPE);
+#endif
 
-WiFiServer server(80);
+// OTHER VARIALBES
+String currentIP, request, fullrequest;
 
-void setup() {
+// LOAD UP NETWORK LIB & PORT
+#if useWIFI==true
+  #include <ESP8266WiFi.h>
+  WiFiServer server(80);
+#else
+  #include <UIPEthernet.h>
+  EthernetServer server = EthernetServer(80);
+#endif
+
+void setup()
+{
   Serial.begin(115200);
-  delay(10);
 
-  dht.begin();
+  #if useDHT==true
+    dht.begin();
+  #endif
 
   pinMode(relayPin1, OUTPUT);
   pinMode(relayPin2, OUTPUT);
   digitalWrite(relayPin1, use5Vrelay==true ? HIGH : LOW);
   digitalWrite(relayPin2, use5Vrelay==true ? HIGH : LOW);
 
-  // Connect to WiFi network
-  Serial.println();
-  Serial.print("Connecting to ");
-  Serial.println(ssid);
-
-  WiFi.mode(WIFI_STA);
-  WiFi.begin(ssid, password);
-
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-  Serial.println("");
-  Serial.println("WiFi connected");
-
-  // Start the server
-  server.begin();
-  Serial.println("Server started");
-
-  // Print the IP address
-  Serial.print("Use this URL to connect: ");
-  Serial.print("http://");
-  Serial.print(WiFi.localIP());
-  Serial.println("/");
+  #if useWIFI==true
+    // Connect to WiFi network
+    Serial.println(); Serial.print("Connecting to "); Serial.println(ssid);
+    WiFi.mode(WIFI_STA);
+    WiFi.begin(ssid, password);
+    while (WiFi.status() != WL_CONNECTED) {
+      delay(500);
+      Serial.print(".");
+    }
+    Serial.println("");
+    Serial.println("WiFi connected");
+    // Start the server
+    server.begin();
+    Serial.println("Server started");
+    // Print the IP address
+    Serial.print("Use this URL to connect: ");
+    Serial.print("http://"); Serial.print(WiFi.localIP()); Serial.println("/");
+    currentIP=WiFi.localIP().toString();
+  #else
+    uint8_t mac[6] = {0xFF,0x01,0x02,0x03,0x04,0x05};
+    IPAddress myIP(192,168,0,226);
+    Ethernet.begin(mac,myIP);
+    /* //DHCP NOT WORKING
+    if (Ethernet.begin(mac) == 0) {
+      while (1) {
+        Serial.println("Failed to configure Ethernet using DHCP");
+        delay(10000);
+      }
+    }
+    */
+    server.begin();
+    Serial.print("localIP: "); Serial.println(Ethernet.localIP());
+    Serial.print("subnetMask: "); Serial.println(Ethernet.subnetMask());
+    Serial.print("gatewayIP: "); Serial.println(Ethernet.gatewayIP());
+    Serial.print("dnsServerIP: "); Serial.println(Ethernet.dnsServerIP());
+    currentIP=Ethernet.localIP().toString();
+  #endif
 }
 
-void loop() {
-  //RESET EVERY 8 HOURS
-  if (millis () >= 28800000) {
+void loop()
+{
+  // SERIAL MESSAGE
+  if (millis()%900000==0) { // every 15 minutes
+    Serial.print("UpTime:"); Serial.println(uptime());
+  }
+
+  // REBOOT
+  EEPROM.begin(1);
+  int days=EEPROM.read(0);
+  int RebootFrequencyDays=0;
+  RebootFrequencyDays=days;
+  if (RebootFrequencyDays > 0 && millis() >= (86400000*RebootFrequencyDays)) { //86400000 per day
     while(true);
   }
 
-  // Check if a client has connected
-  WiFiClient client = server.available();
-  if (!client) {
-    return;
-  }
- 
-  // Wait until the client sends some data
-  Serial.println("New client");
-  while(!client.available()){
-    delay(1);
-  }
-  //Serial.println("---FULL REQUEST---");
-  //Serial.println(client.readString());
-  //Serial.println("---END OF FULL REQUEST---");
+  #if useWIFI==true
+    // Check if a client has connected
+    WiFiClient client = server.available();
+    if (!client) {
+      return;
+    }
+   
+    // Wait until the client sends some data
+    Serial.println("New client");
+    while(!client.available()){
+      delay(1);
+    }
+    //Serial.println("---FULL REQUEST---"); Serial.println(client.readString()); Serial.println("---END OF FULL REQUEST---");
+  
+    request = client.readStringUntil('\r');  // Read the first line of the request
+    fullrequest = client.readString();
+    Serial.println(request);
+    request.replace("GET ", ""); request.replace(" HTTP/1.1", ""); request.replace(" HTTP/1.0", "");
+    client.flush();
+  #else
+    EthernetClient client = server.available();  // try to get client
+  
+    if (client) {  // got client?
+      boolean currentLineIsBlank = true;
+      String HTTP_req;          // stores the HTTP request
+      while (client.connected()) {
+        if (client.available()) {   // client data available to read
+          char c = client.read(); // read 1 byte (character) from client
+          HTTP_req += c;  // save the HTTP request 1 char at a time
+          // last line of client request is blank and ends with \n
+          // respond to client only after last line received
+          if (c == '\n' && currentLineIsBlank) { //&& currentLineIsBlank --- first line only on low memory like UNO/Nano otherwise get it all for AUTH
+            fullrequest=HTTP_req;
+            request = HTTP_req.substring(0,HTTP_req.indexOf('\r'));
+            //auth = HTTP_req.substring(HTTP_req.indexOf('Authorization: Basic '),HTTP_req.indexOf('\r'));
+            HTTP_req = "";    // finished with request, empty string
+            request.replace("GET ", ""); request.replace(" HTTP/1.1", ""); request.replace(" HTTP/1.0", "");
+  #endif
 
-  // Read the first line of the request
-  String request = client.readStringUntil('\r');
-  String fullrequest = client.readString();
   Serial.println(request);
-  client.flush();
+  handleRequest();
+  delay(10); // pause to make sure pin status is updated for response below
+  client.println(clientResponse());
 
-/*
-  // BASIC AUTHENTICATION
-  // The below Base64 string is gate:gate1 for the username:password
-  if (fullrequest.indexOf("Authorization: Basic Z2F0ZTpnYXRlMQ==") == -1)  {
-    client.println("HTTP/1.1 401 Access Denied");
-    client.println("WWW-Authenticate: Basic realm=\"ESP8266\"");
-      //client.println("Content-Type: text/html");
-      //client.println(""); //  do not forget this one
-      //client.println("Failed : Authentication Required!");
-      //Serial.println(fullrequest);
-    return;
-  }
-*/
+  #if useWIFI==true
+    delay(1);
+    Serial.println("Client disonnected");
+    Serial.println("");
+  #else
+            break;
+          }
+          // every line of text received from the client ends with \r\n
+          if (c == '\n') {
+            // last character on line of received text
+            // starting new line with next character read
+            currentLineIsBlank = true;
+          } else if (c != '\r') {
+            // a text character was received from client
+            currentLineIsBlank = false;
+          }
+        } // end if (client.available())
+      } // end while (client.connected())
+      delay(1);      // give the web browser time to receive the data
+      client.stop(); // close the connection
+    } // end if (client)
+  #endif
+} //loop
 
+void handleRequest() {
   // Match the request
   if (request.indexOf("/favicon.ico") > -1)  {
     return;
@@ -117,6 +195,17 @@ void loop() {
   if (request.indexOf("/RebootNow") != -1)  {
     while(true);
   }
+  if (request.indexOf("RebootFrequencyDays=") != -1)  {
+    EEPROM.begin(1);
+    String RebootFrequencyDays=request;
+    RebootFrequencyDays.replace("RebootFrequencyDays=","");
+    RebootFrequencyDays.replace("/","");
+    RebootFrequencyDays.replace("?","");
+    //for (int i = 0 ; i < 512 ; i++) { EEPROM.write(i, 0); } // fully clear EEPROM before overwrite
+    EEPROM.write(0,atoi(RebootFrequencyDays.c_str()));
+    EEPROM.commit();
+  }
+
 
   //Serial.print("use5Vrelay == "); Serial.println(use5Vrelay);
   if (request.indexOf("RELAY1=ON") != -1 || request.indexOf("MainTriggerOn=") != -1)  {
@@ -130,7 +219,7 @@ void loop() {
     delay(300);
     digitalWrite(relayPin1, use5Vrelay==true ? HIGH : LOW);
   }
-
+  
   if (request.indexOf("RELAY2=ON") != -1 || request.indexOf("CustomTriggerOn=") != -1)  {
     digitalWrite(relayPin2, use5Vrelay==true ? LOW : HIGH);
   }
@@ -142,70 +231,99 @@ void loop() {
     delay(300);
     digitalWrite(relayPin2, use5Vrelay==true ? HIGH : LOW);
   }
+}
+
+String clientResponse () {
+  String clientResponse;
+  // BASIC AUTHENTICATION
+  if (useAuth==true)  {
+  // The below Base64 string is gate:gate1 for the username:password
+    if (fullrequest.indexOf("Authorization: Basic Z2F0ZTpnYXRlMQ==") == -1)  {
+      clientResponse.concat("HTTP/1.1 401 Access Denied\n");
+      clientResponse.concat("WWW-Authenticate: Basic realm=\"ESP8266\"\n");
+      clientResponse.concat("Content-Type: text/html\n");
+      clientResponse.concat("\n"); //  do not forget this one
+      clientResponse.concat("Failed : Authentication Required!\n");
+      return clientResponse;
+    }
+  }
 
   // Return the response
-  client.println("HTTP/1.1 200 OK");
-  client.println("Content-Type: text/html");
-  client.println(""); //  do not forget this one
-  client.println("<!DOCTYPE HTML>");
-  client.println("<html><head><title>ESP8266 Dual 5V Relay</title></head><meta name=viewport content='width=500'><style type='text/css'>button {line-height: 2.2em; margin: 10px;} body {text-align:center;}");
-  client.println("div {border:solid 1px; margin: 3px; width:150px;} .center { margin: auto; width: 350px; border: 3px solid #73AD21; padding: 10px;");
-  client.println("</style></head><h1><a href='/'>ESP8266 DUAL RELAY</a></h1>");
+  clientResponse.concat("HTTP/1.1 200 OK\n");
+  clientResponse.concat("Content-Type: text/html\n");
+  clientResponse.concat("\n"); //  do not forget this one
+  clientResponse.concat("<!DOCTYPE HTML>\n");
+  clientResponse.concat("<html><head><title>ESP8266 & ");
+  #if useWIFI==true
+    clientResponse.concat("WIFI");
+  #else
+    clientResponse.concat("ENC28J60");
+  #endif
+  clientResponse.concat(" DUAL SWITCH</title></head><meta name=viewport content='width=500'>\n<style type='text/css'>\nbutton {line-height: 1.8em; margin: 10px; padding: 3px 12px;}");
+  clientResponse.concat("\nbody {text-align:center;}\ndiv {border:solid 1px; margin: 3px; width:150px;}\n.center { margin: auto; width: 350px; border: 3px solid #73AD21; padding: 3px;");
+  clientResponse.concat("</style></head><h2><a href='/'>ESP8266 & ");
+  #if useWIFI==true
+    clientResponse.concat("WIFI");
+  #else
+    clientResponse.concat("ENC28J60");
+  #endif
+  clientResponse.concat(" DUAL SWITCH</h2><h3>");
+  clientResponse.concat(currentIP);
+  clientResponse.concat("</h3>\n</a>\n");
 
-  String requestIn = request;
-  requestIn.replace("GET ", ""); requestIn.replace(" HTTP/1.1", "");
-  Serial.println("---WEB PAGE OUTPUT---");
-  Serial.println(request);
-  Serial.println("---END OF WEB PAGE OUTPUT---");
-  client.println("<i>Current Request:</i><br><b>");
-  client.println(requestIn);
-  client.println("</b><hr>");
+  clientResponse.concat("<i>Current Request:</i><br><b>\n");
+  clientResponse.concat(request);
+  clientResponse.concat("\n</b><hr>");
 
-  // Reading temperature or humidity takes about 250 milliseconds!
-  // Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
-  float h = dht.readHumidity();
-  float tc = dht.readTemperature();
-  float tf = (tc * 9.0 / 5.0) + 32.0;
+  clientResponse.concat("<pre>\n");
+  // HANDLE DHT
+  #if useDHT==true
+    // Reading temperature or humidity takes about 250 milliseconds! Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
+    float h = dht.readHumidity();
+    float tc = dht.readTemperature();
+    float tf = (tc * 9.0 / 5.0) + 32.0;
+    // check if returns are valid, if they are NaN (not a number) then something went wrong!
+    if (isnan(tc) || isnan(h)) {
+      Serial.println("Failed to read from DHT");
+    } else {
+      clientResponse.concat("Temperature="); clientResponse.concat(String(tc,1)); clientResponse.concat((char)176); clientResponse.concat("C "); clientResponse.concat(round(tf)); clientResponse.concat((char)176); clientResponse.concat("F\n");
+      clientResponse.concat("Humidity="); clientResponse.concat(round(h)); clientResponse.concat("%\n");
+    }
+  #endif
+  clientResponse.concat("UpTime="); clientResponse.concat(uptime()); clientResponse.concat("\n");
+  clientResponse.concat(freeRam());
+  clientResponse.concat("\n</pre>\n"); clientResponse.concat("<hr>\n");
 
-  // check if returns are valid, if they are NaN (not a number) then something went wrong!
-  client.println("<pre>");
-  if (isnan(tc) || isnan(h)) {
-    Serial.println("Failed to read from DHT");
-  } else {
-    client.print("Temperature="); client.print(tc,1); client.print((char)176); client.print("C "); client.print(round(tf)); client.print((char)176); client.println("F");
-    client.print("Humidity="); client.print(round(h)); client.println("%");
-  }
-  client.print("UpTime="); client.println(uptime());
-  client.println(freeRam());
-  client.println("</pre>"); client.println("<hr>");
-
-  client.print("<div class='center'>RELAY1 pin is now: ");
+  clientResponse.concat("<div class='center'>RELAY1 pin is now: ");
   if(use5Vrelay==true) {
-    if(digitalRead(relayPin1) == LOW) { client.println("On"); } else { client.println("Off"); }
+    if(digitalRead(relayPin1) == LOW) { clientResponse.concat("On"); } else { clientResponse.concat("Off"); }
   } else {
-    if(digitalRead(relayPin1) == HIGH) { client.println("On"); } else { client.println("Off"); }
+    if(digitalRead(relayPin1) == HIGH) { clientResponse.concat("On"); } else { clientResponse.concat("Off"); }
   }
-  client.println("<br><a href=\"/RELAY1=ON\"><button onClick=\"parent.location='/RELAY1=ON'\">Turn On</button></a>");
-  client.println("<a href=\"/RELAY1=OFF\"><button onClick=\"parent.location='/RELAY1=OFF'\">Turn Off</button></a><br/>");
-  client.println("<a href=\"/RELAY1=MOMENTARY\"><button onClick=\"parent.location='/RELAY1=MOMENTARY'\">MOMENTARY</button></a><br/></div>");
-
-  client.println("<hr>");
-  client.print("<div class='center'>RELAY2 pin is now: ");
+  clientResponse.concat("\n<br><a href=\"/RELAY1=ON\"><button onClick=\"parent.location='/RELAY1=ON'\">Turn On</button></a>\n");
+  clientResponse.concat("<a href=\"/RELAY1=OFF\"><button onClick=\"parent.location='/RELAY1=OFF'\">Turn Off</button></a>\n");
+  clientResponse.concat("<a href=\"/RELAY1=MOMENTARY\"><button onClick=\"parent.location='/RELAY1=MOMENTARY'\">MOMENTARY</button></a><br/></div><hr>\n");
+  
+  clientResponse.concat("<div class='center'>RELAY2 pin is now: ");
   if(use5Vrelay==true) {
-    if(digitalRead(relayPin2) == LOW) { client.println("On"); } else { client.println("Off"); }
+    if(digitalRead(relayPin2) == LOW) { clientResponse.concat("On"); } else { clientResponse.concat("Off"); }
   } else {
-    if(digitalRead(relayPin2) == HIGH) { client.println("On"); } else { client.println("Off"); }
+    if(digitalRead(relayPin2) == HIGH) { clientResponse.concat("On"); } else { clientResponse.concat("Off"); }
   }
-  client.println("<br><a href=\"/RELAY2=ON\"><button onClick=\"parent.location='/RELAY2=ON'\">Turn On</button></a>");
-  client.println("<a href=\"/RELAY2=OFF\"><button onClick=\"parent.location='/RELAY2=OFF'\">Turn Off</button></a><br/>");
-  client.println("<a href=\"/RELAY2=MOMENTARY\"><button onClick=\"parent.location='/RELAY2=MOMENTARY'\">MOMENTARY</button></a><br/></div>");
+  clientResponse.concat("\n<br><a href=\"/RELAY2=ON\"><button onClick=\"parent.location='/RELAY2=ON'\">Turn On</button></a>\n");
+  clientResponse.concat("<a href=\"/RELAY2=OFF\"><button onClick=\"parent.location='/RELAY2=OFF'\">Turn Off</button></a>\n");
+  clientResponse.concat("<a href=\"/RELAY2=MOMENTARY\"><button onClick=\"parent.location='/RELAY2=MOMENTARY'\">MOMENTARY</button></a></div><hr>\n");
+  
+  clientResponse.concat("<div class='center'><input id=\"RebootFrequencyDays\" type=\"text\" name=\"RebootFrequencyDays\" value=\"");
+  EEPROM.begin(1);
+  int days=EEPROM.read(0);
+  clientResponse.concat(days);
+  clientResponse.concat("\" maxlength=\"3\" size=\"2\" min=\"0\" max=\"255\">&nbsp;&nbsp;&nbsp;<button style=\"line-height: 1em; margin: 3px; padding: 3px 3px;\" onClick=\"parent.location='/RebootFrequencyDays='+document.getElementById('RebootFrequencyDays').value;\">SAVE</button><br>Days between reboots.<br>0 to disable & by default, 255 days is the max allowed.");
+  clientResponse.concat("<button onClick=\"javascript: if (confirm(\'Are you sure you want to reboot?\')) parent.location='/RebootNow';\">Reboot Now</button><br></div><hr>\n");
 
-  client.println("<hr><div class='center'><a target='_blank' href='https://community.smartthings.com/t/raspberry-pi-to-php-to-gpio-to-relay-to-gate-garage-trigger/43335'>Project on SmartThings Community</a></br>");
-  client.println("<a target='_blank' href='https://github.com/JZ-SmartThings/SmartThings/tree/master/Devices/Generic%20HTTP%20Device'>Project on GitHub</a></br></div></html>");
-
-  delay(1);
-  Serial.println("Client disonnected");
-  Serial.println("");
+  clientResponse.concat("<div class='center'><a target='_blank' href='https://community.smartthings.com/t/raspberry-pi-to-php-to-gpio-to-relay-to-gate-garage-trigger/43335'>Project on SmartThings Community</a></br>\n");
+  clientResponse.concat("<br><button onClick=\"javascript: if (confirm(\'Are you sure you want to reboot?\')) parent.location='/RebootNow';\">Reboot Now</button><br></div><hr>\n");
+  return clientResponse;
 }
 
 String freeRam () {

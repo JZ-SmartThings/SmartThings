@@ -1,15 +1,19 @@
 # Generic HTTP Device
+Link to the project: https://community.smartthings.com/t/43335
 
 This project consists of a Raspberry Pi running Raspbian OS. It runs HTTPD with index.php as the source. The PHP runs the gpio command in order to enable the pins on the Pi. The code sample in the PHP file causes a relay to momentarily turn on then off. I'm using this on a gate so the short/momentary capability was key. However, it's very customizable and now offers on/off states for both switches. For advanced/full instructions on installing and configuring Raspbian OS, see the project link below.
 
-Link to the project: https://community.smartthings.com/t/43335
+The code and project expanded to the use of Atmel/AVR devices like Arduino UNO/Nano/Mega and the WIFI capable SOC like ESP8266/NodeMCU/WeMos D1 Mini. The code can use the popular Ethernet module ENC28J60 using a custom library linked below:
+https://github.com/UIPEthernet/UIPEthernet
 
 The Groovy file is the Device Handler for SmartThings.
 index.php is meant to reside in /var/www/html folder of the Raspbery Pi and runs the external gpio command in Linux.
 At the top of index.php, change the first variable to "true" instead of "false" and this will make the PHP page protected with basic authentication. After making that change, make sure to change the SmartThings preferences for the device.
+The *.ino files are the Arduino IDE code samples. Verify the few options at the top of the script before flashing your device.
 
 This project was tested successfully via an external IP, Pollster and with an Amazon Echo/Alexa. Echo can run TWO functions in my app. The ON command triggers the main function and OFF triggers the custom function but can be changed to only control the Main switch.
 
+</br>v1.0.20170108 - ESP8266/NodeMCU can now be wired with an ENC28J60 using modified UIPEthernet library. Ability to use transistor/mosfet rather than relays. Reboot is now optionally modified via the web-page & stored in the first byte of the EEPROM thus the setting will survive a reboot or a flash. ST code now will work with an invalid header (impacts ESP8266 & ENC28J60 unreliability). Wiring diagrams updated.
 </br>v1.0.20161231 - Arduino sketch enhancements & fixes: Added free memory/heap logic. UpTime reports day/days correctly now. Replaced reboot logic with a simple while loop to cause a soft watchdog reset. Switched to use5Vrelay=true to match wiring diagrams. Added abort when favicon.ico request is sent.
 </br>v1.0.20161223 - Added UpTime for the Arduino IDE samples. Added device name & IP at the top of SmartThings screen. Added wiring for Arduino Nano & a generic ENC28J60 ethernet board.
 </br>v1.0.20160806 - Security issue with the ESP8266 library, read this post: https://community.smartthings.com/t/esp8266-nodemcu-arduino-based-tv-remote/50161/22
@@ -34,6 +38,7 @@ This project was tested successfully via an external IP, Pollster and with an Am
 <img src="https://raw.githubusercontent.com/JZ-SmartThings/SmartThings/master/Devices/Generic%20HTTP%20Device/Screenshot_Arduino.png">
 <img src="https://raw.githubusercontent.com/JZ-SmartThings/SmartThings/master/Devices/Generic%20HTTP%20Device/Screenhot_Prototype.jpg">
 <img src="https://raw.githubusercontent.com/JZ-SmartThings/SmartThings/master/Devices/Generic%20HTTP%20Device/WIRING/NodeMCU-DualRelay5V.png">
+<img src="https://raw.githubusercontent.com/JZ-SmartThings/SmartThings/master/Devices/Generic%20HTTP%20Device/WIRING/NodeMCU-ENC28J60-DualRelay5V.png">
 <img src="https://raw.githubusercontent.com/JZ-SmartThings/SmartThings/master/Devices/Generic%20HTTP%20Device/WIRING/ArduinoNano-DualRelay5V.png">
 <img src="https://raw.githubusercontent.com/JZ-SmartThings/SmartThings/master/Devices/Generic%20HTTP%20Device/WIRING/ArduinoNano-ENC28J60-DualRelay5V.png">
 <img src="https://raw.githubusercontent.com/JZ-SmartThings/SmartThings/master/Devices/Generic%20HTTP%20Device/WIRING/ArduinoUNO-ENC28J60-DualRelay5V.png">

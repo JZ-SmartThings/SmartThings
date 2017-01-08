@@ -1,7 +1,7 @@
 /**
- *  Generic HTTP Device v1.0.20161223
+ *  Generic HTTP Device v1.0.20170108
  *  Source code can be found here: https://github.com/JZ-SmartThings/SmartThings/blob/master/Devices/Generic%20HTTP%20Device/GenericHTTPDevice.groovy
- *  Copyright 2016 JZ
+ *  Copyright 2017 JZ
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  *  in compliance with the License. You may obtain a copy of the License at:
@@ -299,10 +299,8 @@ def parse(String description) {
 	def jsonlist = [:]
 	def bodyReturned = ' '
 	def headersReturned = ' '
-	if (descMap["body"] && descMap["headers"]) {
-		bodyReturned = new String(descMap["body"].decodeBase64())
-		headersReturned = new String(descMap["headers"].decodeBase64())
-	}
+	if (descMap["body"]) { bodyReturned = new String(descMap["body"].decodeBase64()) }
+	if (descMap["headers"]) { headersReturned = new String(descMap["headers"].decodeBase64()) }
 	//log.debug "BODY---" + bodyReturned
 	//log.debug "HEADERS---" + headersReturned
 
@@ -313,7 +311,7 @@ def parse(String description) {
 			jsonlist = slurper.parseText(body)
 			//log.debug "JSONLIST---" + jsonlist."CPU"
 			jsonlist.put ("Date", new Date().format("yyyy-MM-dd h:mm:ss a", location.timeZone))
-		} else if (headersReturned.contains("text/html")) {
+		} else {
 			jsonlist.put ("Date", new Date().format("yyyy-MM-dd h:mm:ss a", location.timeZone))
 			def data=bodyReturned.eachLine { line ->
 				if (line.contains('CPU=')) { jsonlist.put ("CPU", line.replace("CPU=","")) }
@@ -358,7 +356,7 @@ def parse(String description) {
 			}
 		}
 	}
-	if (descMap["body"] && (headersReturned.contains("application/json") || headersReturned.contains("text/html"))) {
+	if (descMap["body"]) {
 		//putImageInS3(descMap)
 		if (jsonlist."Refresh"=="Authentication Required!") {
 			sendEvent(name: "refreshTriggered", value: "Use Authentication Credentials", unit: "")
