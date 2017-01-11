@@ -1,5 +1,5 @@
-/**
- *  ESP8266-12E / NodeMCU / WeMos D1 Mini WiFi & ENC28J60 Sample v1.0.20170108
+ /**
+ *  ESP8266-12E / NodeMCU / WeMos D1 Mini WiFi & ENC28J60 Sample v1.0.20170110
  *  Source code can be found here: https://github.com/JZ-SmartThings/SmartThings/blob/master/Devices/Generic%20HTTP%20Device
  *  Copyright 2017 JZ
  *
@@ -10,7 +10,6 @@
  *  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
  *  for the specific language governing permissions and limitations under the License.
  */
-
 #include <EEPROM.h>
 
 // SET YOUR NETWORK MODE TO USE WIFI OR ENC28J60
@@ -27,7 +26,7 @@ int relayPin2 = D2; // GPIO4 = D2
 // USE BASIC HTTP AUTH?
 const bool useAuth = false;
 
-// USE DHT TEMP/HUMIDITY SENSOR? WHICH PIN? MAKE SURE TO DEFINE WHICH SENSOR MODEL BELOW.
+// USE DHT TEMP/HUMIDITY SENSOR? DESIGNATE WHICH PIN. MAKE SURE TO DEFINE WHICH SENSOR MODEL BELOW BY UNCOMMENTING IT.
 #define useDHT false
 #define DHTPIN D3     // what pin is the DHT on?
 #if useDHT==true
@@ -107,7 +106,7 @@ void loop()
 {
   // SERIAL MESSAGE
   if (millis()%900000==0) { // every 15 minutes
-    Serial.print("UpTime:"); Serial.println(uptime());
+    Serial.print("UpTime: "); Serial.println(uptime());
   }
 
   // REBOOT
@@ -259,9 +258,9 @@ String clientResponse () {
   #else
     clientResponse.concat("ENC28J60");
   #endif
-  clientResponse.concat(" DUAL SWITCH</title></head><meta name=viewport content='width=500'>\n<style type='text/css'>\nbutton {line-height: 1.8em; margin: 10px; padding: 3px 12px;}");
-  clientResponse.concat("\nbody {text-align:center;}\ndiv {border:solid 1px; margin: 3px; width:150px;}\n.center { margin: auto; width: 350px; border: 3px solid #73AD21; padding: 3px;");
-  clientResponse.concat("</style></head><h2><a href='/'>ESP8266 & ");
+  clientResponse.concat(" DUAL SWITCH</title></head><meta name=viewport content='width=500'>\n<style type='text/css'>\nbutton {line-height: 1.8em; margin: 5px; padding: 3px 7px;}");
+  clientResponse.concat("\nbody {text-align:center;}\ndiv {border:solid 1px; margin: 3px; width:150px;}\n.center { margin: auto; width: 400px; border: 3px solid #73AD21; padding: 3px;");
+  clientResponse.concat("</style></head>\n<h2><a href='/'>ESP8266 & ");
   #if useWIFI==true
     clientResponse.concat("WIFI");
   #else
@@ -276,25 +275,44 @@ String clientResponse () {
   clientResponse.concat("\n</b><hr>");
 
   clientResponse.concat("<pre>\n");
+  clientResponse.concat("UpTime="); clientResponse.concat(uptime()); clientResponse.concat("\n");
+  clientResponse.concat(freeRam());
+  clientResponse.concat("\n");
   // HANDLE DHT
   #if useDHT==true
     // Reading temperature or humidity takes about 250 milliseconds! Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
     float h = dht.readHumidity();
     float tc = dht.readTemperature();
+    // SENSOR RETRY LOGIC
+    int counter=1;
+    while((isnan(tc) || isnan(h)) || counter>5){
+        h = dht.readHumidity();
+        tc = dht.readTemperature();
+        counter += 1;
+    }
     float tf = (tc * 9.0 / 5.0) + 32.0;
     // check if returns are valid, if they are NaN (not a number) then something went wrong!
     if (isnan(tc) || isnan(h)) {
       Serial.println("Failed to read from DHT");
+      clientResponse.concat("DHT Sensor Failed\n");
     } else {
+      #if DHTTYPE==DHT11
+        clientResponse.concat("<b><i>DHT11 Sensor Information:</i></b>\n");
+      #elif DHTTYPE==DHT22
+        clientResponse.concat("<b><i>DHT22 Sensor Information:</i></b>\n");
+      #elif DHTTYPE==DHT21
+        clientResponse.concat("<b><i>DHT21 Sensor Information:</i></b>\n");
+      #endif
       clientResponse.concat("Temperature="); clientResponse.concat(String(tc,1)); clientResponse.concat((char)176); clientResponse.concat("C "); clientResponse.concat(round(tf)); clientResponse.concat((char)176); clientResponse.concat("F\n");
       clientResponse.concat("Humidity="); clientResponse.concat(round(h)); clientResponse.concat("%\n");
     }
+  #else
+    clientResponse.concat("DHT Sensor Not Used\n");
   #endif
-  clientResponse.concat("UpTime="); clientResponse.concat(uptime()); clientResponse.concat("\n");
-  clientResponse.concat(freeRam());
-  clientResponse.concat("\n</pre>\n"); clientResponse.concat("<hr>\n");
+  clientResponse.concat("</pre>\n"); clientResponse.concat("<hr>\n");
 
-  clientResponse.concat("<div class='center'>RELAY1 pin is now: ");
+  clientResponse.concat("<div class='center'>\n");
+  clientResponse.concat("RELAY1 pin is now: ");
   if(use5Vrelay==true) {
     if(digitalRead(relayPin1) == LOW) { clientResponse.concat("On"); } else { clientResponse.concat("Off"); }
   } else {
@@ -304,7 +322,8 @@ String clientResponse () {
   clientResponse.concat("<a href=\"/RELAY1=OFF\"><button onClick=\"parent.location='/RELAY1=OFF'\">Turn Off</button></a>\n");
   clientResponse.concat("<a href=\"/RELAY1=MOMENTARY\"><button onClick=\"parent.location='/RELAY1=MOMENTARY'\">MOMENTARY</button></a><br/></div><hr>\n");
   
-  clientResponse.concat("<div class='center'>RELAY2 pin is now: ");
+  clientResponse.concat("<div class='center'>\n");
+  clientResponse.concat("RELAY2 pin is now: ");
   if(use5Vrelay==true) {
     if(digitalRead(relayPin2) == LOW) { clientResponse.concat("On"); } else { clientResponse.concat("Off"); }
   } else {
@@ -318,11 +337,11 @@ String clientResponse () {
   EEPROM.begin(1);
   int days=EEPROM.read(0);
   clientResponse.concat(days);
-  clientResponse.concat("\" maxlength=\"3\" size=\"2\" min=\"0\" max=\"255\">&nbsp;&nbsp;&nbsp;<button style=\"line-height: 1em; margin: 3px; padding: 3px 3px;\" onClick=\"parent.location='/RebootFrequencyDays='+document.getElementById('RebootFrequencyDays').value;\">SAVE</button><br>Days between reboots.<br>0 to disable & by default, 255 days is the max allowed.");
-  clientResponse.concat("<button onClick=\"javascript: if (confirm(\'Are you sure you want to reboot?\')) parent.location='/RebootNow';\">Reboot Now</button><br></div><hr>\n");
+  clientResponse.concat("\" maxlength=\"3\" size=\"2\" min=\"0\" max=\"255\">&nbsp;&nbsp;&nbsp;<button style=\"line-height: 1em; margin: 3px; padding: 3px 3px;\" onClick=\"parent.location='/RebootFrequencyDays='+document.getElementById('RebootFrequencyDays').value;\">SAVE</button><br>Days between reboots.<br>0 to disable & 255 days is max.");
+  clientResponse.concat("<br><button onClick=\"javascript: if (confirm(\'Are you sure you want to reboot?\')) parent.location='/RebootNow';\">Reboot Now</button><br></div><hr>\n");
 
   clientResponse.concat("<div class='center'><a target='_blank' href='https://community.smartthings.com/t/raspberry-pi-to-php-to-gpio-to-relay-to-gate-garage-trigger/43335'>Project on SmartThings Community</a></br>\n");
-  clientResponse.concat("<br><button onClick=\"javascript: if (confirm(\'Are you sure you want to reboot?\')) parent.location='/RebootNow';\">Reboot Now</button><br></div><hr>\n");
+  clientResponse.concat("<a target='_blank' href='https://github.com/JZ-SmartThings/SmartThings/tree/master/Devices/Generic%20HTTP%20Device'>Project on GitHub</a></br></div></html>\n");
   return clientResponse;
 }
 

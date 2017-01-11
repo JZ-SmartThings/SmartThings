@@ -1,5 +1,5 @@
  /**
- *  Arduino Nano & Ethernet Shield Sample v1.0.20170108
+ *  Arduino Nano & Ethernet Shield Sample v1.0.20170110
  *  Source code can be found here: https://github.com/JZ-SmartThings/SmartThings/blob/master/Devices/Generic%20HTTP%20Device
  *  Copyright 2017 JZ
  *
@@ -10,13 +10,12 @@
  *  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
  *  for the specific language governing permissions and limitations under the License.
  */
-
 #include <UIPEthernet.h>
 #include <EEPROM.h>
 
 // DECIDE WHETHER TO SEND HIGH OR LOW TO THE PINS AND WHICH PINS ARE USED FOR TRIGGERS
 // IF USING 3.3V RELAY, TRANSISTOR OR MOSFET THEN SET THE BELOW VARIABLE TO FALSE
-const bool use5Vrelay = true;
+const bool use5Vrelay = false;
 int relayPin1 = 2; // GPIO5 = D2
 int relayPin2 = 3; // GPIO6 = D3
 
@@ -58,7 +57,7 @@ void loop()
 {
   // SERIAL MESSAGE
   if (millis()%900000==0) { // every 15 minutes
-    Serial.print("UpTime:"); Serial.println(uptime());
+    Serial.print("UpTime: "); Serial.println(uptime());
   }
 
   // REBOOT
@@ -138,9 +137,9 @@ void loop()
           client.println(F("Content-Type: text/html"));
           client.println(F("\n")); //  do not forget this one
           client.println(F("<!DOCTYPE HTML>"));
-          client.println(F("<html><head><title>Arduino & ENC28J60 Dual Switch</title></head><meta name=viewport content='width=500'>\n<style type='text/css'>\nbutton {line-height: 1.8em; margin: 10px; padding: 3px 12px;}"));
-          client.println(F("\nbody {text-align:center;}\ndiv {border:solid 1px; margin: 3px; width:150px;}\n.center { margin: auto; width: 350px; border: 3px solid #73AD21; padding: 3px;"));
-          client.println(F("</style></head><h3><a href='/'>ARDUINO & ENC28J60 DUAL SWITCH</h3><h3>"));
+          client.println(F("<html><head><title>Arduino & ENC28J60 Dual Switch</title></head><meta name=viewport content='width=500'>\n<style type='text/css'>\nbutton {line-height: 1.8em; margin: 5px; padding: 3px 7px;}"));
+          client.println(F("\nbody {text-align:center;}\ndiv {border:solid 1px; margin: 3px; width:150px;}\n.center { margin: auto; width: 400px; border: 3px solid #73AD21; padding: 3px;"));
+          client.println(F("</style></head>\n<h3><a href='/'>ARDUINO & ENC28J60 DUAL SWITCH</h3><h3>"));
           client.println(currentIP);
           client.println(F("</h3>\n</a>\n"));
 
@@ -153,23 +152,25 @@ void loop()
           client.println(freeRam());
           client.println(F("</pre>")); client.println(F("<hr>\n"));
 
-          client.println(F("<div class='center'>RELAY1 pin is now: "));
+          client.println(F("<div class='center'>\n"));
+          client.print(F("RELAY1 pin is now: "));
           if(use5Vrelay==true) {
             if(digitalRead(relayPin1) == LOW) { client.print(F("On")); } else { client.print(F("Off")); }
           } else {
             if(digitalRead(relayPin1) == HIGH) { client.print(F("On")); } else { client.print(F("Off")); }
           }
-          client.println(F("<br><a href=\"/RELAY1=ON\"><button onClick=\"parent.location='/RELAY1=ON'\">Turn On</button></a>\n"));
+          client.println(F("\n<br><a href=\"/RELAY1=ON\"><button onClick=\"parent.location='/RELAY1=ON'\">Turn On</button></a>\n"));
           client.println(F("<a href=\"/RELAY1=OFF\"><button onClick=\"parent.location='/RELAY1=OFF'\">Turn Off</button></a>\n"));
           client.println(F("<a href=\"/RELAY1=MOMENTARY\"><button onClick=\"parent.location='/RELAY1=MOMENTARY'\">MOMENTARY</button></a><br/></div><hr>\n"));
 
-          client.println(F("<div class='center'>RELAY2 pin is now: "));
+          client.println(F("<div class='center'>\n"));
+          client.print(F("RELAY2 pin is now: "));
           if(use5Vrelay==true) {
             if(digitalRead(relayPin2) == LOW) { client.print(F("On")); } else { client.print(F("Off")); }
           } else {
             if(digitalRead(relayPin2) == HIGH) { client.print(F("On")); } else { client.print(F("Off")); }
           }
-          client.println(F("<br><a href=\"/RELAY2=ON\"><button onClick=\"parent.location='/RELAY2=ON'\">Turn On</button></a>\n"));
+          client.println(F("\n<br><a href=\"/RELAY2=ON\"><button onClick=\"parent.location='/RELAY2=ON'\">Turn On</button></a>\n"));
           client.println(F("<a href=\"/RELAY2=OFF\"><button onClick=\"parent.location='/RELAY2=OFF'\">Turn Off</button></a>\n"));
           client.println(F("<a href=\"/RELAY2=MOMENTARY\"><button onClick=\"parent.location='/RELAY2=MOMENTARY'\">MOMENTARY</button></a><br/></div><hr>\n"));
 
@@ -177,7 +178,7 @@ void loop()
           //EEPROM.begin(1);
           int days=EEPROM.read(0);
           client.println(days);
-          client.println(F("\" maxlength=\"3\" size=\"2\" min=\"0\" max=\"255\">&nbsp;&nbsp;&nbsp;<button style=\"line-height: 1em; margin: 3px; padding: 3px 3px;\" onClick=\"parent.location='/RebootFrequencyDays='+document.getElementById('RebootFrequencyDays').value;\">SAVE</button><br>Days between reboots.<br>0 to disable & by default, 255 days is the max allowed."));
+          client.println(F("\" maxlength=\"3\" size=\"2\" min=\"0\" max=\"255\">&nbsp;&nbsp;&nbsp;<button style=\"line-height: 1em; margin: 3px; padding: 3px 3px;\" onClick=\"parent.location='/RebootFrequencyDays='+document.getElementById('RebootFrequencyDays').value;\">SAVE</button><br>Days between reboots.<br>0 to disable & 255 days is max."));
           client.println(F("<br><button onClick=\"javascript: if (confirm(\'Are you sure you want to reboot?\')) parent.location='/RebootNow';\">Reboot Now</button><br></div><hr>\n"));
 
           client.println(F("<div class='center'><a target='_blank' href='https://community.smartthings.com/t/raspberry-pi-to-php-to-gpio-to-relay-to-gate-garage-trigger/43335'>Project on SmartThings Community</a></br>\n"));
