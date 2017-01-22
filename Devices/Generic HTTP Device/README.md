@@ -13,6 +13,7 @@ The *.ino files are the Arduino IDE code samples. Verify the few options at the 
 
 This project was tested successfully via an external IP, Pollster and with an Amazon Echo/Alexa. Echo can run TWO functions in my app. The ON command triggers the main function and OFF triggers the custom function but can be changed to only control the Main switch.
 
+</br>v1.0.20170121 - NodeMCU sketch is now able to do OTA updates via a web-page or directly via the Arduino IDE.
 </br>v1.0.20170110 - Arduino & NodeMCU code updated. Stateful on/off functionality fixed. DHT sensor will now retry 5 times so should return results with more success than before. DHT part number displayed.
 </br>v1.0.20170108 - ESP8266/NodeMCU can now be wired with an ENC28J60 using modified UIPEthernet library. Ability to use transistor/mosfet rather than relays. Reboot is now optionally modified via the web-page & stored in the first byte of the EEPROM thus the setting will survive a reboot or a flash. ST code now will work with an invalid header (impacts ESP8266 & ENC28J60 unreliability). Wiring diagrams updated.
 </br>v1.0.20161231 - Arduino sketch enhancements & fixes: Added free memory/heap logic. UpTime reports day/days correctly now. Replaced reboot logic with a simple while loop to cause a soft watchdog reset. Switched to use5Vrelay=true to match wiring diagrams. Added abort when favicon.ico request is sent.

@@ -1,5 +1,5 @@
  /**
- *  ESP8266-12E / NodeMCU / WeMos D1 Mini WiFi & ENC28J60 Sample v1.0.20170110
+ *  ESP8266-12E / NodeMCU / WeMos D1 Mini WiFi & ENC28J60 Sample v1.0.20170121
  *  Source code can be found here: https://github.com/JZ-SmartThings/SmartThings/blob/master/Devices/Generic%20HTTP%20Device
  *  Copyright 2017 JZ
  *
@@ -19,7 +19,7 @@ const char* password = "WIFI_PASSWORD";
 
 // DECIDE WHETHER TO SEND HIGH OR LOW TO THE PINS AND WHICH PINS ARE USED FOR TRIGGERS
 // IF USING 3.3V RELAY, TRANSISTOR OR MOSFET THEN SET THE BELOW VARIABLE TO FALSE
-const bool use5Vrelay = false;
+const bool use5Vrelay = true;
 int relayPin1 = D1; // GPIO5 = D1
 int relayPin2 = D2; // GPIO4 = D2
 
@@ -30,10 +30,11 @@ const bool useAuth = false;
 #define useDHT false
 #define DHTPIN D3     // what pin is the DHT on?
 #if useDHT==true
+  // Use library version 1.2.3 as 1.3.0 gives error
   #include <DHT.h>
   // Uncomment whatever type of temperature sensor you're using!
-  //#define DHTTYPE DHT11   // DHT 11
-  #define DHTTYPE DHT22   // DHT 22  (AM2302)
+  #define DHTTYPE DHT11   // DHT 11
+  //#define DHTTYPE DHT22   // DHT 22  (AM2302)
   //#define DHTTYPE DHT21   // DHT 21 (AM2301)
   DHT dht(DHTPIN, DHTTYPE);
 #endif
@@ -44,7 +45,14 @@ String currentIP, request, fullrequest;
 // LOAD UP NETWORK LIB & PORT
 #if useWIFI==true
   #include <ESP8266WiFi.h>
+  #include <WiFiClient.h>
+  #include <ESP8266WebServer.h>
+  #include <ESP8266mDNS.h>
+  #include <ESP8266HTTPUpdateServer.h>
+  #include <ArduinoOTA.h>
   WiFiServer server(80);
+  ESP8266WebServer httpServer(81);
+  ESP8266HTTPUpdateServer httpUpdater;
 #else
   #include <UIPEthernet.h>
   EthernetServer server = EthernetServer(80);
@@ -81,7 +89,23 @@ void setup()
     Serial.print("Use this URL to connect: ");
     Serial.print("http://"); Serial.print(WiFi.localIP()); Serial.println("/");
     currentIP=WiFi.localIP().toString();
+
+    // OTA WEB PAGE LOGIC IN SETUP
+    //MDNS.begin(host);
+    httpUpdater.setup(&httpServer);
+    httpServer.begin();
+    MDNS.addService("http", "tcp", 81);
+    Serial.print("HTTPUpdateServer ready! Open following location: http://"); Serial.print(currentIP); Serial.println(":81/update in your browser\n");
+
+    // OTA DIRECTLY FROM IDE
+    ArduinoOTA.setHostname("OTA-ESP8266-PORT81");
+    ArduinoOTA.onStart([]() { });
+    ArduinoOTA.onEnd([]() { });
+    ArduinoOTA.onError([](ota_error_t error) { ESP.restart(); });
+    ArduinoOTA.begin();
+
   #else
+    // ENC28J60 ETHERNET
     uint8_t mac[6] = {0xFF,0x01,0x02,0x03,0x04,0x05};
     IPAddress myIP(192,168,0,226);
     Ethernet.begin(mac,myIP);
@@ -100,10 +124,15 @@ void setup()
     Serial.print("dnsServerIP: "); Serial.println(Ethernet.dnsServerIP());
     currentIP=Ethernet.localIP().toString();
   #endif
+  Serial.println("Setup finished...");
 }
 
 void loop()
 {
+  // OTA
+  httpServer.handleClient();
+  ArduinoOTA.handle();
+
   // SERIAL MESSAGE
   if (millis()%900000==0) { // every 15 minutes
     Serial.print("UpTime: "); Serial.println(uptime());
@@ -187,12 +216,14 @@ void loop()
 } //loop
 
 void handleRequest() {
+  Serial.println("Starting handleRequest...");
   // Match the request
   if (request.indexOf("/favicon.ico") > -1)  {
     return;
   }
   if (request.indexOf("/RebootNow") != -1)  {
-    while(true);
+    //while(true);
+    ESP.restart();
   }
   if (request.indexOf("RebootFrequencyDays=") != -1)  {
     EEPROM.begin(1);
@@ -260,15 +291,15 @@ String clientResponse () {
   #endif
   clientResponse.concat(" DUAL SWITCH</title></head><meta name=viewport content='width=500'>\n<style type='text/css'>\nbutton {line-height: 1.8em; margin: 5px; padding: 3px 7px;}");
   clientResponse.concat("\nbody {text-align:center;}\ndiv {border:solid 1px; margin: 3px; width:150px;}\n.center { margin: auto; width: 400px; border: 3px solid #73AD21; padding: 3px;");
-  clientResponse.concat("</style></head>\n<h2><a href='/'>ESP8266 & ");
+  clientResponse.concat("</style></head>\n<h2 style=\"height: 15px;\"><a href='/'>ESP8266 & ");
   #if useWIFI==true
     clientResponse.concat("WIFI");
   #else
     clientResponse.concat("ENC28J60");
   #endif
-  clientResponse.concat(" DUAL SWITCH</h2><h3>");
+  clientResponse.concat(" DUAL SWITCH</h2><h3 style=\"height: 15px;\">");
   clientResponse.concat(currentIP);
-  clientResponse.concat("</h3>\n</a>\n");
+  clientResponse.concat("</a>\n</h3>\n");
 
   clientResponse.concat("<i>Current Request:</i><br><b>\n");
   clientResponse.concat(request);
@@ -284,8 +315,9 @@ String clientResponse () {
     float h = dht.readHumidity();
     float tc = dht.readTemperature();
     // SENSOR RETRY LOGIC
+    Serial.println("Starting DHT retry logic...");
     int counter=1;
-    while((isnan(tc) || isnan(h)) || counter>5){
+    while(counter<6 && (isnan(tc) || isnan(h))){
         h = dht.readHumidity();
         tc = dht.readTemperature();
         counter += 1;
@@ -296,13 +328,9 @@ String clientResponse () {
       Serial.println("Failed to read from DHT");
       clientResponse.concat("DHT Sensor Failed\n");
     } else {
-      #if DHTTYPE==DHT11
-        clientResponse.concat("<b><i>DHT11 Sensor Information:</i></b>\n");
-      #elif DHTTYPE==DHT22
-        clientResponse.concat("<b><i>DHT22 Sensor Information:</i></b>\n");
-      #elif DHTTYPE==DHT21
-        clientResponse.concat("<b><i>DHT21 Sensor Information:</i></b>\n");
-      #endif
+      clientResponse.concat("<b><i>DHT");
+      clientResponse.concat(DHTTYPE);
+      clientResponse.concat(" Sensor Information:</i></b>\n");
       clientResponse.concat("Temperature="); clientResponse.concat(String(tc,1)); clientResponse.concat((char)176); clientResponse.concat("C "); clientResponse.concat(round(tf)); clientResponse.concat((char)176); clientResponse.concat("F\n");
       clientResponse.concat("Humidity="); clientResponse.concat(round(h)); clientResponse.concat("%\n");
     }
@@ -333,7 +361,11 @@ String clientResponse () {
   clientResponse.concat("<a href=\"/RELAY2=OFF\"><button onClick=\"parent.location='/RELAY2=OFF'\">Turn Off</button></a>\n");
   clientResponse.concat("<a href=\"/RELAY2=MOMENTARY\"><button onClick=\"parent.location='/RELAY2=MOMENTARY'\">MOMENTARY</button></a></div><hr>\n");
   
-  clientResponse.concat("<div class='center'><input id=\"RebootFrequencyDays\" type=\"text\" name=\"RebootFrequencyDays\" value=\"");
+  clientResponse.concat("<div class='center'><a href=\"http://"); clientResponse.concat(currentIP);
+  clientResponse.concat(":81/update\"><button onClick=\"parent.location='http://"); clientResponse.concat(currentIP);
+  clientResponse.concat(":81/update'\">OTA Update</button></a><br>This is the <a target='_blank' href='http://esp8266.github.io/Arduino/versions/2.0.0/doc/ota_updates/ota_updates.html#web-browser'>Web Browser OTA method</a>,<br>Open Start&rarr;Run&rarr;type in %TEMP% then enter.<br>BIN file will be under one of the build* folders.<br>2nd method of <a target='_blank' href='http://esp8266.github.io/Arduino/versions/2.0.0/doc/ota_updates/ota_updates.html#arduino-ide'>OTA directly via Arduino IDE</a>.<hr>\n");
+
+  clientResponse.concat("<input id=\"RebootFrequencyDays\" type=\"text\" name=\"RebootFrequencyDays\" value=\"");
   EEPROM.begin(1);
   int days=EEPROM.read(0);
   clientResponse.concat(days);
