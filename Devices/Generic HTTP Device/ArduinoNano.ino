@@ -1,5 +1,5 @@
  /**
- *  Arduino Nano & Ethernet Shield Sample v1.0.20170110
+ *  Arduino Nano & Ethernet Shield Sample v1.0.20170126
  *  Source code can be found here: https://github.com/JZ-SmartThings/SmartThings/blob/master/Devices/Generic%20HTTP%20Device
  *  Copyright 2017 JZ
  *
@@ -138,10 +138,10 @@ void loop()
           client.println(F("\n")); //  do not forget this one
           client.println(F("<!DOCTYPE HTML>"));
           client.println(F("<html><head><title>Arduino & ENC28J60 Dual Switch</title></head><meta name=viewport content='width=500'>\n<style type='text/css'>\nbutton {line-height: 1.8em; margin: 5px; padding: 3px 7px;}"));
-          client.println(F("\nbody {text-align:center;}\ndiv {border:solid 1px; margin: 3px; width:150px;}\n.center { margin: auto; width: 400px; border: 3px solid #73AD21; padding: 3px;"));
-          client.println(F("</style></head>\n<h3><a href='/'>ARDUINO & ENC28J60 DUAL SWITCH</h3><h3>"));
+          client.println(F("\nbody {text-align:center;}\ndiv {border:solid 1px; margin: 3px; width:150px;}\n.center { margin: auto; width: 400px; border: 3px solid #73AD21; padding: 3px;}"));
+          client.println(F("\nhr {width:400px;}\n</style></head>\n<h3 style=\"height: 15px; margin-top: 0px;\"><a href='/'>ARDUINO & ENC28J60 DUAL SWITCH</h3><h3 style=\"height: 15px;\">"));
           client.println(currentIP);
-          client.println(F("</h3>\n</a>\n"));
+          client.println(F("</a>\n</h3>\n"));
 
           client.println(F("<i>Current Request:</i><br><b>"));
           client.println(request);

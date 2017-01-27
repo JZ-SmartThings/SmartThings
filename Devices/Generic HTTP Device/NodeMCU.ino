@@ -1,5 +1,5 @@
  /**
- *  ESP8266-12E / NodeMCU / WeMos D1 Mini WiFi & ENC28J60 Sample v1.0.20170121
+ *  ESP8266-12E / NodeMCU / WeMos D1 Mini WiFi & ENC28J60 Sample v1.0.20170126
  *  Source code can be found here: https://github.com/JZ-SmartThings/SmartThings/blob/master/Devices/Generic%20HTTP%20Device
  *  Copyright 2017 JZ
  *
@@ -27,14 +27,14 @@ int relayPin2 = D2; // GPIO4 = D2
 const bool useAuth = false;
 
 // USE DHT TEMP/HUMIDITY SENSOR? DESIGNATE WHICH PIN. MAKE SURE TO DEFINE WHICH SENSOR MODEL BELOW BY UNCOMMENTING IT.
-#define useDHT false
+#define useDHT true
 #define DHTPIN D3     // what pin is the DHT on?
 #if useDHT==true
   // Use library version 1.2.3 as 1.3.0 gives error
   #include <DHT.h>
   // Uncomment whatever type of temperature sensor you're using!
-  #define DHTTYPE DHT11   // DHT 11
-  //#define DHTTYPE DHT22   // DHT 22  (AM2302)
+  //#define DHTTYPE DHT11   // DHT 11
+  #define DHTTYPE DHT22   // DHT 22  (AM2302)
   //#define DHTTYPE DHT21   // DHT 21 (AM2301)
   DHT dht(DHTPIN, DHTTYPE);
 #endif
@@ -99,6 +99,9 @@ void setup()
 
     // OTA DIRECTLY FROM IDE
     ArduinoOTA.setHostname("OTA-ESP8266-PORT81");
+    // No authentication by default
+    // ArduinoOTA.setPassword("admin");
+    // ArduinoOTA.setPassword((const char *)"admin");
     ArduinoOTA.onStart([]() { });
     ArduinoOTA.onEnd([]() { });
     ArduinoOTA.onError([](ota_error_t error) { ESP.restart(); });
@@ -189,7 +192,10 @@ void loop()
   Serial.println(request);
   handleRequest();
   delay(10); // pause to make sure pin status is updated for response below
-  client.println(clientResponse());
+  client.println(clientResponse(0));
+  client.println(clientResponse(1));
+  client.println(clientResponse(2));
+  client.println(clientResponse(3));
 
   #if useWIFI==true
     delay(1);
@@ -263,118 +269,141 @@ void handleRequest() {
   }
 }
 
-String clientResponse () {
+String clientResponse (int section) {
   String clientResponse;
-  // BASIC AUTHENTICATION
-  if (useAuth==true)  {
-  // The below Base64 string is gate:gate1 for the username:password
-    if (fullrequest.indexOf("Authorization: Basic Z2F0ZTpnYXRlMQ==") == -1)  {
-      clientResponse.concat("HTTP/1.1 401 Access Denied\n");
-      clientResponse.concat("WWW-Authenticate: Basic realm=\"ESP8266\"\n");
-      clientResponse.concat("Content-Type: text/html\n");
-      clientResponse.concat("\n"); //  do not forget this one
-      clientResponse.concat("Failed : Authentication Required!\n");
-      return clientResponse;
+  if (section==0) {
+    // BASIC AUTHENTICATION
+    if (useAuth==true)  {
+    // The below Base64 string is gate:gate1 for the username:password
+      if (fullrequest.indexOf("Authorization: Basic Z2F0ZTpnYXRlMQ==") == -1)  {
+        clientResponse.concat("HTTP/1.1 401 Access Denied\n");
+        clientResponse.concat("WWW-Authenticate: Basic realm=\"ESP8266\"\n");
+        clientResponse.concat("Content-Type: text/html\n");
+        clientResponse.concat("\n"); //  do not forget this one
+        clientResponse.concat("Failed : Authentication Required!\n");
+        return clientResponse;
+      }
     }
-  }
-
-  // Return the response
-  clientResponse.concat("HTTP/1.1 200 OK\n");
-  clientResponse.concat("Content-Type: text/html\n");
-  clientResponse.concat("\n"); //  do not forget this one
-  clientResponse.concat("<!DOCTYPE HTML>\n");
-  clientResponse.concat("<html><head><title>ESP8266 & ");
-  #if useWIFI==true
-    clientResponse.concat("WIFI");
-  #else
-    clientResponse.concat("ENC28J60");
-  #endif
-  clientResponse.concat(" DUAL SWITCH</title></head><meta name=viewport content='width=500'>\n<style type='text/css'>\nbutton {line-height: 1.8em; margin: 5px; padding: 3px 7px;}");
-  clientResponse.concat("\nbody {text-align:center;}\ndiv {border:solid 1px; margin: 3px; width:150px;}\n.center { margin: auto; width: 400px; border: 3px solid #73AD21; padding: 3px;");
-  clientResponse.concat("</style></head>\n<h2 style=\"height: 15px;\"><a href='/'>ESP8266 & ");
-  #if useWIFI==true
-    clientResponse.concat("WIFI");
-  #else
-    clientResponse.concat("ENC28J60");
-  #endif
-  clientResponse.concat(" DUAL SWITCH</h2><h3 style=\"height: 15px;\">");
-  clientResponse.concat(currentIP);
-  clientResponse.concat("</a>\n</h3>\n");
-
-  clientResponse.concat("<i>Current Request:</i><br><b>\n");
-  clientResponse.concat(request);
-  clientResponse.concat("\n</b><hr>");
-
-  clientResponse.concat("<pre>\n");
-  clientResponse.concat("UpTime="); clientResponse.concat(uptime()); clientResponse.concat("\n");
-  clientResponse.concat(freeRam());
-  clientResponse.concat("\n");
-  // HANDLE DHT
-  #if useDHT==true
-    // Reading temperature or humidity takes about 250 milliseconds! Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
-    float h = dht.readHumidity();
-    float tc = dht.readTemperature();
-    // SENSOR RETRY LOGIC
-    Serial.println("Starting DHT retry logic...");
-    int counter=1;
-    while(counter<6 && (isnan(tc) || isnan(h))){
-        h = dht.readHumidity();
-        tc = dht.readTemperature();
-        counter += 1;
-    }
-    float tf = (tc * 9.0 / 5.0) + 32.0;
-    // check if returns are valid, if they are NaN (not a number) then something went wrong!
-    if (isnan(tc) || isnan(h)) {
-      Serial.println("Failed to read from DHT");
-      clientResponse.concat("DHT Sensor Failed\n");
-    } else {
+  
+    // Return the response
+    clientResponse.concat("HTTP/1.1 200 OK\n");
+    clientResponse.concat("Content-Type: text/html\n");
+    clientResponse.concat("\n"); //  do not forget this one
+    clientResponse.concat("<!DOCTYPE HTML>\n");
+    clientResponse.concat("<html><head><title>ESP8266 & ");
+    #if useWIFI==true
+      clientResponse.concat("WIFI");
+    #else
+      clientResponse.concat("ENC28J60");
+    #endif
+    clientResponse.concat(" DUAL SWITCH</title></head><meta name=viewport content='width=500'>\n<style type='text/css'>\nbutton {line-height: 1.8em; margin: 5px; padding: 3px 7px;}");
+    clientResponse.concat("\nbody {text-align:center;}\ndiv {border:solid 1px; margin: 3px; width:150px;}\n.center { margin: auto; width: 400px; border: 3px solid #73AD21; padding: 3px;}");
+    clientResponse.concat("\nhr {width:400px;}\n</style></head>\n<h2 style=\"height: 15px; margin-top: 0px;\"><a href='/'>ESP8266 & ");
+    #if useWIFI==true
+      clientResponse.concat("WIFI");
+    #else
+      clientResponse.concat("ENC28J60");
+    #endif
+    clientResponse.concat(" DUAL SWITCH</h2><h3 style=\"height: 15px;\">");
+    clientResponse.concat(currentIP);
+    clientResponse.concat("</a>\n</h3>\n");
+  
+    clientResponse.concat("<i>Current Request:</i><br><b>\n");
+    clientResponse.concat(request);
+    clientResponse.concat("\n</b><hr>");
+  } else if (section==1) {
+    clientResponse.concat("<pre>\n");
+    clientResponse.concat("UpTime="); clientResponse.concat(uptime()); clientResponse.concat("\n");
+    clientResponse.concat(freeRam());
+    clientResponse.concat("\n");
+    // HANDLE DHT
+    #if useDHT==true
       clientResponse.concat("<b><i>DHT");
       clientResponse.concat(DHTTYPE);
       clientResponse.concat(" Sensor Information:</i></b>\n");
-      clientResponse.concat("Temperature="); clientResponse.concat(String(tc,1)); clientResponse.concat((char)176); clientResponse.concat("C "); clientResponse.concat(round(tf)); clientResponse.concat((char)176); clientResponse.concat("F\n");
-      clientResponse.concat("Humidity="); clientResponse.concat(round(h)); clientResponse.concat("%\n");
+      float h = processDHT(0);
+      float tc = processDHT(1); float tf = (tc * 9.0 / 5.0) + 32.0;
+      if (h==-1000) {
+        clientResponse.concat("DHT Humidity Reading Failed\n");
+      } else {
+        clientResponse.concat("Humidity="); clientResponse.concat(round(h)); clientResponse.concat("%\n");
+      }
+      if (tc==-1000) {
+        clientResponse.concat("DHT Temperature Reading Failed\n");
+      } else {
+        clientResponse.concat("Temperature="); clientResponse.concat(String(tc,1)); clientResponse.concat((char)176); clientResponse.concat("C "); clientResponse.concat(round(tf)); clientResponse.concat((char)176); clientResponse.concat("F\n");
+      }
+    #else
+      clientResponse.concat("DHT Sensor Not Used\n");
+    #endif
+    clientResponse.concat("</pre>\n"); clientResponse.concat("<hr>\n");
+
+  } else if (section==2) {
+    clientResponse.concat("<div class='center'>\n");
+    clientResponse.concat("RELAY1 pin is now: ");
+    if(use5Vrelay==true) {
+      if(digitalRead(relayPin1) == LOW) { clientResponse.concat("On"); } else { clientResponse.concat("Off"); }
+    } else {
+      if(digitalRead(relayPin1) == HIGH) { clientResponse.concat("On"); } else { clientResponse.concat("Off"); }
     }
-  #else
-    clientResponse.concat("DHT Sensor Not Used\n");
-  #endif
-  clientResponse.concat("</pre>\n"); clientResponse.concat("<hr>\n");
-
-  clientResponse.concat("<div class='center'>\n");
-  clientResponse.concat("RELAY1 pin is now: ");
-  if(use5Vrelay==true) {
-    if(digitalRead(relayPin1) == LOW) { clientResponse.concat("On"); } else { clientResponse.concat("Off"); }
-  } else {
-    if(digitalRead(relayPin1) == HIGH) { clientResponse.concat("On"); } else { clientResponse.concat("Off"); }
-  }
-  clientResponse.concat("\n<br><a href=\"/RELAY1=ON\"><button onClick=\"parent.location='/RELAY1=ON'\">Turn On</button></a>\n");
-  clientResponse.concat("<a href=\"/RELAY1=OFF\"><button onClick=\"parent.location='/RELAY1=OFF'\">Turn Off</button></a>\n");
-  clientResponse.concat("<a href=\"/RELAY1=MOMENTARY\"><button onClick=\"parent.location='/RELAY1=MOMENTARY'\">MOMENTARY</button></a><br/></div><hr>\n");
+    clientResponse.concat("\n<br><a href=\"/RELAY1=ON\"><button onClick=\"parent.location='/RELAY1=ON'\">Turn On</button></a>\n");
+    clientResponse.concat("<a href=\"/RELAY1=OFF\"><button onClick=\"parent.location='/RELAY1=OFF'\">Turn Off</button></a>\n");
+    clientResponse.concat("<a href=\"/RELAY1=MOMENTARY\"><button onClick=\"parent.location='/RELAY1=MOMENTARY'\">MOMENTARY</button></a><br/></div><hr>\n");
+    
+    clientResponse.concat("<div class='center'>\n");
+    clientResponse.concat("RELAY2 pin is now: ");
+    if(use5Vrelay==true) {
+      if(digitalRead(relayPin2) == LOW) { clientResponse.concat("On"); } else { clientResponse.concat("Off"); }
+    } else {
+      if(digitalRead(relayPin2) == HIGH) { clientResponse.concat("On"); } else { clientResponse.concat("Off"); }
+    }
+    clientResponse.concat("\n<br><a href=\"/RELAY2=ON\"><button onClick=\"parent.location='/RELAY2=ON'\">Turn On</button></a>\n");
+    clientResponse.concat("<a href=\"/RELAY2=OFF\"><button onClick=\"parent.location='/RELAY2=OFF'\">Turn Off</button></a>\n");
+    clientResponse.concat("<a href=\"/RELAY2=MOMENTARY\"><button onClick=\"parent.location='/RELAY2=MOMENTARY'\">MOMENTARY</button></a></div><hr>\n");
+  } else if (section==3) {
+    clientResponse.concat("<div class='center'><a href=\"http://"); clientResponse.concat(currentIP);
+    clientResponse.concat(":81/update\"><button onClick=\"parent.location='http://"); clientResponse.concat(currentIP);
+    clientResponse.concat(":81/update'\">OTA Update</button></a><br><span style=\"font-size:0.8em;\">This is the <a target='_blank' href='http://esp8266.github.io/Arduino/versions/2.0.0/doc/ota_updates/ota_updates.html#web-browser'>Web Browser OTA method</a>,<br>");
+    clientResponse.concat("Open Start&rarr;Run&rarr;type in %TEMP% then enter.<br>BIN file will be under one of the build* folders.<br>2nd method of <a target='_blank' href='http://esp8266.github.io/Arduino/versions/2.0.0/doc/ota_updates/ota_updates.html#arduino-ide'>OTA directly via Arduino IDE</a>.</span><hr>\n");
   
-  clientResponse.concat("<div class='center'>\n");
-  clientResponse.concat("RELAY2 pin is now: ");
-  if(use5Vrelay==true) {
-    if(digitalRead(relayPin2) == LOW) { clientResponse.concat("On"); } else { clientResponse.concat("Off"); }
-  } else {
-    if(digitalRead(relayPin2) == HIGH) { clientResponse.concat("On"); } else { clientResponse.concat("Off"); }
-  }
-  clientResponse.concat("\n<br><a href=\"/RELAY2=ON\"><button onClick=\"parent.location='/RELAY2=ON'\">Turn On</button></a>\n");
-  clientResponse.concat("<a href=\"/RELAY2=OFF\"><button onClick=\"parent.location='/RELAY2=OFF'\">Turn Off</button></a>\n");
-  clientResponse.concat("<a href=\"/RELAY2=MOMENTARY\"><button onClick=\"parent.location='/RELAY2=MOMENTARY'\">MOMENTARY</button></a></div><hr>\n");
+    clientResponse.concat("<input id=\"RebootFrequencyDays\" type=\"text\" name=\"RebootFrequencyDays\" value=\"");
+    EEPROM.begin(1);
+    int days=EEPROM.read(0);
+    clientResponse.concat(days);
+    clientResponse.concat("\" maxlength=\"3\" size=\"2\" min=\"0\" max=\"255\">&nbsp;&nbsp;&nbsp;<button style=\"line-height: 1em; margin: 3px; padding: 3px 3px;\" onClick=\"parent.location='/RebootFrequencyDays='+document.getElementById('RebootFrequencyDays').value;\">SAVE</button><br>Days between reboots.<br>0 to disable & 255 days is max.");
+    clientResponse.concat("<br><button onClick=\"javascript: if (confirm(\'Are you sure you want to reboot?\')) parent.location='/RebootNow';\">Reboot Now</button><br></div><hr>\n");
   
-  clientResponse.concat("<div class='center'><a href=\"http://"); clientResponse.concat(currentIP);
-  clientResponse.concat(":81/update\"><button onClick=\"parent.location='http://"); clientResponse.concat(currentIP);
-  clientResponse.concat(":81/update'\">OTA Update</button></a><br>This is the <a target='_blank' href='http://esp8266.github.io/Arduino/versions/2.0.0/doc/ota_updates/ota_updates.html#web-browser'>Web Browser OTA method</a>,<br>Open Start&rarr;Run&rarr;type in %TEMP% then enter.<br>BIN file will be under one of the build* folders.<br>2nd method of <a target='_blank' href='http://esp8266.github.io/Arduino/versions/2.0.0/doc/ota_updates/ota_updates.html#arduino-ide'>OTA directly via Arduino IDE</a>.<hr>\n");
-
-  clientResponse.concat("<input id=\"RebootFrequencyDays\" type=\"text\" name=\"RebootFrequencyDays\" value=\"");
-  EEPROM.begin(1);
-  int days=EEPROM.read(0);
-  clientResponse.concat(days);
-  clientResponse.concat("\" maxlength=\"3\" size=\"2\" min=\"0\" max=\"255\">&nbsp;&nbsp;&nbsp;<button style=\"line-height: 1em; margin: 3px; padding: 3px 3px;\" onClick=\"parent.location='/RebootFrequencyDays='+document.getElementById('RebootFrequencyDays').value;\">SAVE</button><br>Days between reboots.<br>0 to disable & 255 days is max.");
-  clientResponse.concat("<br><button onClick=\"javascript: if (confirm(\'Are you sure you want to reboot?\')) parent.location='/RebootNow';\">Reboot Now</button><br></div><hr>\n");
-
-  clientResponse.concat("<div class='center'><a target='_blank' href='https://community.smartthings.com/t/raspberry-pi-to-php-to-gpio-to-relay-to-gate-garage-trigger/43335'>Project on SmartThings Community</a></br>\n");
-  clientResponse.concat("<a target='_blank' href='https://github.com/JZ-SmartThings/SmartThings/tree/master/Devices/Generic%20HTTP%20Device'>Project on GitHub</a></br></div></html>\n");
+    clientResponse.concat("<div class='center'><a target='_blank' href='https://community.smartthings.com/t/raspberry-pi-to-php-to-gpio-to-relay-to-gate-garage-trigger/43335'>Project on SmartThings Community</a></br>\n");
+    clientResponse.concat("<a target='_blank' href='https://github.com/JZ-SmartThings/SmartThings/tree/master/Devices/Generic%20HTTP%20Device'>Project on GitHub</a></br></div></html>\n");
+  }
   return clientResponse;
+}
+
+float processDHT(bool whichSensor){
+  // Reading temperature or humidity takes about 250 milliseconds. Sensor readings may also be up to 2 seconds old
+  #if useDHT==true
+    float h=-1000;
+    float tc=-1000;
+    int counter=1;
+    if (whichSensor==0){
+      h = dht.readHumidity();
+      while(counter<=10 && (isnan(h) || h==-1000)){
+        if (isnan(h) || h==-1000) { h = dht.readHumidity(); } // re-read
+        counter += 1; delay(10);
+      }
+    } else if (whichSensor==1){
+      tc = dht.readTemperature();
+      while(counter<=10 && (isnan(tc) || tc==-1000)){
+        if (isnan(tc) || tc==-1000) { tc = dht.readTemperature(); } // re-read
+        counter += 1; delay(10);
+      }
+    }
+    if (whichSensor==0){
+      if (isnan(h) || h==-1000) { return -1000; } else { return h; }
+    } else if (whichSensor==1){
+      if (isnan(tc) || tc==-1000) { return -1000; } else { return tc; }
+    }
+  #endif
 }
 
 String freeRam () {
