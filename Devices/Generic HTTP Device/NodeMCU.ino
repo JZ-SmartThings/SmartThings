@@ -27,7 +27,7 @@ int relayPin2 = D2; // GPIO4 = D2
 const bool useAuth = false;
 
 // USE DHT TEMP/HUMIDITY SENSOR? DESIGNATE WHICH PIN. MAKE SURE TO DEFINE WHICH SENSOR MODEL BELOW BY UNCOMMENTING IT.
-#define useDHT true
+#define useDHT false
 #define DHTPIN D3     // what pin is the DHT on?
 #if useDHT==true
   // Use library version 1.2.3 as 1.3.0 gives error
