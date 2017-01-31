@@ -183,8 +183,13 @@ def parse(String description) {
 	def retResult = []
 	def descMap = parseDescriptionAsMap(description)
 	//Image
-	if (descMap["bucket"] && descMap["key"]) {
-		putImageInS3(descMap)
+	if (descMap["key"]) {
+		try {
+			storeTemporaryImage(descMap["key"], getPictureName()) 
+		}
+		catch (Exception e) {
+			log.error e
+		}
 	}
     else if (descMap["headers"] && descMap["body"]){
     	def body = new String(descMap["body"].decodeBase64())
@@ -193,27 +198,6 @@ def parse(String description) {
 	else {
 		log.debug "PARSE FAILED FOR: '${description}'"
     }
-}
-
-def putImageInS3(map) {
-	log.debug "firing s3"
-    def s3ObjectContent
-    try {
-        def imageBytes = getS3Object(map.bucket, map.key + ".jpg")
-        if(imageBytes)
-        {
-            s3ObjectContent = imageBytes.getObjectContent()
-            def bytes = new ByteArrayInputStream(s3ObjectContent.bytes)
-            storeImage(getPictureName(), bytes)
-        }
-    }
-    catch(Exception e) {
-        log.error e
-    }
-	finally {
-    //Explicitly close the stream
-		if (s3ObjectContent) { s3ObjectContent.close() }
-	}
 }
 
 def parseDescriptionAsMap(description) {
