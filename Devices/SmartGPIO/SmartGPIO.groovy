@@ -1,5 +1,5 @@
 /**
- *  SmartGPIO v1.0.20160410
+ *  SmartGPIO v1.0.20170130
  *
  *  Source code can be found here: https://github.com/JZ-SmartThings/SmartThings/blob/master/Devices/SmartGPIO/SmartGPIO.groovy
  *
@@ -188,10 +188,15 @@ def parse(String description) {
 	if (DeviceBodyText==null) { LocalDeviceBodyText = "GPIO=" } else { LocalDeviceBodyText = DeviceBodyText }
 
 	//Image
-	if (descMap["bucket"] && descMap["key"]) {
-		putImageInS3(descMap)
-		def imageDate = new Date().format("yyyy-MM-dd h:mm:ss a", location.timeZone)
-		sendEvent(name: "lastTriggered", value: imageDate, unit: "", isStateChange: true)
+	if (descMap["key"]) {
+		try {
+			storeTemporaryImage(descMap["key"], getPictureName()) 
+			def imageDate = new Date().format("yyyy-MM-dd h:mm:ss a", location.timeZone)
+			sendEvent(name: "lastTriggered", value: imageDate, unit: "", isStateChange: true)
+		}
+		catch (Exception e) {
+			log.error e
+		}
 	} else if (descMap["body"]) {
 		if (headersReturned.contains("application/json")) {
 			def body = new String(descMap["body"].decodeBase64())
@@ -237,26 +242,6 @@ def parse(String description) {
 	log.debug jsonlist
 }
 
-def putImageInS3(map) {
-	log.debug "firing s3"
-    def s3ObjectContent
-    try {
-        def imageBytes = getS3Object(map.bucket, map.key + ".jpg")
-        if(imageBytes)
-        {
-            s3ObjectContent = imageBytes.getObjectContent()
-            def bytes = new ByteArrayInputStream(s3ObjectContent.bytes)
-            storeImage(getPictureName(), bytes)
-        }
-    }
-    catch(Exception e) {
-        log.error e
-    }
-	finally {
-    //Explicitly close the stream
-		if (s3ObjectContent) { s3ObjectContent.close() }
-	}
-}
 private getPictureName() {
 	def pictureUuid = java.util.UUID.randomUUID().toString().replaceAll('-', '')
     log.debug pictureUuid
