@@ -1,4 +1,4 @@
-<?php //v1.0.20160430
+<?php //v1.0.20170130
 
 $perform_authentication=false;
 
@@ -135,7 +135,8 @@ if (isset($_POST['GPIO']) && $rpi['php5-gd'] == true) {
 		imagestring($im, 1.3, 0, $counter, $v, $text_color);
 		$counter = $counter + 12;
 	}
-	imagejpeg($im, NULL, 80-(3*($gpiolines-19)));
+	//imagejpeg($im, NULL, 80-(3*($gpiolines-19)));
+	imagejpeg($im, NULL, 90);
 	imagedestroy($im);
 	exit;
 }
