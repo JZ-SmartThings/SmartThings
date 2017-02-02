@@ -187,10 +187,10 @@ def parse(String description) {
 	def LocalDeviceBodyText = ''
 	if (DeviceBodyText==null) { LocalDeviceBodyText = "GPIO=" } else { LocalDeviceBodyText = DeviceBodyText }
 
-    def imageKey = descMap["tempImageKey"] ? descMap["tempImageKey"] : descMap["key"]
-	if (imageKey) {
+	//Image
+	if (descMap["key"]) {
 		try {
-			storeTemporaryImage(imageKey, getPictureName()) 
+			storeTemporaryImage(descMap["key"], getPictureName()) 
 			def imageDate = new Date().format("yyyy-MM-dd h:mm:ss a", location.timeZone)
 			sendEvent(name: "lastTriggered", value: imageDate, unit: "", isStateChange: true)
 		}

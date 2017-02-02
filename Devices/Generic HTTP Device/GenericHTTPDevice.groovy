@@ -357,6 +357,7 @@ def parse(String description) {
 		}
 	}
 	if (descMap["body"]) {
+		//putImageInS3(descMap)
 		if (jsonlist."Refresh"=="Authentication Required!") {
 			sendEvent(name: "refreshTriggered", value: "Use Authentication Credentials", unit: "")
 			whichTile = 'refresh'
