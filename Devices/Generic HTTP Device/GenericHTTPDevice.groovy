@@ -163,6 +163,7 @@ def refresh() {
 	if (DeviceMainPin) {FullCommand=FullCommand+"&MainPin="+DeviceMainPin} //else {FullCommand=FullCommand+"&MainPin=4"}
 	if (DeviceCustomPin) {FullCommand=FullCommand+"&CustomPin="+DeviceCustomPin} //else {FullCommand=FullCommand+"&CustomPin=21"}
 	if (UseJSON==true) { FullCommand=FullCommand+"&UseJSON=" }
+	if (DeviceMainMomentary==true) { settings.UseOffVoiceCommandForCustom = true }
 	runCmd(FullCommand)
 }
 def poll() {
@@ -171,6 +172,7 @@ def poll() {
 def on() {
 	def FullCommand = ''
 	if (DeviceMainMomentary==true) {
+		settings.UseOffVoiceCommandForCustom = true
 		FullCommand='MainTrigger='
 	} else {
 		if (device.currentState("switch")!=null && device.currentState("switch").getValue()=="off") { FullCommand='MainTriggerOn=' } else { FullCommand='MainTriggerOff=' }
@@ -193,6 +195,7 @@ def CustomTrigger() {
 	//log.debug device.currentState("customswitch").getValue() + " === customswitch state"
 	def FullCommand = ''
 	if (DeviceCustomMomentary==true) {
+		settings.UseOffVoiceCommandForCustom = true
 		FullCommand='CustomTrigger='
 	} else {
 		log.debug "main swtich currentState===" + device.currentState("switch")
