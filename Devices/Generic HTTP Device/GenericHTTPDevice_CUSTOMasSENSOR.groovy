@@ -380,7 +380,7 @@ def parse(String description) {
 		if (jsonlist."CustomTrigger"=="Success") {
 			sendEvent(name: "customswitch", value: "on", isStateChange: true)
 			sendEvent(name: "customTriggered", value: "MOMENTARY @ " + jsonlist."Date", unit: "")
-			createEvent(name: "contact", value: "open", descriptionText: "$device.displayName is open")
+			createEvent(name: "contact", value: "closed", descriptionText: "$device.displayName is closed")
 			whichTile = 'customoff'
 		}
 		if (jsonlist."CustomTriggerOn"=="Success" && jsonlist."CustomPinStatus"==1) {
@@ -393,6 +393,7 @@ def parse(String description) {
 		}
 		if (jsonlist."CustomTriggerOff"=="Success" && jsonlist."CustomPinStatus"==0) {
 			sendEvent(name: "customTriggered", value: "OFF @ " + jsonlist."Date", unit: "")
+			createEvent(name: "contact", value: "open", descriptionText: "$device.displayName is open")
 			whichTile = 'customoff'
 		}
 		if (jsonlist."CustomTriggerOff"=="Authentication Required!") {
@@ -400,11 +401,13 @@ def parse(String description) {
 		}
 		if (jsonlist."CustomPinStatus"==1) {
 			sendEvent(name: "customswitch", value: "on", isStateChange: true)
+			createEvent(name: "contact", value: "closed", descriptionText: "$device.displayName is closed")
 			sendEvent(name: "refreshswitch", value: "default", isStateChange: true)
 			whichTile = 'customon'
 		}
 		else if (jsonlist."CustomPinStatus"==0) {
 			sendEvent(name: "customswitch", value: "off", isStateChange: true)
+			createEvent(name: "contact", value: "open", descriptionText: "$device.displayName is open")
 			sendEvent(name: "refreshswitch", value: "default", isStateChange: true)
 			whichTile = 'customoff'
 		}
