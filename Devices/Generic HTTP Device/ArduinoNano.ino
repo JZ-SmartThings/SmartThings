@@ -1,5 +1,5 @@
  /**
- *  Arduino Nano & Ethernet Shield Sample v1.0.20170126
+ *  Arduino Nano & Ethernet Shield Sample v1.0.20170214
  *  Source code can be found here: https://github.com/JZ-SmartThings/SmartThings/blob/master/Devices/Generic%20HTTP%20Device
  *  Copyright 2017 JZ
  *
@@ -15,9 +15,13 @@
 
 // DECIDE WHETHER TO SEND HIGH OR LOW TO THE PINS AND WHICH PINS ARE USED FOR TRIGGERS
 // IF USING 3.3V RELAY, TRANSISTOR OR MOSFET THEN SET THE BELOW VARIABLE TO FALSE
-const bool use5Vrelay = false;
+const bool use5Vrelay = true;
 int relayPin1 = 2; // GPIO5 = D2
 int relayPin2 = 3; // GPIO6 = D3
+
+// USE CONTACT SENSOR? DESIGNATE WHICH PIN.
+#define useSENSOR true
+#define SENSORPIN 5     // what pin is the Contact Sensor on?
 
 // OTHER VARIALBES
 String currentIP;
@@ -33,6 +37,10 @@ void setup()
   pinMode(relayPin2, OUTPUT);
   digitalWrite(relayPin1, use5Vrelay==true ? HIGH : LOW);
   digitalWrite(relayPin2, use5Vrelay==true ? HIGH : LOW);
+
+  #if useSENSOR==true
+    pinMode(SENSORPIN, INPUT);
+  #endif
 
   uint8_t mac[6] = {0xFF,0x01,0x02,0x03,0x04,0x05};
   IPAddress myIP(192,168,0,225);
@@ -148,6 +156,9 @@ void loop()
           client.println(F("</b><hr>"));
 
           client.println(F("<pre>"));
+          #if useSENSOR==true
+            client.print(F("Contact Sensor=")); client.println(digitalRead(SENSORPIN) ? F("Closed") : F("Open"));
+          #endif
           client.print(F("UpTime=")); client.println(uptime());
           client.println(freeRam());
           client.println(F("</pre>")); client.println(F("<hr>\n"));

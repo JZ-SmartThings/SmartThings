@@ -1,6 +1,7 @@
-<?php //v1.0.20170130
+<?php //v1.0.20170214 added contact sensor
 
 $perform_authentication=false;
+$sensor_pin=25;
 
 if ($perform_authentication) {
 	$valid_passwords = array ("gate" => "gate1");
@@ -48,10 +49,19 @@ $rpi = array(
 	"Free Mem" => shell_exec('free -t -h | tr -s " " | grep "Total:" | awk -F " " \'{print $4 " of " $2}\' | tr -d \'\n\''),
 	"php5-gd" => $gd_installed
 );
+
 function CPUTemp() {
 	$celcius = shell_exec('sudo vcgencmd measure_temp | sed "s/temp=//g" | tr -d \'\n\'');
 	$fahrenheit = round(substr(str_replace("C","",$celcius), 0, -1) * 1.8 + 32, 0) . "'F";
     return $celcius .' '. $fahrenheit;
+}
+
+shell_exec("sudo gpio -g mode $sensor_pin in");
+$sensor_pin_status = shell_exec("sudo raspi-gpio get $sensor_pin | grep 'func=INPUT' | grep 'level=1'");
+if (strlen($sensor_pin_status) > 5) {
+	$rpi = $rpi + array("SensorPinStatus" => 0);
+} else {
+	$rpi = $rpi + array("SensorPinStatus" => 1);
 }
 
 $main_pin=4;
@@ -207,6 +217,7 @@ if ($rpi['MainTriggerOff']) { echo "MainTriggerOff=Success\n"; }
 if ($rpi['CustomTrigger']) { echo "CustomTrigger=Success\n"; }
 if ($rpi['CustomTriggerOn']) { echo "CustomTriggerOn=Success\n"; }
 if ($rpi['CustomTriggerOff']) { echo "CustomTriggerOff=Success\n"; }
+echo ($rpi['SensorPinStatus']) ? "SensorPinStatus=Open\n" : "SensorPinStatus=Closed\n";
 if ($rpi['Refresh']) { echo "Refresh=Success\n"; }
 if ($rpi['RebootNow']) { echo "RebootNow=Success\n"; }
 ?>

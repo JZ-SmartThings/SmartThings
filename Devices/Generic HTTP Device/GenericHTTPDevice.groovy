@@ -1,5 +1,5 @@
 /**
- *  Generic HTTP Device v1.0.20170205
+ *  Generic HTTP Device v1.0.20170214
  *  Source code can be found here: https://github.com/JZ-SmartThings/SmartThings/blob/master/Devices/Generic%20HTTP%20Device/GenericHTTPDevice.groovy
  *  Copyright 2017 JZ
  *
@@ -17,6 +17,8 @@ metadata {
 	definition (name: "Generic HTTP Device", author: "JZ", namespace:"JZ") {
 		capability "Switch"
 		capability "Temperature Measurement"
+		capability "Contact Sensor"
+		capability "Sensor"
 		capability "Polling"
 		capability "Refresh"
 		attribute "mainTriggered", "string"
@@ -77,6 +79,13 @@ metadata {
 			state "off", label:'CUSTOM', action: "CustomTrigger", icon: "st.Lighting.light13", backgroundColor:"#53a7c0", nextState: "trying"
 			state "on", label: 'ON', action: "CustomTrigger", icon: "st.Lighting.light11", backgroundColor: "#FF6600", nextState: "trying"
 			state "trying", label: 'TRYING', action: "ResetTiles", icon: "st.Lighting.light11", backgroundColor: "#FFAA33"
+		}
+		valueTile("sensorTriggered", "device.sensorTriggered", width: 5, height: 1, decoration: "flat") {
+			state("default", label: 'Sensor State Changed:\r\n${currentValue}', backgroundColor:"#ffffff")
+		}
+		standardTile("contact", "device.contact", width: 1, height: 1, decoration: "flat") {
+			state "open", label: '${name}', icon: "st.contact.contact.open", backgroundColor: "#ffa81e"
+			state "closed", label: '${name}', icon: "st.contact.contact.closed", backgroundColor: "#79b821"
 		}
 		valueTile("refreshTriggered", "device.refreshTriggered", width: 5, height: 1, decoration: "flat") {
 			state("default", label: 'Refreshed:\r\n${currentValue}', backgroundColor:"#ffffff")
@@ -154,7 +163,7 @@ metadata {
 			state "rebooting", label: 'REBOOTING', action: "ResetTiles", icon: "st.Office.office13", backgroundColor: "#FF6600", nextState: "default"
 		}
 		main "DeviceTrigger"
-		details(["displayName","mainTriggered", "DeviceTrigger", "customTriggered", "CustomTrigger", "refreshTriggered", "RefreshTrigger", "cpuUsage", "cpuTemp", "upTime", "spaceUsed", "freeMem", "clearTiles", "temperature", "humidity" , "RebootNow"])
+		details(["displayName","mainTriggered", "DeviceTrigger", "customTriggered", "CustomTrigger", "sensorTriggered", "contact", "refreshTriggered", "RefreshTrigger", "cpuUsage", "cpuTemp", "upTime", "spaceUsed", "freeMem", "clearTiles", "temperature", "humidity" , "RebootNow"])
 	}
 }
 
@@ -214,6 +223,7 @@ def ClearTiles() {
 	sendEvent(name: "mainTriggered", value: "", unit: "")
 	sendEvent(name: "customTriggered", value: "", unit: "")
 	sendEvent(name: "refreshTriggered", value: "", unit: "")
+	sendEvent(name: "sensorTriggered", value: "", unit: "")
 	sendEvent(name: "cpuUsage", value: "", unit: "")
 	sendEvent(name: "cpuTemp", value: "", unit: "")
 	sendEvent(name: "spaceUsed", value: "", unit: "")
@@ -341,6 +351,10 @@ def parse(String description) {
 				if (line.contains('CustomTriggerOff=Failed : Authentication Required!')) { jsonlist.put ("CustomTriggerOff", "Authentication Required!") }
 				if (line.contains('CustomPinStatus=1')) { jsonlist.put ("CustomPinStatus".replace("=",""), 1) }
 				if (line.contains('CustomPinStatus=0')) { jsonlist.put ("CustomPinStatus".replace("=",""), 0) }
+				if (line.contains('SensorPinStatus=Open')) { jsonlist.put ("SensorPinStatus".replace("=",""), "Open") }
+				if (line.contains('SensorPinStatus=Closed')) { jsonlist.put ("SensorPinStatus".replace("=",""), "Closed") }
+				if (line.contains('Contact Sensor=Open')) { jsonlist.put ("SensorPinStatus".replace("=",""), "Open") }
+				if (line.contains('Contact Sensor=Closed')) { jsonlist.put ("SensorPinStatus".replace("=",""), "Closed") }
 				if (line.contains('Refresh=Success')) { jsonlist.put ("Refresh", "Success") }
 				if (line.contains('Refresh=Failed : Authentication Required!')) { jsonlist.put ("Refresh", "Authentication Required!") }
 				if (line.contains('RebootNow=Success')) { jsonlist.put ("RebootNow", "Success") }
@@ -395,8 +409,7 @@ def parse(String description) {
 			sendEvent(name: "customswitch", value: "on", isStateChange: true)
 			sendEvent(name: "refreshswitch", value: "default", isStateChange: true)
 			whichTile = 'customon'
-		}
-		else if (jsonlist."CustomPinStatus"==0) {
+		} else if (jsonlist."CustomPinStatus"==0) {
 			sendEvent(name: "customswitch", value: "off", isStateChange: true)
 			sendEvent(name: "refreshswitch", value: "default", isStateChange: true)
 			whichTile = 'customoff'
@@ -428,11 +441,19 @@ def parse(String description) {
 			sendEvent(name: "switch", value: "on", isStateChange: true)
 			sendEvent(name: "refreshswitch", value: "default", isStateChange: true)
 			whichTile = 'mainon'
-		}
-		else if (jsonlist."MainPinStatus"==0) {
+		} else if (jsonlist."MainPinStatus"==0) {
 			sendEvent(name: "switch", value: "off", isStateChange: true)
 			sendEvent(name: "refreshswitch", value: "default", isStateChange: true)
 			whichTile = 'mainoff'
+		}
+		if (jsonlist."SensorPinStatus"=="Open") {
+			if (device.currentState("contact").getValue()=="closed") { sendEvent(name: "sensorTriggered", value: "OPEN @ " + jsonlist."Date", unit: "") }
+			sendEvent(name: "contact", value: "open", descriptionText: "$device.displayName is open")
+			sendEvent(name: "refreshswitch", value: "default", isStateChange: true)
+		} else if (jsonlist."SensorPinStatus"=="Closed") {
+			if (device.currentState("contact").getValue()=="open") { sendEvent(name: "sensorTriggered", value: "CLOSED @ " + jsonlist."Date", unit: "") }
+			sendEvent(name: "contact", value: "closed", descriptionText: "$device.displayName is closed")
+			sendEvent(name: "refreshswitch", value: "default", isStateChange: true)
 		}
 		if (jsonlist."CPU") {
 			sendEvent(name: "cpuUsage", value: jsonlist."CPU".replace("=","\n").replace("%",""), unit: "")

@@ -1,5 +1,5 @@
  /**
- *  ESP8266-12E / NodeMCU / WeMos D1 Mini WiFi & ENC28J60 Sample v1.0.20170126
+ *  ESP8266-12E / NodeMCU / WeMos D1 Mini WiFi & ENC28J60 Sample v1.0.20170214
  *  Source code can be found here: https://github.com/JZ-SmartThings/SmartThings/blob/master/Devices/Generic%20HTTP%20Device
  *  Copyright 2017 JZ
  *
@@ -25,6 +25,10 @@ int relayPin2 = D2; // GPIO4 = D2
 
 // USE BASIC HTTP AUTH?
 const bool useAuth = false;
+
+// USE CONTACT SENSOR? DESIGNATE WHICH PIN.
+#define useSENSOR true
+#define SENSORPIN D5     // what pin is the Contact Sensor on?
 
 // USE DHT TEMP/HUMIDITY SENSOR? DESIGNATE WHICH PIN. MAKE SURE TO DEFINE WHICH SENSOR MODEL BELOW BY UNCOMMENTING IT.
 #define useDHT false
@@ -64,6 +68,10 @@ void setup()
 
   #if useDHT==true
     dht.begin();
+  #endif
+
+  #if useSENSOR==true
+    pinMode(SENSORPIN, INPUT);
   #endif
 
   pinMode(relayPin1, OUTPUT);
@@ -313,6 +321,9 @@ String clientResponse (int section) {
     clientResponse.concat("\n</b><hr>");
   } else if (section==1) {
     clientResponse.concat("<pre>\n");
+    #if useSENSOR==true
+      clientResponse.concat("Contact Sensor="); clientResponse.concat(digitalRead(SENSORPIN) ? "Closed" : "Open" ); clientResponse.concat("\n");
+    #endif
     clientResponse.concat("UpTime="); clientResponse.concat(uptime()); clientResponse.concat("\n");
     clientResponse.concat(freeRam());
     clientResponse.concat("\n");
@@ -361,18 +372,21 @@ String clientResponse (int section) {
     clientResponse.concat("<a href=\"/RELAY2=OFF\"><button onClick=\"parent.location='/RELAY2=OFF'\">Turn Off</button></a>\n");
     clientResponse.concat("<a href=\"/RELAY2=MOMENTARY\"><button onClick=\"parent.location='/RELAY2=MOMENTARY'\">MOMENTARY</button></a></div><hr>\n");
   } else if (section==3) {
-    clientResponse.concat("<div class='center'><a href=\"http://"); clientResponse.concat(currentIP);
-    clientResponse.concat(":81/update\"><button onClick=\"parent.location='http://"); clientResponse.concat(currentIP);
-    clientResponse.concat(":81/update'\">OTA Update</button></a><br><span style=\"font-size:0.8em;\">This is the <a target='_blank' href='http://esp8266.github.io/Arduino/versions/2.0.0/doc/ota_updates/ota_updates.html#web-browser'>Web Browser OTA method</a>,<br>");
-    clientResponse.concat("Open Start&rarr;Run&rarr;type in %TEMP% then enter.<br>BIN file will be under one of the build* folders.<br>2nd method of <a target='_blank' href='http://esp8266.github.io/Arduino/versions/2.0.0/doc/ota_updates/ota_updates.html#arduino-ide'>OTA directly via Arduino IDE</a>.</span><hr>\n");
-  
+    // SHOW OTA INFO IF WIFI IS ENABLED
+    #if useWIFI==true
+      clientResponse.concat("<div class='center'><a href=\"http://"); clientResponse.concat(currentIP);
+      clientResponse.concat(":81/update\"><button onClick=\"parent.location='http://"); clientResponse.concat(currentIP);
+      clientResponse.concat(":81/update'\">OTA Update</button></a><br><span style=\"font-size:0.8em;\">This is the <a target='_blank' href='http://esp8266.github.io/Arduino/versions/2.0.0/doc/ota_updates/ota_updates.html#web-browser'>Web Browser OTA method</a>,<br>");
+      clientResponse.concat("Open Start&rarr;Run&rarr;type in %TEMP% then enter.<br>BIN file will be under one of the build* folders.<br>2nd method of <a target='_blank' href='http://esp8266.github.io/Arduino/versions/2.0.0/doc/ota_updates/ota_updates.html#arduino-ide'>OTA directly via Arduino IDE</a>.</span><hr>\n");
+    #endif
+    // REBOOT FREQUENCY
     clientResponse.concat("<input id=\"RebootFrequencyDays\" type=\"text\" name=\"RebootFrequencyDays\" value=\"");
     EEPROM.begin(1);
     int days=EEPROM.read(0);
     clientResponse.concat(days);
     clientResponse.concat("\" maxlength=\"3\" size=\"2\" min=\"0\" max=\"255\">&nbsp;&nbsp;&nbsp;<button style=\"line-height: 1em; margin: 3px; padding: 3px 3px;\" onClick=\"parent.location='/RebootFrequencyDays='+document.getElementById('RebootFrequencyDays').value;\">SAVE</button><br>Days between reboots.<br>0 to disable & 255 days is max.");
     clientResponse.concat("<br><button onClick=\"javascript: if (confirm(\'Are you sure you want to reboot?\')) parent.location='/RebootNow';\">Reboot Now</button><br></div><hr>\n");
-  
+    // BOTTOM LINKS  
     clientResponse.concat("<div class='center'><a target='_blank' href='https://community.smartthings.com/t/raspberry-pi-to-php-to-gpio-to-relay-to-gate-garage-trigger/43335'>Project on SmartThings Community</a></br>\n");
     clientResponse.concat("<a target='_blank' href='https://github.com/JZ-SmartThings/SmartThings/tree/master/Devices/Generic%20HTTP%20Device'>Project on GitHub</a></br></div></html>\n");
   }

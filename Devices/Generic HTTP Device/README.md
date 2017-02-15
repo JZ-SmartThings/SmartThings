@@ -13,6 +13,7 @@ The *.ino files are the Arduino IDE code samples. Verify the few options at the 
 
 This project was tested successfully via an external IP, Pollster and with an Amazon Echo/Alexa. Echo can run TWO functions in my app. The ON command triggers the main function and OFF triggers the custom function but can be changed to only control the Main switch.
 
+</br>v1.0.20170214 - Added contact sensor ability. Using SmartThings "capability" so rules can be respected when sensor state changes. Modified both Arduino sketches and PHP samples.
 </br>v1.0.20170126 - NodeMCU sketch DHT sensor retry logic is a bit smarter. Small bug fixes.
 </br>v1.0.20170121 - NodeMCU sketch is now able to do OTA updates via a web-page or directly via the Arduino IDE.
 </br>v1.0.20170110 - Arduino & NodeMCU code updated. Stateful on/off functionality fixed. DHT sensor will now retry 5 times so should return results with more success than before. DHT part number displayed.
