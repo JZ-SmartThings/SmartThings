@@ -1,5 +1,5 @@
  /**
- *  ESP8266-12E / NodeMCU / WeMos D1 Mini WiFi & ENC28J60 Sample v1.0.20170214
+ *  ESP8266-12E / NodeMCU / WeMos D1 Mini WiFi & ENC28J60 Sample v1.0.20170218
  *  Source code can be found here: https://github.com/JZ-SmartThings/SmartThings/blob/master/Devices/Generic%20HTTP%20Device
  *  Copyright 2017 JZ
  *
@@ -71,7 +71,7 @@ void setup()
   #endif
 
   #if useSENSOR==true
-    pinMode(SENSORPIN, INPUT);
+    pinMode(SENSORPIN, INPUT_PULLUP);
   #endif
 
   pinMode(relayPin1, OUTPUT);
@@ -322,7 +322,7 @@ String clientResponse (int section) {
   } else if (section==1) {
     clientResponse.concat("<pre>\n");
     #if useSENSOR==true
-      clientResponse.concat("Contact Sensor="); clientResponse.concat(digitalRead(SENSORPIN) ? "Closed" : "Open" ); clientResponse.concat("\n");
+      clientResponse.concat("Contact Sensor="); clientResponse.concat(digitalRead(SENSORPIN) ? "Open" : "Closed" ); clientResponse.concat("\n");
     #endif
     clientResponse.concat("UpTime="); clientResponse.concat(uptime()); clientResponse.concat("\n");
     clientResponse.concat(freeRam());

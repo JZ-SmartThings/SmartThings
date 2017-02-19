@@ -1,5 +1,5 @@
  /**
- *  Arduino Nano & Ethernet Shield Sample v1.0.20170214
+ *  Arduino Nano & Ethernet Shield Sample v1.0.20170218
  *  Source code can be found here: https://github.com/JZ-SmartThings/SmartThings/blob/master/Devices/Generic%20HTTP%20Device
  *  Copyright 2017 JZ
  *
@@ -39,7 +39,7 @@ void setup()
   digitalWrite(relayPin2, use5Vrelay==true ? HIGH : LOW);
 
   #if useSENSOR==true
-    pinMode(SENSORPIN, INPUT);
+    pinMode(SENSORPIN, INPUT_PULLUP);
   #endif
 
   uint8_t mac[6] = {0xFF,0x01,0x02,0x03,0x04,0x05};
@@ -157,7 +157,7 @@ void loop()
 
           client.println(F("<pre>"));
           #if useSENSOR==true
-            client.print(F("Contact Sensor=")); client.println(digitalRead(SENSORPIN) ? F("Closed") : F("Open"));
+            client.print(F("Contact Sensor=")); client.println(digitalRead(SENSORPIN) ? F("Open") : F("Closed"));
           #endif
           client.print(F("UpTime=")); client.println(uptime());
           client.println(freeRam());
