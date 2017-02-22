@@ -1,5 +1,5 @@
  /**
- *  Arduino Nano & Ethernet Shield Sample v1.0.20170218
+ *  Arduino Nano & Ethernet Shield Sample v1.0.20170221
  *  Source code can be found here: https://github.com/JZ-SmartThings/SmartThings/blob/master/Devices/Generic%20HTTP%20Device
  *  Copyright 2017 JZ
  *
@@ -19,8 +19,7 @@ const bool use5Vrelay = true;
 int relayPin1 = 2; // GPIO5 = D2
 int relayPin2 = 3; // GPIO6 = D3
 
-// USE CONTACT SENSOR? DESIGNATE WHICH PIN.
-#define useSENSOR true
+// DESIGNATE CONTACT SENSOR PIN.
 #define SENSORPIN 5     // what pin is the Contact Sensor on?
 
 // OTHER VARIALBES
@@ -38,9 +37,16 @@ void setup()
   digitalWrite(relayPin1, use5Vrelay==true ? HIGH : LOW);
   digitalWrite(relayPin2, use5Vrelay==true ? HIGH : LOW);
 
-  #if useSENSOR==true
+  //EEPROM.begin(1);
+  int ContactSensor=EEPROM.read(1);
+  Serial.println(); Serial.println(ContactSensor);
+  if (ContactSensor != 0 && ContactSensor != 1) {
+    EEPROM.write(1,0);
+    //EEPROM.commit();
+  }
+  if (ContactSensor==1) {
     pinMode(SENSORPIN, INPUT_PULLUP);
-  #endif
+  }
 
   uint8_t mac[6] = {0xFF,0x01,0x02,0x03,0x04,0x05};
   IPAddress myIP(192,168,0,225);
@@ -58,7 +64,8 @@ void setup()
   Serial.print(F("subnetMask: ")); Serial.println(Ethernet.subnetMask());
   Serial.print(F("gatewayIP: ")); Serial.println(Ethernet.gatewayIP());
   Serial.print(F("dnsServerIP: ")); Serial.println(Ethernet.dnsServerIP());
-  //currentIP=Ethernet.localIP().toString(); //not compiling on AVR
+  currentIP=Ethernet.localIP()[0]; currentIP+="."; currentIP+= Ethernet.localIP()[1]; currentIP+= ".";
+  currentIP+=Ethernet.localIP()[2]; currentIP+= "."; currentIP+=Ethernet.localIP()[3] ;
 }
 
 void loop()
@@ -106,14 +113,24 @@ void loop()
           if (request.indexOf("RebootFrequencyDays=") != -1)  {
             //EEPROM.begin(1);
             String RebootFrequencyDays=request;
-            RebootFrequencyDays.replace("RebootFrequencyDays=","");
-            RebootFrequencyDays.replace("/","");
-            RebootFrequencyDays.replace("?","");
+            RebootFrequencyDays.replace("RebootFrequencyDays=",""); RebootFrequencyDays.replace("/",""); RebootFrequencyDays.replace("?","");
             //for (int i = 0 ; i < 512 ; i++) { EEPROM.write(i, 0); } // fully clear EEPROM before overwrite
             EEPROM.write(0,atoi(RebootFrequencyDays.c_str()));
             //EEPROM.commit();
           }
-
+          if (request.indexOf("/ToggleSensor") != -1)  {
+            //EEPROM.begin(1);
+            String ToggleSensor=request;
+            ToggleSensor.replace("/ToggleSensor","");
+            if (EEPROM.read(1) == 0) {
+              EEPROM.write(1,1);
+              //EEPROM.commit();
+              pinMode(SENSORPIN, INPUT_PULLUP);
+            } else if (EEPROM.read(1) == 1) {
+              EEPROM.write(1,0);
+              //EEPROM.commit();
+            }
+          }
 
           //Serial.print("use5Vrelay == "); Serial.println(use5Vrelay);
           if (request.indexOf("RELAY1=ON") != -1 || request.indexOf("MainTriggerOn=") != -1)  {
@@ -156,9 +173,14 @@ void loop()
           client.println(F("</b><hr>"));
 
           client.println(F("<pre>"));
-          #if useSENSOR==true
-            client.print(F("Contact Sensor=")); client.println(digitalRead(SENSORPIN) ? F("Open") : F("Closed"));
-          #endif
+          // CONTACT SENSOR
+          if (EEPROM.read(1)==1) {
+            client.print(F("<b><i>Contact Sensor Enabled:</i></b>\n"));
+            client.print(F("Contact Sensor=")); client.print(digitalRead(SENSORPIN) ? F("Open") : F("Closed") ); client.print(F("\n"));
+          } else {
+            client.print(F("<b><i>Contact Sensor Disabled:</i></b>\n"));
+            client.print(F("Contact Sensor=Closed\n"));
+          }
           client.print(F("UpTime=")); client.println(uptime());
           client.println(freeRam());
           client.println(F("</pre>")); client.println(F("<hr>\n"));
@@ -185,7 +207,11 @@ void loop()
           client.println(F("<a href=\"/RELAY2=OFF\"><button onClick=\"parent.location='/RELAY2=OFF'\">Turn Off</button></a>\n"));
           client.println(F("<a href=\"/RELAY2=MOMENTARY\"><button onClick=\"parent.location='/RELAY2=MOMENTARY'\">MOMENTARY</button></a><br/></div><hr>\n"));
 
-          client.println(F("<div class='center'><input id=\"RebootFrequencyDays\" type=\"text\" name=\"RebootFrequencyDays\" value=\""));
+
+          client.println(F("<div class='center'>"));
+          client.println(F("<button onClick=\"javascript: if (confirm(\'Are you sure you want to toggle the Contact Sensor?\')) parent.location='/ToggleSensor';\">Toggle Contact Sensor</button><br><hr>\n"));
+
+          client.println(F("<input id=\"RebootFrequencyDays\" type=\"text\" name=\"RebootFrequencyDays\" value=\""));
           //EEPROM.begin(1);
           int days=EEPROM.read(0);
           client.println(days);

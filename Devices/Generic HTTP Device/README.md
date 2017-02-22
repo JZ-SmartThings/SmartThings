@@ -3,7 +3,7 @@ Link to the project: https://community.smartthings.com/t/43335
 
 This project consists of a Raspberry Pi running Raspbian OS. It runs HTTPD with index.php as the source. The PHP runs the gpio command in order to enable the pins on the Pi. The code sample in the PHP file causes a relay to momentarily turn on then off. I'm using this on a gate so the short/momentary capability was key. However, it's very customizable and now offers on/off states for both switches. For advanced/full instructions on installing and configuring Raspbian OS, see the project link below.
 
-The code and project expanded to the use of Atmel/AVR devices like Arduino UNO/Nano/Mega and the WIFI capable SOC like ESP8266/NodeMCU/WeMos D1 Mini. The code can use the popular Ethernet module ENC28J60 using a custom library linked below:
+The code and project expanded to the use of Atmel/AVR devices like Arduino UNO/Nano/Mega and the WIFI capable SOC like ESP8266/NodeMCU/WeMos D1 Mini. It can report temperature & humidity back to SmartThings using the DHT modules. It can also report magnetic contact sensor state to SmartThings. Basica HTTP authentication is available as an option. The code can use the popular Ethernet module ENC28J60 using a custom library linked below:
 https://github.com/UIPEthernet/UIPEthernet
 
 The Groovy file is the Device Handler for SmartThings.
@@ -13,6 +13,7 @@ The *.ino files are the Arduino IDE code samples. Verify the few options at the 
 
 This project was tested successfully via an external IP, Pollster and with an Amazon Echo/Alexa. Echo can run TWO functions in my app. The ON command triggers the main function and OFF triggers the custom function but can be changed to only control the Main switch.
 
+</br>v1.0.20170221 - Changed all code samples including ST Device Handler. Defaulting the contact sensor to closed state for accurate ST alerts. Contact Sensor enabling flag now resides in the EEPROM & in the PHP code it's defined at the top. Fixed UIPEthernet IP not showing up on Arduino UNO/Nano page.
 </br>v1.0.20170218 - Changed only the Arduino/NodeMCU code samples to use the GND signal instead of VCC for better accuracy. Read up on INPUT_PULLUP for my reasoning.
 </br>v1.0.20170214 - Added contact sensor ability. Using SmartThings "capability" so rules can be respected when sensor state changes. Modified both Arduino sketches and PHP samples.
 </br>v1.0.20170126 - NodeMCU sketch DHT sensor retry logic is a bit smarter. Small bug fixes.

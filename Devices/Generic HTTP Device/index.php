@@ -1,6 +1,7 @@
-<?php //v1.0.20170214 added contact sensor
+<?php //v1.0.20170221 added contact sensor default
 
 $perform_authentication=false;
+$contact_sensor=false;
 $sensor_pin=25;
 
 if ($perform_authentication) {
@@ -56,12 +57,16 @@ function CPUTemp() {
     return $celcius .' '. $fahrenheit;
 }
 
-shell_exec("sudo gpio -g mode $sensor_pin in");
-$sensor_pin_status = shell_exec("sudo raspi-gpio get $sensor_pin | grep 'func=INPUT' | grep 'level=1'");
-if (strlen($sensor_pin_status) > 5) {
+if ($contact_sensor) {
+	shell_exec("sudo gpio -g mode $sensor_pin in");
+	$sensor_pin_status = shell_exec("sudo raspi-gpio get $sensor_pin | grep 'func=INPUT' | grep 'level=1'");
+	if (strlen($sensor_pin_status) > 5) {
+		$rpi = $rpi + array("SensorPinStatus" => 0);
+	} else {
+		$rpi = $rpi + array("SensorPinStatus" => 1);
+	}
+} else { // Default to Closed
 	$rpi = $rpi + array("SensorPinStatus" => 0);
-} else {
-	$rpi = $rpi + array("SensorPinStatus" => 1);
 }
 
 $main_pin=4;
@@ -226,20 +231,20 @@ if ($rpi['RebootNow']) { echo "RebootNow=Success\n"; }
 <form method="post">
 	<button class="btn" name="Refresh">Refresh</button>
 	<br/>
-	<div style="border: 2px dashed #969696; background-color: #D0D0D0;">
-		<button class="btn" name="MainTrigger">Main Trigger</button>
+	<div style="border: 2px dashed #969696; background-color: #D0D0D0; margin-top: 10px;">
+		<button class="btn" style="width: 115px; line-height: 1em;" name="MainTriggerOn">Main Trigger On</button>&nbsp;
+		<button class="btn" style="width: 115px; line-height: 1em;" name="MainTriggerOff">Main Trigger Off</button>&nbsp;
+		<button class="btn" style="width: 115px; line-height: 1em;" name="MainTrigger">Main Trigger</button>
 		<br/>
 		<div class="center" style="transform: scale(1.0); -webkit-transform: scale(1.0); margin-top:6px; width:230px;border:1px solid; padding:3px;"><input type="text" name="MainPin" value="4" maxlength="2" size="2">&nbsp;&nbsp;&nbsp;Main Pin # in BCM</div>
-		<button class="btn" style="width: 115px; line-height: 1em;" name="MainTriggerOn">Main Trigger On</button>&nbsp;
-		<button class="btn" style="width: 115px; line-height: 1em;" name="MainTriggerOff">Main Trigger Off</button>
 		<br/>
 	</div>
 	<div style="border: 2px dashed #969696; background-color: #D0D0D0; margin-top: 5px;">
-		<button class="btn" name="CustomTrigger">Custom Trigger</button>
+		<button class="btn" style="width: 115px; line-height: 1em;" name="CustomTriggerOn">Custom Trigger On</button>&nbsp;
+		<button class="btn" style="width: 115px; line-height: 1em;" name="CustomTriggerOff">Custom Trigger Off</button>&nbsp;
+		<button class="btn" style="width: 115px; line-height: 1em;" name="CustomTrigger">Custom Trigger</button>
 		<br/>
 		<div class="center" style="transform: scale(1.0); -webkit-transform: scale(1.0); margin-top:6px; width:230px;border:1px solid; padding:3px;"><input type="text" name="CustomPin" value="21" maxlength="2" size="2">&nbsp;&nbsp;&nbsp;Custom Pin # in BCM</div>
-		<button class="btn" style="width: 115px; line-height: 1em;" name="CustomTriggerOn">Custom Trigger On</button>&nbsp;
-		<button class="btn" style="width: 115px; line-height: 1em;" name="CustomTriggerOff">Custom Trigger Off</button>
 		<br/>
 	</div>
 	<button class="btn" name="RebootNow" OnClick='return (confirm("Are you sure you want to reboot?"));'>Reboot Now</button>
