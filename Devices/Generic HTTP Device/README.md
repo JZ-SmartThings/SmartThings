@@ -1,9 +1,9 @@
 # Generic HTTP Device
 Link to the project: https://community.smartthings.com/t/43335
 
-This project consists of a Raspberry Pi running Raspbian OS. It runs HTTPD with index.php as the source. The PHP runs the gpio command in order to enable the pins on the Pi. The code sample in the PHP file causes a relay to momentarily turn on then off. I'm using this on a gate so the short/momentary capability was key. However, it's very customizable and now offers on/off states for both switches. For advanced/full instructions on installing and configuring Raspbian OS, see the project link below.
+This project consists of a Raspberry Pi running Raspbian OS. It runs HTTPD with index.php as the source. The PHP runs the gpio command in order to enable the pins on the Pi. The code sample in the PHP file causes a relay to momentarily turn on then off. I'm using this on a gate so the short/momentary capability was key. However, it's very customizable and now offers on/off states for both switches. For advanced/full instructions on installing and configuring Raspbian OS, see the project's forum link at the top.
 
-The code and project expanded to the use of Atmel/AVR devices like Arduino UNO/Nano/Mega and the WIFI capable SOC like ESP8266/NodeMCU/WeMos D1 Mini. It can report temperature & humidity back to SmartThings using the DHT modules. It can also report magnetic contact sensor state to SmartThings. Basica HTTP authentication is available as an option. The code can use the popular Ethernet module ENC28J60 using a custom library linked below:
+The code and project expanded to the use of Atmel/AVR devices like Arduino UNO/Nano/Mega and the WIFI capable SOC like ESP8266/NodeMCU/WeMos D1 Mini. It can report temperature & humidity back to SmartThings using the DHT modules. It can also report magnetic contact sensor state to SmartThings. Basica HTTP authentication is available as an option. The code can use the popular Ethernet module ENC28J60 using a custom library:
 https://github.com/UIPEthernet/UIPEthernet
 
 The Groovy file is the Device Handler for SmartThings.
