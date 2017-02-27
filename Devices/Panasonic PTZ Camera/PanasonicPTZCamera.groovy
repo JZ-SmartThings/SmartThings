@@ -3,9 +3,9 @@
  *
  *  Source code can be found here: https://github.com/JZ-SmartThings/SmartThings/blob/master/Devices/Panasonic%20PTZ%20Camera/PanasonicPTZCamera.groovy
  *
- *  Copyright 2016 JZ
+ *  Copyright 2017 JZ
  *
- *  Tested with Panasonic BL-C30A
+ *  Tested with Panasonic BL-C30A, BB-HCM511A, BB-HCM531A
  *  Thanks to: patrickstuart & blebson
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
@@ -91,7 +91,7 @@ metadata {
 
 def take() {
 	log.debug "Taking picture"
-	cameraCmd("/SnapshotJPEG?Resolution=320x240")
+	cameraCmd("/SnapshotJPEG?Resolution=640x480")
 }
 def home() {
 	log.debug "Moving to Home position"
