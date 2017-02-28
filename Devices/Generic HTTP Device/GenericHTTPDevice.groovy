@@ -1,5 +1,5 @@
 /**
- *  Generic HTTP Device v1.0.20170221
+ *  Generic HTTP Device v1.0.20170227
  *  Source code can be found here: https://github.com/JZ-SmartThings/SmartThings/blob/master/Devices/Generic%20HTTP%20Device/GenericHTTPDevice.groovy
  *  Copyright 2017 JZ
  *
@@ -23,7 +23,9 @@ metadata {
 		capability "Refresh"
 		attribute "mainTriggered", "string"
 		attribute "refreshTriggered", "string"
+		attribute "customswitch", "string"
 		attribute "customTriggered", "string"
+		attribute "customTriggeredEPOC", "number"
 		attribute "cpuUsage", "string"
 		attribute "spaceUsed", "string"
 		attribute "upTime", "string"
@@ -200,6 +202,7 @@ def off() {
 		on()
 	}
 }
+
 def CustomTrigger() {
 	//log.debug device.currentState("customswitch").getValue() + " === customswitch state"
 	def FullCommand = ''
@@ -389,10 +392,12 @@ def parse(String description) {
 		if (jsonlist."CustomTrigger"=="Success") {
 			sendEvent(name: "customswitch", value: "on", isStateChange: true)
 			sendEvent(name: "customTriggered", value: "MOMENTARY @ " + jsonlist."Date", unit: "")
+            sendEvent(name: "customTriggeredEPOC", value: now(), isStateChange: true)
 			whichTile = 'customoff'
 		}
 		if (jsonlist."CustomTriggerOn"=="Success" && jsonlist."CustomPinStatus"==1) {
 			sendEvent(name: "customTriggered", value: "ON @ " + jsonlist."Date", unit: "")
+            sendEvent(name: "customTriggeredEPOC", value: now(), isStateChange: true)
 			whichTile = 'customon'
 		}
 		if (jsonlist."CustomTriggerOn"=="Authentication Required!") {
@@ -400,6 +405,7 @@ def parse(String description) {
 		}
 		if (jsonlist."CustomTriggerOff"=="Success" && jsonlist."CustomPinStatus"==0) {
 			sendEvent(name: "customTriggered", value: "OFF @ " + jsonlist."Date", unit: "")
+            sendEvent(name: "customTriggeredEPOC", value: now(), isStateChange: true)
 			whichTile = 'customoff'
 		}
 		if (jsonlist."CustomTriggerOff"=="Authentication Required!") {
@@ -407,10 +413,12 @@ def parse(String description) {
 		}
 		if (jsonlist."CustomPinStatus"==1) {
 			sendEvent(name: "customswitch", value: "on", isStateChange: true)
+            sendEvent(name: "customTriggeredEPOC", value: now(), isStateChange: true)
 			sendEvent(name: "refreshswitch", value: "default", isStateChange: true)
 			whichTile = 'customon'
 		} else if (jsonlist."CustomPinStatus"==0) {
 			sendEvent(name: "customswitch", value: "off", isStateChange: true)
+            sendEvent(name: "customTriggeredEPOC", value: now(), isStateChange: true)
 			sendEvent(name: "refreshswitch", value: "default", isStateChange: true)
 			whichTile = 'customoff'
 		}
