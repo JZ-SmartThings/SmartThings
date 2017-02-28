@@ -6,15 +6,15 @@ This project consists of a Raspberry Pi running Raspbian OS. It runs HTTPD with 
 The code and project expanded to the use of Atmel/AVR devices like Arduino UNO/Nano/Mega and the WIFI capable SOC like ESP8266/NodeMCU/WeMos D1 Mini. It can report temperature & humidity back to SmartThings using the DHT modules. It can also report magnetic contact sensor state to SmartThings. Basic HTTP authentication is available as an option. The code can use the popular Ethernet module ENC28J60 using a custom library:
 https://github.com/UIPEthernet/UIPEthernet
 
--SMARTTHINGS:
+---SMARTTHINGS:
 The GenericHTTPDevice.groovy file is the Device Handler for SmartThings. The VirtualCustomSwitch.groovy file can be used in conjunction with the SmartApp which will keep the custom button in sync with a virtual one:
 https://github.com/JZ-SmartThings/SmartThings/tree/master/SmartApps/Virtual%20Custom%20Switch%20Sync%20App
 
--RASPBERY PI or LINUX:
+---RASPBERY PI or LINUX:
 For Raspberry Pi or Linux, use index.php and likely place it in the /var/www/html folder of your RPi. It runs the external gpio command in Linux.
 At the top of index.php, change the first variable to "true" instead of "false" and this will make the PHP page protected with basic authentication. After making that change, make sure to change the SmartThings preferences for the device.
 
--ARDUINO or NODEMCU
+---ARDUINO or NODEMCU
 The *.ino files are the Arduino IDE code samples. Verify the few options at the top of the script before flashing your device.
 
 This project was tested successfully via an external IP, Pollster and with an Amazon Echo/Alexa. Echo can run TWO functions in my app. The ON command triggers the main function and OFF triggers the custom function but can be changed to only control the Main switch.
