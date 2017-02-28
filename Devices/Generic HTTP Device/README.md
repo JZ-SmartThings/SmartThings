@@ -3,16 +3,23 @@ Link to the project: https://community.smartthings.com/t/43335
 
 This project consists of a Raspberry Pi running Raspbian OS. It runs HTTPD with index.php as the source. The PHP runs the gpio command in order to enable the pins on the Pi. The code sample in the PHP file causes a relay to momentarily turn on then off. I'm using this on a gate so the short/momentary capability was key. However, it's very customizable and now offers on/off states for both switches. For advanced/full instructions on installing and configuring Raspbian OS, see the project's forum link at the top.
 
-The code and project expanded to the use of Atmel/AVR devices like Arduino UNO/Nano/Mega and the WIFI capable SOC like ESP8266/NodeMCU/WeMos D1 Mini. It can report temperature & humidity back to SmartThings using the DHT modules. It can also report magnetic contact sensor state to SmartThings. Basica HTTP authentication is available as an option. The code can use the popular Ethernet module ENC28J60 using a custom library:
+The code and project expanded to the use of Atmel/AVR devices like Arduino UNO/Nano/Mega and the WIFI capable SOC like ESP8266/NodeMCU/WeMos D1 Mini. It can report temperature & humidity back to SmartThings using the DHT modules. It can also report magnetic contact sensor state to SmartThings. Basic HTTP authentication is available as an option. The code can use the popular Ethernet module ENC28J60 using a custom library:
 https://github.com/UIPEthernet/UIPEthernet
 
-The Groovy file is the Device Handler for SmartThings.
-index.php is meant to reside in /var/www/html folder of the Raspbery Pi and runs the external gpio command in Linux.
+-SMARTTHINGS:
+The GenericHTTPDevice.groovy file is the Device Handler for SmartThings. The VirtualCustomSwitch.groovy file can be used in conjunction with the SmartApp which will keep the custom button in sync with a virtual one:
+https://github.com/JZ-SmartThings/SmartThings/tree/master/SmartApps/Virtual%20Custom%20Switch%20Sync%20App
+
+-RASPBERY PI or LINUX:
+For Raspberry Pi or Linux, use index.php and likely place it in the /var/www/html folder of your RPi. It runs the external gpio command in Linux.
 At the top of index.php, change the first variable to "true" instead of "false" and this will make the PHP page protected with basic authentication. After making that change, make sure to change the SmartThings preferences for the device.
+
+-ARDUINO or NODEMCU
 The *.ino files are the Arduino IDE code samples. Verify the few options at the top of the script before flashing your device.
 
 This project was tested successfully via an external IP, Pollster and with an Amazon Echo/Alexa. Echo can run TWO functions in my app. The ON command triggers the main function and OFF triggers the custom function but can be changed to only control the Main switch.
 
+</br>v1.0.20170227 - Created a SmartApp & a Virtual Custom Switch device. The SmartApp will keep the virtual switch synced up with the Custom Switch of the generic HTTP device. This will help to automate the secondary/custom button.
 </br>v1.0.20170221 - Changed all code samples including ST Device Handler. Defaulting the contact sensor to closed state for accurate ST alerts. Contact Sensor enabling flag now resides in the EEPROM & in the PHP code it's defined at the top. Fixed UIPEthernet IP not showing up on Arduino UNO/Nano page.
 </br>v1.0.20170218 - Changed only the Arduino/NodeMCU code samples to use the GND signal instead of VCC for better accuracy. Read up on INPUT_PULLUP for my reasoning.
 </br>v1.0.20170214 - Added contact sensor ability. Using SmartThings "capability" so rules can be respected when sensor state changes. Modified both Arduino sketches and PHP samples.
