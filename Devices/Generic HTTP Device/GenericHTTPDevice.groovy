@@ -1,5 +1,5 @@
 /**
- *  Generic HTTP Device v1.0.20170227
+ *  Generic HTTP Device v1.0.20170326
  *  Source code can be found here: https://github.com/JZ-SmartThings/SmartThings/blob/master/Devices/Generic%20HTTP%20Device/GenericHTTPDevice.groovy
  *  Copyright 2017 JZ
  *
@@ -21,6 +21,7 @@ metadata {
 		capability "Sensor"
 		capability "Polling"
 		capability "Refresh"
+		capability "Health Check"
 		attribute "mainTriggered", "string"
 		attribute "refreshTriggered", "string"
 		attribute "customswitch", "string"
@@ -51,6 +52,8 @@ metadata {
 		input("DeviceMainPin", "number", title:'Main Pin Number in BCM Format', description: 'Empty assumes pin #4.', required: false, displayDuringSetup: false)
 		input("DeviceCustomMomentary", "bool", title:"CustomTrigger is Momentary?", description: "", defaultValue: true, required: false, displayDuringSetup: true)
 		input("DeviceCustomPin", "number", title:'Custom Pin Number in BCM Format', description: 'Empty assumes pin #21.', required: false, displayDuringSetup: false)
+		input("DeviceSensorInvert", "bool", title:"Invert open/closed states on primary contact sensor?", description: "", defaultValue: false, required: false, displayDuringSetup: false)	
+		//input("DeviceSensor2Invert", "bool", title:"Invert open/closed states on secondary contact sensor??", description: "", defaultValue: false, required: false, displayDuringSetup: false)	
 		input("UseJSON", "bool", title:"Use JSON instead of HTML?", description: "", defaultValue: false, required: false, displayDuringSetup: true)
 		section() {
 			input("HTTPAuth", "bool", title:"Requires User Auth?", description: "Choose if the HTTP requires basic authentication", defaultValue: false, required: true, displayDuringSetup: true)
@@ -178,6 +181,10 @@ def refresh() {
 	runCmd(FullCommand)
 }
 def poll() {
+	refresh()
+}
+def ping() {
+    log.debug "ping()"
 	refresh()
 }
 def on() {
@@ -354,10 +361,13 @@ def parse(String description) {
 				if (line.contains('CustomTriggerOff=Failed : Authentication Required!')) { jsonlist.put ("CustomTriggerOff", "Authentication Required!") }
 				if (line.contains('CustomPinStatus=1')) { jsonlist.put ("CustomPinStatus".replace("=",""), 1) }
 				if (line.contains('CustomPinStatus=0')) { jsonlist.put ("CustomPinStatus".replace("=",""), 0) }
-				if (line.contains('SensorPinStatus=Open')) { jsonlist.put ("SensorPinStatus".replace("=",""), "Open") }
-				if (line.contains('SensorPinStatus=Closed')) { jsonlist.put ("SensorPinStatus".replace("=",""), "Closed") }
-				if (line.contains('Contact Sensor=Open')) { jsonlist.put ("SensorPinStatus".replace("=",""), "Open") }
-				if (line.contains('Contact Sensor=Closed')) { jsonlist.put ("SensorPinStatus".replace("=",""), "Closed") }
+				if (DeviceSensorInvert == false) { 
+					if (line.contains('Contact Sensor=Open')) { jsonlist.put ("SensorPinStatus".replace("=",""), "Open") }
+					if (line.contains('Contact Sensor=Closed')) { jsonlist.put ("SensorPinStatus".replace("=",""), "Closed") }
+				} else {
+					if (line.contains('Contact Sensor=Open')) { jsonlist.put ("SensorPinStatus".replace("=",""), "Closed") }
+					if (line.contains('Contact Sensor=Closed')) { jsonlist.put ("SensorPinStatus".replace("=",""), "Open") }
+				}
 				if (line.contains('Refresh=Success')) { jsonlist.put ("Refresh", "Success") }
 				if (line.contains('Refresh=Failed : Authentication Required!')) { jsonlist.put ("Refresh", "Authentication Required!") }
 				if (line.contains('RebootNow=Success')) { jsonlist.put ("RebootNow", "Success") }

@@ -1,5 +1,5 @@
  /**
- *  Arduino Nano & Ethernet Shield Sample v1.0.20170221
+ *  Arduino Nano & Ethernet Shield Sample v1.0.20170326
  *  Source code can be found here: https://github.com/JZ-SmartThings/SmartThings/blob/master/Devices/Generic%20HTTP%20Device
  *  Copyright 2017 JZ
  *
@@ -13,11 +13,11 @@
 #include <UIPEthernet.h>
 #include <EEPROM.h>
 
-// DECIDE WHETHER TO SEND HIGH OR LOW TO THE PINS AND WHICH PINS ARE USED FOR TRIGGERS
-// IF USING 3.3V RELAY, TRANSISTOR OR MOSFET THEN SET THE BELOW VARIABLE TO FALSE
-const bool use5Vrelay = true;
+// DESIGNATE WHICH PINS ARE USED FOR TRIGGERS
+// IF USING 3.3V RELAY, TRANSISTOR OR MOSFET THEN TOGGLE Use5Vrelay TO FALSE VIA UI
 int relayPin1 = 2; // GPIO5 = D2
 int relayPin2 = 3; // GPIO6 = D3
+bool Use5Vrelay; // Value defaults by reading eeprom in the setup method
 
 // DESIGNATE CONTACT SENSOR PIN.
 #define SENSORPIN 5     // what pin is the Contact Sensor on?
@@ -32,14 +32,10 @@ EthernetServer server = EthernetServer(80);
 void setup()
 {
   Serial.begin(115200);
-  pinMode(relayPin1, OUTPUT);
-  pinMode(relayPin2, OUTPUT);
-  digitalWrite(relayPin1, use5Vrelay==true ? HIGH : LOW);
-  digitalWrite(relayPin2, use5Vrelay==true ? HIGH : LOW);
 
+  // DEFAULT CONFIG FOR CONTACT SENSOR
   //EEPROM.begin(1);
   int ContactSensor=EEPROM.read(1);
-  Serial.println(); Serial.println(ContactSensor);
   if (ContactSensor != 0 && ContactSensor != 1) {
     EEPROM.write(1,0);
     //EEPROM.commit();
@@ -47,14 +43,27 @@ void setup()
   if (ContactSensor==1) {
     pinMode(SENSORPIN, INPUT_PULLUP);
   }
+  // DEFAULT CONFIG FOR USE5VRELAY
+  //EEPROM.begin(5);
+  int eepromUse5Vrelay=EEPROM.read(5);
+  if (eepromUse5Vrelay != 0 && eepromUse5Vrelay != 1) {
+    EEPROM.write(5,1);
+    //EEPROM.commit();
+  }
+  if (eepromUse5Vrelay ? Use5Vrelay=1 : Use5Vrelay=0);
 
-  uint8_t mac[6] = {0xFF,0x01,0x02,0x03,0x04,0x05};
+  pinMode(relayPin1, OUTPUT);
+  pinMode(relayPin2, OUTPUT);
+  digitalWrite(relayPin1, Use5Vrelay==true ? HIGH : LOW);
+  digitalWrite(relayPin2, Use5Vrelay==true ? HIGH : LOW);
+
+  uint8_t mac[6] = {0x0A,0x0B,0x0C,0x0D,0x0E,0x0F};
   IPAddress myIP(192,168,0,225);
   Ethernet.begin(mac,myIP);
-  /* //DHCP NOT WORKING
+  /* // DHCP
   if (Ethernet.begin(mac) == 0) {
     while (1) {
-      Serial.println("Failed to configure Ethernet using DHCP");
+      Serial.println(F("Failed to configure Ethernet using DHCP"));
       delay(10000);
     }
   }
@@ -120,8 +129,6 @@ void loop()
           }
           if (request.indexOf("/ToggleSensor") != -1)  {
             //EEPROM.begin(1);
-            String ToggleSensor=request;
-            ToggleSensor.replace("/ToggleSensor","");
             if (EEPROM.read(1) == 0) {
               EEPROM.write(1,1);
               //EEPROM.commit();
@@ -131,30 +138,42 @@ void loop()
               //EEPROM.commit();
             }
           }
-
-          //Serial.print("use5Vrelay == "); Serial.println(use5Vrelay);
+          if (request.indexOf("/ToggleUse5Vrelay") != -1)  {
+            //EEPROM.begin(5);
+            if (EEPROM.read(5) == 0) {
+              Use5Vrelay=true;
+              EEPROM.write(5,1);
+              //EEPROM.commit();
+            } else {
+              Use5Vrelay=false;
+              EEPROM.write(5,0);
+              //EEPROM.commit();
+            }
+            resetFunction();
+          }
+          //Serial.print("Use5Vrelay == "); Serial.println(Use5Vrelay);
           if (request.indexOf("RELAY1=ON") != -1 || request.indexOf("MainTriggerOn=") != -1)  {
-            digitalWrite(relayPin1, use5Vrelay==true ? LOW : HIGH);
+            digitalWrite(relayPin1, Use5Vrelay==true ? LOW : HIGH);
           }
           if (request.indexOf("RELAY1=OFF") != -1 || request.indexOf("MainTriggerOff=") != -1)  {
-            digitalWrite(relayPin1, use5Vrelay==true ? HIGH : LOW);
+            digitalWrite(relayPin1, Use5Vrelay==true ? HIGH : LOW);
           }
           if (request.indexOf("RELAY1=MOMENTARY") != -1 || request.indexOf("MainTrigger=") != -1)  {
-            digitalWrite(relayPin1, use5Vrelay==true ? LOW : HIGH);
+            digitalWrite(relayPin1, Use5Vrelay==true ? LOW : HIGH);
             delay(300);
-            digitalWrite(relayPin1, use5Vrelay==true ? HIGH : LOW);
+            digitalWrite(relayPin1, Use5Vrelay==true ? HIGH : LOW);
           }
 
           if (request.indexOf("RELAY2=ON") != -1 || request.indexOf("CustomTriggerOn=") != -1)  {
-            digitalWrite(relayPin2, use5Vrelay==true ? LOW : HIGH);
+            digitalWrite(relayPin2, Use5Vrelay==true ? LOW : HIGH);
           }
           if (request.indexOf("RELAY2=OFF") != -1 || request.indexOf("CustomTriggerOff=") != -1)  {
-            digitalWrite(relayPin2, use5Vrelay==true ? HIGH : LOW);
+            digitalWrite(relayPin2, Use5Vrelay==true ? HIGH : LOW);
           }
           if (request.indexOf("RELAY2=MOMENTARY") != -1 || request.indexOf("CustomTrigger=") != -1)  {
-            digitalWrite(relayPin2, use5Vrelay==true ? LOW : HIGH);
+            digitalWrite(relayPin2, Use5Vrelay==true ? LOW : HIGH);
             delay(300);
-            digitalWrite(relayPin2, use5Vrelay==true ? HIGH : LOW);
+            digitalWrite(relayPin2, Use5Vrelay==true ? HIGH : LOW);
           }
 
           // Return the response
@@ -173,7 +192,9 @@ void loop()
           client.println(F("</b><hr>"));
 
           client.println(F("<pre>"));
-          // CONTACT SENSOR
+          // SHOW Use5Vrelay
+          client.print(F("Use5Vrelay=")); client.print(Use5Vrelay ? F("true") : F("false") ); client.print(F("\n"));
+          // SHOW CONTACT SENSOR
           if (EEPROM.read(1)==1) {
             client.print(F("<b><i>Contact Sensor Enabled:</i></b>\n"));
             client.print(F("Contact Sensor=")); client.print(digitalRead(SENSORPIN) ? F("Open") : F("Closed") ); client.print(F("\n"));
@@ -187,7 +208,7 @@ void loop()
 
           client.println(F("<div class='center'>\n"));
           client.print(F("RELAY1 pin is now: "));
-          if(use5Vrelay==true) {
+          if(Use5Vrelay==true) {
             if(digitalRead(relayPin1) == LOW) { client.print(F("On")); } else { client.print(F("Off")); }
           } else {
             if(digitalRead(relayPin1) == HIGH) { client.print(F("On")); } else { client.print(F("Off")); }
@@ -198,7 +219,7 @@ void loop()
 
           client.println(F("<div class='center'>\n"));
           client.print(F("RELAY2 pin is now: "));
-          if(use5Vrelay==true) {
+          if(Use5Vrelay==true) {
             if(digitalRead(relayPin2) == LOW) { client.print(F("On")); } else { client.print(F("Off")); }
           } else {
             if(digitalRead(relayPin2) == HIGH) { client.print(F("On")); } else { client.print(F("Off")); }
@@ -209,7 +230,11 @@ void loop()
 
 
           client.println(F("<div class='center'>"));
+          // SHOW TOGGLE Use5Vrelay
+          client.println(F("<button onClick=\"javascript: if (confirm(\'Are you sure you want to toggle the Use5Vrelay flag?\\nTrue/1 sends a GND signal. False/0 sends a VCC with 3.3 volts.\\nThis will also reboot the device!!!\\nIf the device does not come back up, reset it manually.\')) parent.location='/ToggleUse5Vrelay';\">Toggle Use 5V Relay</button>&nbsp;&nbsp;&nbsp;\n"));
+          // SHOW TOGGLE CONTACT SENSOR
           client.println(F("<button onClick=\"javascript: if (confirm(\'Are you sure you want to toggle the Contact Sensor?\')) parent.location='/ToggleSensor';\">Toggle Contact Sensor</button><br><hr>\n"));
+
 
           client.println(F("<input id=\"RebootFrequencyDays\" type=\"text\" name=\"RebootFrequencyDays\" value=\""));
           //EEPROM.begin(1);

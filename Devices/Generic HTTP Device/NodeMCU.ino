@@ -1,5 +1,5 @@
  /**
- *  ESP8266-12E / NodeMCU / WeMos D1 Mini WiFi & ENC28J60 Sample v1.0.20170221
+ *  ESP8266-12E / NodeMCU / WeMos D1 Mini WiFi & ENC28J60 Sample v1.0.20170326
  *  Source code can be found here: https://github.com/JZ-SmartThings/SmartThings/blob/master/Devices/Generic%20HTTP%20Device
  *  Copyright 2017 JZ
  *
@@ -17,17 +17,17 @@
 const char* ssid = "WIFI_SSID";
 const char* password = "WIFI_PASSWORD";
 
-// DECIDE WHETHER TO SEND HIGH OR LOW TO THE PINS AND WHICH PINS ARE USED FOR TRIGGERS
-// IF USING 3.3V RELAY, TRANSISTOR OR MOSFET THEN SET THE BELOW VARIABLE TO FALSE
-const bool use5Vrelay = true;
+// WHICH PINS ARE USED FOR TRIGGERS
+// IF USING 3.3V RELAY, TRANSISTOR OR MOSFET THEN TOGGLE Use5Vrelay TO FALSE VIA UI
 int relayPin1 = D1; // GPIO5 = D1
 int relayPin2 = D2; // GPIO4 = D2
+bool Use5Vrelay; // Value defaults by reading eeprom in the setup method
 
 // USE BASIC HTTP AUTH?
 const bool useAuth = false;
 
 // DESIGNATE CONTACT SENSOR PIN.
-#define SENSORPIN D5     // what pin is the Contact Sensor on?
+#define SENSORPIN D0     // what pin is the Contact Sensor on?
 
 // USE DHT TEMP/HUMIDITY SENSOR? DESIGNATE WHICH PIN. MAKE SURE TO DEFINE WHICH SENSOR MODEL BELOW BY UNCOMMENTING IT.
 #define useDHT false
@@ -69,9 +69,9 @@ void setup()
     dht.begin();
   #endif
 
+  // DEFAULT CONFIG FOR CONTACT SENSOR
   EEPROM.begin(1);
   int ContactSensor=EEPROM.read(1);
-  Serial.println(); Serial.println(ContactSensor);
   if (ContactSensor != 0 && ContactSensor != 1) {
     EEPROM.write(1,0);
     EEPROM.commit();
@@ -80,10 +80,19 @@ void setup()
     pinMode(SENSORPIN, INPUT_PULLUP);
   }
 
+  // DEFAULT CONFIG FOR USE5VRELAY
+  EEPROM.begin(5);
+  int eepromUse5Vrelay=EEPROM.read(5);
+  if (eepromUse5Vrelay != 0 && eepromUse5Vrelay != 1) {
+    EEPROM.write(5,1);
+    EEPROM.commit();
+  }
+  if (eepromUse5Vrelay ? Use5Vrelay=1 : Use5Vrelay=0);
+
   pinMode(relayPin1, OUTPUT);
   pinMode(relayPin2, OUTPUT);
-  digitalWrite(relayPin1, use5Vrelay==true ? HIGH : LOW);
-  digitalWrite(relayPin2, use5Vrelay==true ? HIGH : LOW);
+  digitalWrite(relayPin1, Use5Vrelay==true ? HIGH : LOW);
+  digitalWrite(relayPin2, Use5Vrelay==true ? HIGH : LOW);
 
   #if useWIFI==true
     // Connect to WiFi network
@@ -96,6 +105,10 @@ void setup()
     }
     Serial.println("");
     Serial.println("WiFi connected");
+    Serial.print("\nlocalIP: "); Serial.println(WiFi.localIP());
+    Serial.print("subnetMask: "); Serial.println(WiFi.subnetMask());
+    Serial.print("gatewayIP: "); Serial.println(WiFi.gatewayIP());
+    Serial.print("dnsIP: "); Serial.println(WiFi.dnsIP());
     // Start the server
     server.begin();
     Serial.println("Server started");
@@ -123,19 +136,18 @@ void setup()
 
   #else
     // ENC28J60 ETHERNET
-    uint8_t mac[6] = {0xFF,0x01,0x02,0x03,0x04,0x05};
-    IPAddress myIP(192,168,0,226);
-    Ethernet.begin(mac,myIP);
-    /* //DHCP NOT WORKING
+    uint8_t mac[6] = {0x0A,0x0B,0x0C,0x0D,0x0E,0x0F};
+    // FIXED IP ADDRESS
+    //IPAddress myIP(192,168,0,226);
+    //Ethernet.begin(mac,myIP);
     if (Ethernet.begin(mac) == 0) {
       while (1) {
         Serial.println("Failed to configure Ethernet using DHCP");
         delay(10000);
       }
     }
-    */
     server.begin();
-    Serial.print("localIP: "); Serial.println(Ethernet.localIP());
+    Serial.print("\nlocalIP: "); Serial.println(Ethernet.localIP());
     Serial.print("subnetMask: "); Serial.println(Ethernet.subnetMask());
     Serial.print("gatewayIP: "); Serial.println(Ethernet.gatewayIP());
     Serial.print("dnsServerIP: "); Serial.println(Ethernet.dnsServerIP());
@@ -147,8 +159,10 @@ void setup()
 void loop()
 {
   // OTA
-  httpServer.handleClient();
-  ArduinoOTA.handle();
+  #if useWIFI==true
+    httpServer.handleClient();
+    ArduinoOTA.handle();
+  #endif
 
   // SERIAL MESSAGE
   if (millis()%900000==0) { // every 15 minutes
@@ -185,7 +199,10 @@ void loop()
     client.flush();
   #else
     EthernetClient client = server.available();  // try to get client
-  
+    //Serial.print("client="); Serial.println(client);
+    //Serial.print("client.connected="); Serial.println(client.connected());
+    //Serial.print("client.read FIRST CHAR=");Serial.println(client.read());
+
     if (client) {  // got client?
       boolean currentLineIsBlank = true;
       String HTTP_req;          // stores the HTTP request
@@ -236,7 +253,7 @@ void loop()
 } //loop
 
 void handleRequest() {
-  Serial.println("Starting handleRequest...");
+  //Serial.println("Starting handleRequest...");
   // Match the request
   if (request.indexOf("/favicon.ico") > -1)  {
     return;
@@ -266,31 +283,42 @@ void handleRequest() {
       EEPROM.commit();
     }
   }
-
-
-  //Serial.print("use5Vrelay == "); Serial.println(use5Vrelay);
+  if (request.indexOf("/ToggleUse5Vrelay") != -1)  {
+    EEPROM.begin(5);
+    if (EEPROM.read(5) == 0) {
+      Use5Vrelay=true;
+      EEPROM.write(5,1);
+      EEPROM.commit();
+    } else {
+      Use5Vrelay=false;
+      EEPROM.write(5,0);
+      EEPROM.commit();
+    }
+    ESP.restart();
+  }
+  //Serial.print("Use5Vrelay == "); Serial.println(Use5Vrelay);
   if (request.indexOf("RELAY1=ON") != -1 || request.indexOf("MainTriggerOn=") != -1)  {
-    digitalWrite(relayPin1, use5Vrelay==true ? LOW : HIGH);
+    digitalWrite(relayPin1, Use5Vrelay==true ? LOW : HIGH);
   }
   if (request.indexOf("RELAY1=OFF") != -1 || request.indexOf("MainTriggerOff=") != -1)  {
-    digitalWrite(relayPin1, use5Vrelay==true ? HIGH : LOW);
+    digitalWrite(relayPin1, Use5Vrelay==true ? HIGH : LOW);
   }
   if (request.indexOf("RELAY1=MOMENTARY") != -1 || request.indexOf("MainTrigger=") != -1)  {
-    digitalWrite(relayPin1, use5Vrelay==true ? LOW : HIGH);
+    digitalWrite(relayPin1, Use5Vrelay==true ? LOW : HIGH);
     delay(300);
-    digitalWrite(relayPin1, use5Vrelay==true ? HIGH : LOW);
+    digitalWrite(relayPin1, Use5Vrelay==true ? HIGH : LOW);
   }
   
   if (request.indexOf("RELAY2=ON") != -1 || request.indexOf("CustomTriggerOn=") != -1)  {
-    digitalWrite(relayPin2, use5Vrelay==true ? LOW : HIGH);
+    digitalWrite(relayPin2, Use5Vrelay==true ? LOW : HIGH);
   }
   if (request.indexOf("RELAY2=OFF") != -1 || request.indexOf("CustomTriggerOff=") != -1)  {
-    digitalWrite(relayPin2, use5Vrelay==true ? HIGH : LOW);
+    digitalWrite(relayPin2, Use5Vrelay==true ? HIGH : LOW);
   }
   if (request.indexOf("RELAY2=MOMENTARY") != -1 || request.indexOf("CustomTrigger=") != -1)  {
-    digitalWrite(relayPin2, use5Vrelay==true ? LOW : HIGH);
+    digitalWrite(relayPin2, Use5Vrelay==true ? LOW : HIGH);
     delay(300);
-    digitalWrite(relayPin2, use5Vrelay==true ? HIGH : LOW);
+    digitalWrite(relayPin2, Use5Vrelay==true ? HIGH : LOW);
   }
 }
 
@@ -338,9 +366,12 @@ String clientResponse (int section) {
     clientResponse.concat("\n</b><hr>");
   } else if (section==1) {
     clientResponse.concat("<pre>\n");
+    // SHOW Use5Vrelay
+    clientResponse.concat("Use5Vrelay="); clientResponse.concat(Use5Vrelay ? "true" : "false" ); clientResponse.concat("\n");
+    // SHOW UPTIME & FREERAM
     clientResponse.concat("UpTime="); clientResponse.concat(uptime()); clientResponse.concat("\n");
     clientResponse.concat(freeRam()); clientResponse.concat("\n");
-    // CONTACT SENSOR
+    // SHOW CONTACT SENSOR
     if (EEPROM.read(1)==1) {
       clientResponse.concat("<b><i>Contact Sensor Enabled:</i></b>\n");
       clientResponse.concat("Contact Sensor="); clientResponse.concat(digitalRead(SENSORPIN) ? "Open" : "Closed" ); clientResponse.concat("\n");
@@ -348,7 +379,7 @@ String clientResponse (int section) {
       clientResponse.concat("<b><i>Contact Sensor Disabled:</i></b>\n");
       clientResponse.concat("Contact Sensor=Closed\n");
     }
-    // HANDLE DHT
+    // SHOW & HANDLE DHT
     #if useDHT==true
       clientResponse.concat("<b><i>DHT");
       clientResponse.concat(DHTTYPE);
@@ -373,7 +404,7 @@ String clientResponse (int section) {
   } else if (section==2) {
     clientResponse.concat("<div class='center'>\n");
     clientResponse.concat("RELAY1 pin is now: ");
-    if(use5Vrelay==true) {
+    if(Use5Vrelay==true) {
       if(digitalRead(relayPin1) == LOW) { clientResponse.concat("On"); } else { clientResponse.concat("Off"); }
     } else {
       if(digitalRead(relayPin1) == HIGH) { clientResponse.concat("On"); } else { clientResponse.concat("Off"); }
@@ -384,7 +415,7 @@ String clientResponse (int section) {
     
     clientResponse.concat("<div class='center'>\n");
     clientResponse.concat("RELAY2 pin is now: ");
-    if(use5Vrelay==true) {
+    if(Use5Vrelay==true) {
       if(digitalRead(relayPin2) == LOW) { clientResponse.concat("On"); } else { clientResponse.concat("Off"); }
     } else {
       if(digitalRead(relayPin2) == HIGH) { clientResponse.concat("On"); } else { clientResponse.concat("Off"); }
@@ -394,6 +425,9 @@ String clientResponse (int section) {
     clientResponse.concat("<a href=\"/RELAY2=MOMENTARY\"><button onClick=\"parent.location='/RELAY2=MOMENTARY'\">MOMENTARY</button></a></div><hr>\n");
   } else if (section==3) {
     clientResponse.concat("<div class='center'>");
+    // SHOW TOGGLE Use5Vrelay
+    clientResponse.concat("<button onClick=\"javascript: if (confirm(\'Are you sure you want to toggle the Use5Vrelay flag?\\nTrue/1 sends a GND signal. False/0 sends a VCC with 3.3 volts.\\nThis will also reboot the device!!!\\nIf the device does not come back up, reset it manually.\')) parent.location='/ToggleUse5Vrelay';\">Toggle Use 5V Relay</button>&nbsp;&nbsp;&nbsp;\n");
+    // SHOW TOGGLE CONTACT SENSOR
     clientResponse.concat("<button onClick=\"javascript: if (confirm(\'Are you sure you want to toggle the Contact Sensor?\')) parent.location='/ToggleSensor';\">Toggle Contact Sensor</button><br><hr>\n");
     // SHOW OTA INFO IF WIFI IS ENABLED
     #if useWIFI==true
@@ -408,7 +442,7 @@ String clientResponse (int section) {
     int days=EEPROM.read(0);
     clientResponse.concat(days);
     clientResponse.concat("\" maxlength=\"3\" size=\"2\" min=\"0\" max=\"255\">&nbsp;&nbsp;&nbsp;<button style=\"line-height: 1em; margin: 3px; padding: 3px 3px;\" onClick=\"parent.location='/RebootFrequencyDays='+document.getElementById('RebootFrequencyDays').value;\">SAVE</button><br>Days between reboots.<br>0 to disable & 255 days is max.");
-    clientResponse.concat("<br><button onClick=\"javascript: if (confirm(\'Are you sure you want to reboot?\')) parent.location='/RebootNow';\">Reboot Now</button></div>\n");
+    clientResponse.concat("<br><button onClick=\"javascript: if (confirm(\'Are you sure you want to reboot?\')) parent.location='/RebootNow';\">Reboot Now</button><br></div><hr>\n");
     // BOTTOM LINKS  
     clientResponse.concat("<div class='center'><a target='_blank' href='https://community.smartthings.com/t/raspberry-pi-to-php-to-gpio-to-relay-to-gate-garage-trigger/43335'>Project on SmartThings Community</a></br>\n");
     clientResponse.concat("<a target='_blank' href='https://github.com/JZ-SmartThings/SmartThings/tree/master/Devices/Generic%20HTTP%20Device'>Project on GitHub</a></br></div></html>\n");
