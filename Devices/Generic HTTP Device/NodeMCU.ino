@@ -1,5 +1,5 @@
  /**
- *  ESP8266-12E / NodeMCU / WeMos D1 Mini WiFi & ENC28J60 Sample v1.0.20170326
+ *  ESP8266-12E / NodeMCU / WeMos D1 Mini WiFi & ENC28J60 Sample v1.0.20170327
  *  Source code can be found here: https://github.com/JZ-SmartThings/SmartThings/blob/master/Devices/Generic%20HTTP%20Device
  *  Copyright 2017 JZ
  *
@@ -26,8 +26,9 @@ bool Use5Vrelay; // Value defaults by reading eeprom in the setup method
 // USE BASIC HTTP AUTH?
 const bool useAuth = false;
 
-// DESIGNATE CONTACT SENSOR PIN.
+// DESIGNATE CONTACT SENSOR PINS.
 #define SENSORPIN D0     // what pin is the Contact Sensor on?
+#define SENSORPIN2 D4     // what pin is the 2nd Contact Sensor on?
 
 // USE DHT TEMP/HUMIDITY SENSOR? DESIGNATE WHICH PIN. MAKE SURE TO DEFINE WHICH SENSOR MODEL BELOW BY UNCOMMENTING IT.
 #define useDHT false
@@ -78,6 +79,23 @@ void setup()
   }
   if (ContactSensor==1) {
     pinMode(SENSORPIN, INPUT_PULLUP);
+  } else {
+    pinMode(SENSORPIN, OUTPUT);
+    digitalWrite(SENSORPIN2, HIGH);
+  }
+
+  // DEFAULT CONFIG FOR CONTACT SENSOR 2
+  EEPROM.begin(2);
+  int ContactSensor2=EEPROM.read(2);
+  if (ContactSensor2 != 0 && ContactSensor2 != 1) {
+    EEPROM.write(2,0);
+    EEPROM.commit();
+  }
+  if (ContactSensor2==1) {
+    pinMode(SENSORPIN2, INPUT_PULLUP);
+  } else {
+    pinMode(SENSORPIN2, OUTPUT);
+    digitalWrite(SENSORPIN2, HIGH);
   }
 
   // DEFAULT CONFIG FOR USE5VRELAY
@@ -272,8 +290,6 @@ void handleRequest() {
   }
   if (request.indexOf("/ToggleSensor") != -1)  {
     EEPROM.begin(1);
-    String ToggleSensor=request;
-    ToggleSensor.replace("/ToggleSensor","");
     if (EEPROM.read(1) == 0) {
       EEPROM.write(1,1);
       EEPROM.commit();
@@ -281,6 +297,21 @@ void handleRequest() {
     } else if (EEPROM.read(1) == 1) {
       EEPROM.write(1,0);
       EEPROM.commit();
+      pinMode(SENSORPIN, OUTPUT);
+      digitalWrite(SENSORPIN, HIGH);
+    }
+  }
+  if (request.indexOf("/Toggle2ndSensor") != -1)  {
+    EEPROM.begin(2);
+    if (EEPROM.read(2) == 0) {
+      EEPROM.write(2,1);
+      EEPROM.commit();
+      pinMode(SENSORPIN2, INPUT_PULLUP);
+    } else if (EEPROM.read(2) == 1) {
+      EEPROM.write(2,0);
+      EEPROM.commit();
+      pinMode(SENSORPIN2, OUTPUT);
+      digitalWrite(SENSORPIN2, HIGH);
     }
   }
   if (request.indexOf("/ToggleUse5Vrelay") != -1)  {
@@ -379,6 +410,14 @@ String clientResponse (int section) {
       clientResponse.concat("<b><i>Contact Sensor Disabled:</i></b>\n");
       clientResponse.concat("Contact Sensor=Closed\n");
     }
+    // SHOW CONTACT SENSOR 2
+    if (EEPROM.read(2)==1) {
+      clientResponse.concat("<b><i>Contact Sensor 2 Enabled:</i></b>\n");
+      clientResponse.concat("Contact Sensor 2="); clientResponse.concat(digitalRead(SENSORPIN2) ? "Open" : "Closed" ); clientResponse.concat("\n");
+    } else {
+      clientResponse.concat("<b><i>Contact Sensor 2 Disabled:</i></b>\n");
+      clientResponse.concat("Contact Sensor 2=Closed\n");
+    }
     // SHOW & HANDLE DHT
     #if useDHT==true
       clientResponse.concat("<b><i>DHT");
@@ -426,9 +465,11 @@ String clientResponse (int section) {
   } else if (section==3) {
     clientResponse.concat("<div class='center'>");
     // SHOW TOGGLE Use5Vrelay
-    clientResponse.concat("<button onClick=\"javascript: if (confirm(\'Are you sure you want to toggle the Use5Vrelay flag?\\nTrue/1 sends a GND signal. False/0 sends a VCC with 3.3 volts.\\nThis will also reboot the device!!!\\nIf the device does not come back up, reset it manually.\')) parent.location='/ToggleUse5Vrelay';\">Toggle Use 5V Relay</button>&nbsp;&nbsp;&nbsp;\n");
-    // SHOW TOGGLE CONTACT SENSOR
-    clientResponse.concat("<button onClick=\"javascript: if (confirm(\'Are you sure you want to toggle the Contact Sensor?\')) parent.location='/ToggleSensor';\">Toggle Contact Sensor</button><br><hr>\n");
+    clientResponse.concat("<button onClick=\"javascript: if (confirm(\'Are you sure you want to toggle the Use5Vrelay flag?\\nTrue/1 sends a GND signal. False/0 sends a VCC with 3.3 volts.\\nThis will also reboot the device!!!\\nIf the device does not come back up, reset it manually.\')) parent.location='/ToggleUse5Vrelay';\">Toggle Use 5V Relay</button><br><hr>\n");
+    // SHOW TOGGLE CONTACT SENSORS
+    clientResponse.concat("<button onClick=\"javascript: if (confirm(\'Are you sure you want to toggle the Contact Sensor?\')) parent.location='/ToggleSensor';\">Toggle Contact Sensor</button>&nbsp;&nbsp;&nbsp;\n");
+    clientResponse.concat("<button onClick=\"javascript: if (confirm(\'Are you sure you want to toggle the 2nd Contact Sensor?\')) parent.location='/Toggle2ndSensor';\">Toggle Contact Sensor 2</button><br><hr>\n");
+
     // SHOW OTA INFO IF WIFI IS ENABLED
     #if useWIFI==true
       clientResponse.concat("<a href=\"http://"); clientResponse.concat(currentIP);

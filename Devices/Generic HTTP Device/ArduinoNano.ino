@@ -1,5 +1,5 @@
  /**
- *  Arduino Nano & Ethernet Shield Sample v1.0.20170326
+ *  Arduino Nano & Ethernet Shield Sample v1.0.20170327
  *  Source code can be found here: https://github.com/JZ-SmartThings/SmartThings/blob/master/Devices/Generic%20HTTP%20Device
  *  Copyright 2017 JZ
  *
@@ -19,8 +19,9 @@ int relayPin1 = 2; // GPIO5 = D2
 int relayPin2 = 3; // GPIO6 = D3
 bool Use5Vrelay; // Value defaults by reading eeprom in the setup method
 
-// DESIGNATE CONTACT SENSOR PIN.
+// DESIGNATE CONTACT SENSOR PINS.
 #define SENSORPIN 5     // what pin is the Contact Sensor on?
+#define SENSORPIN2 6     // what pin is the 2nd Contact Sensor on?
 
 // OTHER VARIALBES
 String currentIP;
@@ -42,7 +43,23 @@ void setup()
   }
   if (ContactSensor==1) {
     pinMode(SENSORPIN, INPUT_PULLUP);
+  } else {
+    pinMode(SENSORPIN, OUTPUT);
+    digitalWrite(SENSORPIN2, HIGH);
   }
+
+  // DEFAULT CONFIG FOR CONTACT SENSOR 2
+  int ContactSensor2=EEPROM.read(2);
+  if (ContactSensor2 != 0 && ContactSensor2 != 1) {
+    EEPROM.write(2,0);
+  }
+  if (ContactSensor2==1) {
+    pinMode(SENSORPIN2, INPUT_PULLUP);
+  } else {
+    pinMode(SENSORPIN2, OUTPUT);
+    digitalWrite(SENSORPIN2, HIGH);
+  }
+
   // DEFAULT CONFIG FOR USE5VRELAY
   //EEPROM.begin(5);
   int eepromUse5Vrelay=EEPROM.read(5);
@@ -136,6 +153,16 @@ void loop()
             } else if (EEPROM.read(1) == 1) {
               EEPROM.write(1,0);
               //EEPROM.commit();
+              pinMode(SENSORPIN, OUTPUT);
+              digitalWrite(SENSORPIN, HIGH);
+            }
+          }
+          if (request.indexOf("/Toggle2ndSensor") != -1)  {
+            if (EEPROM.read(2) == 0) {
+              EEPROM.write(2,1);
+              pinMode(SENSORPIN2, INPUT_PULLUP);
+            } else if (EEPROM.read(2) == 1) {
+              EEPROM.write(2,0);
             }
           }
           if (request.indexOf("/ToggleUse5Vrelay") != -1)  {
@@ -144,6 +171,8 @@ void loop()
               Use5Vrelay=true;
               EEPROM.write(5,1);
               //EEPROM.commit();
+              pinMode(SENSORPIN2, OUTPUT);
+              digitalWrite(SENSORPIN2, HIGH);
             } else {
               Use5Vrelay=false;
               EEPROM.write(5,0);
@@ -202,6 +231,14 @@ void loop()
             client.print(F("<b><i>Contact Sensor Disabled:</i></b>\n"));
             client.print(F("Contact Sensor=Closed\n"));
           }
+          // SHOW CONTACT SENSOR
+          if (EEPROM.read(2)==1) {
+            client.print(F("<b><i>Contact Sensor 2 Enabled:</i></b>\n"));
+            client.print(F("Contact Sensor 2=")); client.print(digitalRead(SENSORPIN2) ? F("Open") : F("Closed") ); client.print(F("\n"));
+          } else {
+            client.print(F("<b><i>Contact Sensor 2 Disabled:</i></b>\n"));
+            client.print(F("Contact Sensor 2=Closed\n"));
+          }
           client.print(F("UpTime=")); client.println(uptime());
           client.println(freeRam());
           client.println(F("</pre>")); client.println(F("<hr>\n"));
@@ -231,9 +268,10 @@ void loop()
 
           client.println(F("<div class='center'>"));
           // SHOW TOGGLE Use5Vrelay
-          client.println(F("<button onClick=\"javascript: if (confirm(\'Are you sure you want to toggle the Use5Vrelay flag?\\nTrue/1 sends a GND signal. False/0 sends a VCC with 3.3 volts.\\nThis will also reboot the device!!!\\nIf the device does not come back up, reset it manually.\')) parent.location='/ToggleUse5Vrelay';\">Toggle Use 5V Relay</button>&nbsp;&nbsp;&nbsp;\n"));
-          // SHOW TOGGLE CONTACT SENSOR
-          client.println(F("<button onClick=\"javascript: if (confirm(\'Are you sure you want to toggle the Contact Sensor?\')) parent.location='/ToggleSensor';\">Toggle Contact Sensor</button><br><hr>\n"));
+          client.println(F("<button onClick=\"javascript: if (confirm(\'Are you sure you want to toggle the Use5Vrelay flag?\\nTrue/1 sends a GND signal. False/0 sends a VCC with 3.3 volts.\\nThis will also reboot the device!!!\\nIf the device does not come back up, reset it manually.\')) parent.location='/ToggleUse5Vrelay';\">Toggle Use 5V Relay</button><br><hr>\n"));
+          // SHOW TOGGLE CONTACT SENSORS
+          client.println(F("<button onClick=\"javascript: if (confirm(\'Are you sure you want to toggle the Contact Sensor?\')) parent.location='/ToggleSensor';\">Toggle Contact Sensor</button>&nbsp;&nbsp;&nbsp;\n"));
+          client.println(F("<button onClick=\"javascript: if (confirm(\'Are you sure you want to toggle the 2nd Contact Sensor?\')) parent.location='/Toggle2ndSensor';\">Toggle Contact Sensor 2</button><br><hr>\n"));
 
 
           client.println(F("<input id=\"RebootFrequencyDays\" type=\"text\" name=\"RebootFrequencyDays\" value=\""));
