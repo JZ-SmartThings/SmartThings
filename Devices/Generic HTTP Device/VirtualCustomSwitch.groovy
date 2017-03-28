@@ -1,5 +1,5 @@
 /**
- *  Virtual Custom Switch v1.0.20170227
+ *  Virtual Custom Switch v1.0.20170327
  *  Copyright 2017 JZ
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
@@ -12,6 +12,7 @@
 metadata {
 	definition (name: "Virtual Custom Switch", namespace: "JZ", author: "JZ") {
 		capability "Switch"
+		
 		command "onPhysical"
 		command "offPhysical"
 	}
@@ -27,8 +28,12 @@ metadata {
 		standardTile("off", "device.switch", decoration: "flat") {
 			state "default", label: 'Off', action: "offPhysical", backgroundColor: "#ffffff"
 		}
+		valueTile("customTriggered", "device.customTriggered", width: 3, height: 1, decoration: "flat") {
+			state("default", label: 'Custom triggered:\r\n${currentValue}', backgroundColor:"#ffffff")
+		}
+
         main "switch"
-		details(["switch","on","off"])
+		details(["switch","on","off","customTriggered"])
 	}
 }
 

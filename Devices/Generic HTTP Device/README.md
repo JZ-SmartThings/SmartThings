@@ -19,6 +19,7 @@ The *.ino files are the Arduino IDE code samples. Verify the few options at the 
 
 This project was tested successfully via an external IP, Pollster and with an Amazon Echo/Alexa. Echo can run TWO functions in my app. The ON command triggers the main function and OFF triggers the custom function but can be changed to only control the Main switch.
 
+</br>v1.0.20170327 - Added 2nd contact sensor. Created a virtual device handler for synchronizing the 2nd contact sensor's state for automation.
 </br>v1.0.20170326 - Fixed MAC address when using RJ45/UIPEthernet. Use5Vrelay flag is now controlled via UI not variable & stored in EEPROM. Inversion of Contact Sensor status, allows for flipping the definition of what closed & open means (NO/NC logic).
 </br>v1.0.20170227 - Created a SmartApp & a Virtual Custom Switch device. The SmartApp will keep the virtual switch synced up with the Custom Switch of the generic HTTP device. This will help to automate the secondary/custom button.
 </br>v1.0.20170221 - Changed all code samples including ST Device Handler. Defaulting the contact sensor to closed state for accurate ST alerts. Contact Sensor enabling flag now resides in the EEPROM & in the PHP code it's defined at the top. Fixed UIPEthernet IP not showing up on Arduino UNO/Nano page.
