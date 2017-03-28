@@ -18,15 +18,9 @@ metadata {
 	}
 
 	tiles {
-		standardTile("switch", "device.switch", width: 2, height: 2, canChangeIcon: true) {
+		standardTile("switch", "device.switch", width: 3, height: 2, canChangeIcon: true) {
 			state "off", label: '${currentValue}', action: "switch.on", icon: "st.switches.switch.off", backgroundColor: "#ffffff"
 			state "on", label: '${currentValue}', action: "switch.off", icon: "st.switches.switch.on", backgroundColor: "#79b821"
-		}
-		standardTile("on", "device.switch", decoration: "flat") {
-			state "default", label: 'On', action: "onPhysical", backgroundColor: "#ffffff"
-		}
-		standardTile("off", "device.switch", decoration: "flat") {
-			state "default", label: 'Off', action: "offPhysical", backgroundColor: "#ffffff"
 		}
 		valueTile("customTriggered", "device.customTriggered", width: 3, height: 1, decoration: "flat") {
 			state("default", label: 'Custom triggered:\r\n${currentValue}', backgroundColor:"#ffffff")
@@ -52,16 +46,6 @@ def on() {
 def off() {
 	log.debug "$version off()"
 	sendEvent(name: "switch", value: "off")
-}
-
-def onPhysical() {
-	log.debug "$version onPhysical()"
-	sendEvent(name: "switch", value: "on", type: "physical")
-}
-
-def offPhysical() {
-	log.debug "$version offPhysical()"
-	sendEvent(name: "switch", value: "off", type: "physical")
 }
 
 private getVersion() {
