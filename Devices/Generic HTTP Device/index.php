@@ -1,8 +1,10 @@
-<?php //v1.0.20170221 added contact sensor default
+<?php //v1.0.20170328 added contact sensor 2
 
 $perform_authentication=false;
 $contact_sensor=false;
-$sensor_pin=25;
+$contact_sensor_2=false;
+$sensor_pin=24;
+$sensor_pin_2=25;
 
 if ($perform_authentication) {
 	$valid_passwords = array ("gate" => "gate1");
@@ -67,6 +69,17 @@ if ($contact_sensor) {
 	}
 } else { // Default to Closed
 	$rpi = $rpi + array("SensorPinStatus" => 0);
+}
+if ($contact_sensor_2) {
+	shell_exec("sudo gpio -g mode $sensor_pin_2 in");
+	$sensor_pin_status_2 = shell_exec("sudo raspi-gpio get $sensor_pin_2 | grep 'func=INPUT' | grep 'level=1'");
+	if (strlen($sensor_pin_status_2) > 5) {
+		$rpi = $rpi + array("Sensor2PinStatus" => 0);
+	} else {
+		$rpi = $rpi + array("Sensor2PinStatus" => 1);
+	}
+} else { // Default to Closed
+	$rpi = $rpi + array("Sensor2PinStatus" => 0);
 }
 
 $main_pin=4;
@@ -223,6 +236,7 @@ if ($rpi['CustomTrigger']) { echo "CustomTrigger=Success\n"; }
 if ($rpi['CustomTriggerOn']) { echo "CustomTriggerOn=Success\n"; }
 if ($rpi['CustomTriggerOff']) { echo "CustomTriggerOff=Success\n"; }
 echo ($rpi['SensorPinStatus']) ? "SensorPinStatus=Open\n" : "SensorPinStatus=Closed\n";
+echo ($rpi['SensorPin2Status']) ? "Sensor2PinStatus=Open\n" : "Sensor2PinStatus=Closed\n";
 if ($rpi['Refresh']) { echo "Refresh=Success\n"; }
 if ($rpi['RebootNow']) { echo "RebootNow=Success\n"; }
 ?>
