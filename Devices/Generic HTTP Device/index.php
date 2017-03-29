@@ -236,7 +236,7 @@ if ($rpi['CustomTrigger']) { echo "CustomTrigger=Success\n"; }
 if ($rpi['CustomTriggerOn']) { echo "CustomTriggerOn=Success\n"; }
 if ($rpi['CustomTriggerOff']) { echo "CustomTriggerOff=Success\n"; }
 echo ($rpi['SensorPinStatus']) ? "SensorPinStatus=Open\n" : "SensorPinStatus=Closed\n";
-echo ($rpi['SensorPin2Status']) ? "Sensor2PinStatus=Open\n" : "Sensor2PinStatus=Closed\n";
+echo ($rpi['Sensor2PinStatus']) ? "Sensor2PinStatus=Open\n" : "Sensor2PinStatus=Closed\n";
 if ($rpi['Refresh']) { echo "Refresh=Success\n"; }
 if ($rpi['RebootNow']) { echo "RebootNow=Success\n"; }
 ?>
