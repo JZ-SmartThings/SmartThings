@@ -1,5 +1,5 @@
 /**
- *  Virtual Custom Switch Sync App v1.0.20170327
+ *  Virtual Custom Switch Sync App v1.0.20170328
  *  Copyright 2017 JZ
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
@@ -23,7 +23,7 @@ preferences {
 	section("Choose your Generic HTTP Device Handler:") {
 		input ("httpswitch", "capability.switch", title: "HTTP Device?", multiple: false, required: true)
 	}
-	section("Choose your Simulated, currently unlinked switch:") {
+	section("Choose your Simulated, currently unlinked Switch:") {
 		input ("virtualswitch", "capability.switch", title: "Virtual Switch?", multiple: false, required: false)
 	}
 	section("Choose your Simulated, currently unlinked Contact Sensor:") {
@@ -43,7 +43,7 @@ def updated() {
 }
 
 def initialize() {
-	subscribe(httpswitch, "customswitch", switchOffHandler)
+	subscribe(httpswitch, "off", switchOffHandler)
 	subscribe(virtualswitch, "switch", virtualSwitchHandler)
 	subscribe(httpswitch, "contact2", virtualSensorHandler)
 }
@@ -51,16 +51,28 @@ def initialize() {
 def switchOffHandler(evt) {
 	//log.debug "$httpswitch.name was turned " + httpswitch*.currentValue("customswitch")
 	log.debug "switchOffHandler called with event: deviceId ${evt.deviceId} name:${evt.name} source:${evt.source} value:${evt.value} isStateChange: ${evt.isStateChange()} isPhysical: ${evt.isPhysical()} isDigital: ${evt.isDigital()} data: ${evt.data} device: ${evt.device}"
-   	sendEvent(settings["virtualswitch"], [name:"switch", value:"$evt.value"])
+
+	// TRYING VALUE OF customswitch FROM HTTP DEVICE RATHER THAN $evt.value
+   	//sendEvent(settings["virtualswitch"], [name:"switch", value:"$evt.value"])
+	for (int i = 1; i<=2; i++) { runIn(i,updateVirtualSwitch) }
 	sendEvent(settings["virtualswitch"], [name:"customTriggered", value:httpswitch*.currentValue("customTriggered")[0]])
 }
 def virtualSwitchHandler(evt) {
 	log.debug "virtualSwitchHandler called with event: deviceId ${evt.deviceId} name:${evt.name} source:${evt.source} value:${evt.value} isStateChange: ${evt.isStateChange()} isPhysical: ${evt.isPhysical()} isDigital: ${evt.isDigital()} data: ${evt.data} device: ${evt.device}"
-	if (now()-httpswitch*.currentValue("customTriggeredEPOCH")[0] > 3000) {
+	log.trace "EPOCH diff was: " + String.valueOf(now()-httpswitch*.currentValue("customTriggeredEPOCH")[0])
+	if (now()-httpswitch*.currentValue("customTriggeredEPOCH")[0] > 5000) {
 		httpswitch.off()
 		sendEvent(settings["virtualswitch"], [name:"customTriggered", value:httpswitch*.currentValue("customTriggered")[0]])
+	} else {
+		for (int i = 1; i<=2; i++) { runIn(i,updateVirtualSwitch) }
 	}
 }
+
+def updateVirtualSwitch() {
+	log.debug "updateVirtualSwitch to ${httpswitch*.currentValue('customswitch')[0]}"
+	sendEvent(settings["virtualswitch"], [name:"switch", value:httpswitch*.currentValue("customswitch")[0]])
+}
+
 def virtualSensorHandler(evt) {
 	log.debug "virtualSensorHandler called with event: deviceId ${evt.deviceId} name:${evt.name} source:${evt.source} value:${evt.value} isStateChange: ${evt.isStateChange()} isPhysical: ${evt.isPhysical()} isDigital: ${evt.isDigital()} data: ${evt.data} device: ${evt.device}"
    	sendEvent(settings["virtualsensor"], [name:"contact", value:"$evt.value"])
