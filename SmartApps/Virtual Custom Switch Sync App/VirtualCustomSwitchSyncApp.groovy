@@ -62,7 +62,7 @@ def runApp(evt) {
 }
 def httpRefresh() {
 	httpswitch.refresh()
-	log.debug "Refresh of " + settings["httpswitch"] + " triggered. Currently set to refresh every " + refreshfreq + " minutes."
+	log.debug "Auto refresh of " + settings["httpswitch"] + " triggered. Currently set to refresh every " + refreshfreq + " minutes."
 	schedule(now() + refreshfreq*1000*60, httpRefresh)
 }
 
