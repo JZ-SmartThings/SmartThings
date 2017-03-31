@@ -1,5 +1,5 @@
 /**
- *  Virtual Custom Switch Sync App v1.0.20170328
+ *  Virtual Custom Switch Sync App v1.0.20170330
  *  Copyright 2017 JZ
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
@@ -13,7 +13,7 @@ definition(
     name: "Virtual Custom Switch Sync App",
     namespace: "JZ",
     author: "JZ",
-    description: "Synchronize a simulated/virtual switch with the Custom Switch of the Generic HTTP Device Handler. This helps with automation of the second button.",
+    description: "Synchronize a simulated/virtual switch with the Custom Switch & 2nd Sensor of the Generic HTTP Device Handler. This helps with automation of the second button & sensor.",
     category: "",
     iconUrl: "https://s3.amazonaws.com/smartapp-icons/Convenience/Cat-Convenience.png",
     iconX2Url: "https://s3.amazonaws.com/smartapp-icons/Convenience/Cat-Convenience@2x.png",
@@ -29,6 +29,9 @@ preferences {
 	section("Choose your Simulated, currently unlinked Contact Sensor:") {
 		input ("virtualsensor", "capability.sensor", title: "Virtual Contact Sensor?", multiple: false, required: false)
 	}
+	section("Refresh/Poll Interval in Minutes. 0/null turns it off (try not to refresh too often):") {
+		input ("refreshfreq", "number", title: "Refresh/Poll Frequency in minutes?", multiple: false, required: false)
+	}
 }
 
 def installed() {
@@ -39,6 +42,7 @@ def installed() {
 def updated() {
 	log.debug "Updated with settings: ${settings}"
 	unsubscribe()
+	unschedule()
 	initialize()
 }
 
@@ -46,6 +50,15 @@ def initialize() {
 	subscribe(httpswitch, "off", switchOffHandler)
 	subscribe(virtualswitch, "switch", virtualSwitchHandler)
 	subscribe(httpswitch, "contact2", virtualSensorHandler)
+	if (refreshfreq > 0) {
+		schedule(now() + refreshfreq*1000*60, httpRefresh)
+	}
+}
+
+def httpRefresh() {
+	httpswitch.refresh()
+	log.debug "Refresh of " + settings["httpswitch"] + " triggered. Currently set to every " + refreshfreq + " minutes."
+	schedule(now() + refreshfreq*1000*60, httpRefresh)
 }
 
 def switchOffHandler(evt) {
