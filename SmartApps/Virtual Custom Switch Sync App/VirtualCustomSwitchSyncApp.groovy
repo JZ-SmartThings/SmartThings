@@ -20,7 +20,7 @@ definition(
     iconX3Url: "https://s3.amazonaws.com/smartapp-icons/Convenience/Cat-Convenience@2x.png")
 
 preferences {
-	section("Choose your Generic HTTP Device Handler:") {
+	section("Choose your Generic HTTP Device:") {
 		input ("httpswitch", "capability.switch", title: "HTTP Device?", multiple: false, required: true)
 	}
 	section("Choose your Simulated, currently unlinked Switch:") {
@@ -29,7 +29,7 @@ preferences {
 	section("Choose your Simulated, currently unlinked Contact Sensor:") {
 		input ("virtualsensor", "capability.sensor", title: "Virtual Contact Sensor?", multiple: false, required: false)
 	}
-	section("Refresh/Poll Interval in Minutes. 0/null turns it off (try not to refresh too often):") {
+	section("Refresh/Poll Interval in Minutes. 0 or null turns refreshing off (try not to refresh too often):") {
 		input ("refreshfreq", "number", title: "Refresh/Poll Frequency in minutes?", multiple: false, required: false)
 	}
 }
