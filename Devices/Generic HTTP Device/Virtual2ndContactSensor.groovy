@@ -1,5 +1,5 @@
 /**
- *  Virtual 2nd Contact Sensor v1.0.20170327
+ *  Virtual 2nd Contact Sensor v1.0.20170407
  *  Copyright 2017 JZ
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
@@ -23,8 +23,8 @@ metadata {
 	}
 	tiles {
 		standardTile("contact", "device.contact", width: 3, height: 2) {
-			state("closed", label:'${name}', icon:"st.contact.contact.closed", backgroundColor:"#00A0DC", action: "open")
-			state("open", label:'${name}', icon:"st.contact.contact.open", backgroundColor:"#e86d13", action: "close")
+			state("closed", label:'${name}', icon:"st.contact.contact.closed", backgroundColor:"#00A0DC")
+			state("open", label:'${name}', icon:"st.contact.contact.open", backgroundColor:"#e86d13")
 		}
 		valueTile("sensor2Triggered", "device.sensor2Triggered", width: 3, height: 1, decoration: "flat") {
 			state("default", label: 'Sensor 2 State Changed:\r\n${currentValue}', backgroundColor:"#ffffff")
