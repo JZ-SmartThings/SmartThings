@@ -127,7 +127,8 @@ def virtualSensorHandler(evt) {
 
 def updateRefreshTiles(evt) {
 	log.debug "Updating REFRESH tiles"
-	schedule(now() + 1000, updateRefreshEvents)
+	//schedule(now() + 1000, updateRefreshEvents)
+	runIn(1,updateRefreshEvents)
 }
 
 def updateRefreshEvents() {
