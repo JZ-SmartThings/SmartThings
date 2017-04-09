@@ -19,6 +19,7 @@ The *.ino files are the Arduino IDE code samples. Verify the few options at the 
 
 This project was tested successfully via an external IP, Pollster and with an Amazon Echo/Alexa. Echo can run TWO functions in my app. The ON command triggers the main function and OFF triggers the custom function but can be changed to only control the Main switch.
 
+</br>v1.0.20170408 - Both virtual device handlers (2nd switch & 2nd sensor) now have refresh ability & a last-refreshed info tile.
 </br>v1.0.20170327 - Added refresh ability to the SmartApp to eliminate reliance on other refresh utilities/apps.
 </br>v1.0.20170327 - Added 2nd contact sensor. Created a virtual device handler for synchronizing the 2nd contact sensor's state for automation.
 </br>v1.0.20170326 - Fixed MAC address when using RJ45/UIPEthernet. Use5Vrelay flag is now controlled via UI not variable & stored in EEPROM. Inversion of Contact Sensor status, allows for flipping the definition of what closed & open means (NO/NC logic).

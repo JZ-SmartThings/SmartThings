@@ -1,5 +1,5 @@
 /**
- *  Virtual 2nd Contact Sensor v1.0.20170407
+ *  Virtual 2nd Contact Sensor v1.0.20170408
  *  Copyright 2017 JZ
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
@@ -13,6 +13,7 @@ metadata {
 	definition (name: "Virtual 2nd Contact Sensor", namespace: "JZ", author: "JZ") {
 		capability "Contact Sensor"
 		capability "Sensor"
+        capability "Refresh"
 
 		command "open"
 		command "close"
@@ -21,17 +22,29 @@ metadata {
 		status "open": "contact:open"
 		status "closed": "contact:closed"
 	}
-	tiles {
-		standardTile("contact", "device.contact", width: 3, height: 2) {
-			state("closed", label:'${name}', icon:"st.contact.contact.closed", backgroundColor:"#00A0DC")
-			state("open", label:'${name}', icon:"st.contact.contact.open", backgroundColor:"#e86d13")
+	tiles(scale: 2) {
+		standardTile("contact", "device.contact", width: 6, height: 2) {
+			state("closed", label:'${name}', icon:"st.contact.contact.closed", backgroundColor:"#53a7c0")
+			state("open", label:'${name}', icon:"st.contact.contact.open", backgroundColor:"#FF6600")
 		}
-		valueTile("sensor2Triggered", "device.sensor2Triggered", width: 3, height: 1, decoration: "flat") {
+		valueTile("sensor2Triggered", "device.sensor2Triggered", width: 6, height: 2, decoration: "flat") {
 			state("default", label: 'Sensor 2 State Changed:\r\n${currentValue}', backgroundColor:"#ffffff")
 		}
+		valueTile("refreshTriggered", "device.refreshTriggered", width: 4, height: 2, decoration: "flat") {
+			state("default", label: 'Refreshed:\r\n${currentValue}', backgroundColor:"#ffffff")
+		}
+		standardTile("refresh", "device.refresh", width: 2, height: 2, decoration: "flat") {
+			state "default", label:'REFRESH', action: "refresh", icon: "st.secondary.refresh-icon", backgroundColor:"#53a7c0", nextState: "refreshing"
+			state "refreshing", label: 'REFRESHING', action: "refresh", icon: "st.secondary.refresh-icon", backgroundColor: "#FF6600", nextState: "default"
+		}
 		main "contact"
-		details "contact","sensor2Triggered"
+		details (["contact","sensor2Triggered","refreshTriggered","refresh"])
 	}
+}
+
+def refresh() {
+	log.debug "refresh()"
+	sendEvent(name: "refresh", value: new Date().format("yyyy-MM-dd h:mm:ss a", location.timeZone))
 }
 
 def parseORIG(String description) {

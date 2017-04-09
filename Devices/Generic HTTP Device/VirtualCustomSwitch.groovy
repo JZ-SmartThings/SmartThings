@@ -1,5 +1,5 @@
 /**
- *  Virtual Custom Switch v1.0.20170327
+ *  Virtual Custom Switch v1.0.20170408
  *  Copyright 2017 JZ
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
@@ -12,23 +12,33 @@
 metadata {
 	definition (name: "Virtual Custom Switch", namespace: "JZ", author: "JZ") {
 		capability "Switch"
-		
-		command "onPhysical"
-		command "offPhysical"
+        capability "Refresh"
+        attribute "refresh", "string"
 	}
 
-	tiles {
-		standardTile("switch", "device.switch", width: 3, height: 2, canChangeIcon: true) {
+	tiles(scale: 2) {
+		standardTile("switch", "device.switch", width: 6, height: 2, canChangeIcon: true) {
 			state "off", label: '${currentValue}', action: "switch.on", icon: "st.switches.switch.off", backgroundColor: "#ffffff"
 			state "on", label: '${currentValue}', action: "switch.off", icon: "st.switches.switch.on", backgroundColor: "#79b821"
 		}
-		valueTile("customTriggered", "device.customTriggered", width: 3, height: 1, decoration: "flat") {
+		valueTile("customTriggered", "device.customTriggered", width: 6, height: 2, decoration: "flat") {
 			state("default", label: 'Custom triggered:\r\n${currentValue}', backgroundColor:"#ffffff")
 		}
-
+		valueTile("refreshTriggered", "device.refreshTriggered", width: 4, height: 2, decoration: "flat") {
+			state("default", label: 'Refreshed:\r\n${currentValue}', backgroundColor:"#ffffff")
+		}
+		standardTile("refresh", "device.refresh", width: 2, height: 2, decoration: "flat") {
+			state "default", label:'REFRESH', action: "refresh", icon: "st.secondary.refresh-icon", backgroundColor:"#53a7c0", nextState: "refreshing"
+			state "refreshing", label: 'REFRESHING', action: "refresh", icon: "st.secondary.refresh-icon", backgroundColor: "#FF6600", nextState: "default"
+		}
         main "switch"
-		details(["switch","on","off","customTriggered"])
+		details(["switch","on","off","customTriggered","refreshTriggered","refresh"])
 	}
+}
+
+def refresh() {
+	log.debug "refresh()"
+	sendEvent(name: "refresh", value: new Date().format("yyyy-MM-dd h:mm:ss a", location.timeZone))
 }
 
 def parse(description) {
