@@ -1,5 +1,5 @@
 /**
- *  Virtual Custom Switch Sync App v1.0.20170408
+ *  Virtual Custom Switch Sync App v1.0.20170409
  *  Copyright 2017 JZ
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
@@ -90,7 +90,9 @@ def switchOffHandler(evt) {
 
 	// TRYING VALUE OF customswitch FROM HTTP DEVICE RATHER THAN $evt.value
    	//sendEvent(settings["virtualswitch"], [name:"switch", value:"$evt.value"])
-	for (int i = 1; i<=2; i++) { runIn(i,updateVirtualSwitch) }
+	//for (int i = 1; i<=2; i++) { runIn(i,updateVirtualSwitch) }
+    //runIn(1,updateVirtualSwitch)
+    updateVirtualSwitch()
 	sendEvent(settings["virtualswitch"], [name:"customTriggered", value:httpswitch*.currentValue("customTriggered")[0]])
 }
 def virtualSwitchHandler(evt) {
@@ -98,12 +100,12 @@ def virtualSwitchHandler(evt) {
 	log.trace "EPOCH diff was: " + String.valueOf(now()-httpswitch*.currentValue("customTriggeredEPOCH")[0])
 	if (now()-httpswitch*.currentValue("customTriggeredEPOCH")[0] > 3000) {
 		httpswitch.off()
-        //for (int i = 1; i<=2; i++) { runIn(i,updateVirtualSwitch) }
-        runIn(3,updateVirtualSwitch)
+        for (int i = 1; i<=3; i++) { runIn(i,updateVirtualSwitch) }
+        //runIn(3,updateVirtualSwitch)
 		sendEvent(settings["virtualswitch"], [name:"customTriggered", value:httpswitch*.currentValue("customTriggered")[0]])
 	} else {
-		//for (int i = 1; i<=2; i++) { runIn(i,updateVirtualSwitch) }
-        runIn(3,updateVirtualSwitch)
+		for (int i = 1; i<=3; i++) { runIn(i,updateVirtualSwitch) }
+        //runIn(3,updateVirtualSwitch)
 		sendEvent(settings["virtualswitch"], [name:"customTriggered", value:httpswitch*.currentValue("customTriggered")[0]])
 	}
 }
