@@ -47,17 +47,23 @@ def updated() {
 }
 
 def initialize() {
-	subscribe(app, runApp)
-	subscribe(httpswitch, "customswitch", switchOffHandler)
-	subscribe(virtualswitch, "switch", virtualSwitchHandler)
-	subscribe(httpswitch, "contact2", virtualSensorHandler)
-    subscribe(httpswitch, "customTriggered", updateCustomTriggered)
-	subscribe(httpswitch, "refreshTriggered", updateRefreshTiles)
-	subscribeToCommand(virtualswitch, "refresh", callRefresh)
-	subscribeToCommand(virtualsensor, "refresh", callRefresh)
-	if (refreshfreq > 0) {
-		schedule(now() + refreshfreq*1000*60, httpRefresh)
-	}
+	if (httpswitch) {
+        subscribe(app, runApp)
+        subscribe(httpswitch, "refreshTriggered", updateRefreshTiles)
+    }
+	if (virtualswitch) {
+		subscribe(virtualswitch, "switch", virtualSwitchHandler)
+        subscribe(httpswitch, "customswitch", switchOffHandler)
+        subscribe(httpswitch, "customTriggered", updateCustomTriggered)
+		subscribeToCommand(virtualswitch, "refresh", callRefresh)
+    }
+	if (virtualsensor) {
+        subscribe(httpswitch, "contact2", virtualSensorHandler)
+        subscribeToCommand(virtualsensor, "refresh", callRefresh)
+    }
+    if (refreshfreq > 0) {
+        schedule(now() + refreshfreq*1000*60, httpRefresh)
+    }
 }
 
 def callRefresh(evt) {
@@ -90,7 +96,7 @@ def switchOffHandler(evt) {
 def virtualSwitchHandler(evt) {
 	log.debug "virtualSwitchHandler called with event: deviceId ${evt.deviceId} name:${evt.name} source:${evt.source} value:${evt.value} isStateChange: ${evt.isStateChange()} isPhysical: ${evt.isPhysical()} isDigital: ${evt.isDigital()} data: ${evt.data} device: ${evt.device}"
 	log.trace "EPOCH diff was: " + String.valueOf(now()-httpswitch*.currentValue("customTriggeredEPOCH")[0])
-	if (now()-httpswitch*.currentValue("customTriggeredEPOCH")[0] > 5000) {
+	if (now()-httpswitch*.currentValue("customTriggeredEPOCH")[0] > 3000) {
 		httpswitch.off()
         //for (int i = 1; i<=2; i++) { runIn(i,updateVirtualSwitch) }
         runIn(3,updateVirtualSwitch)
