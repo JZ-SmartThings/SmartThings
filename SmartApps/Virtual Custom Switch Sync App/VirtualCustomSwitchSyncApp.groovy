@@ -90,9 +90,9 @@ def switchOffHandler(evt) {
 
 	// TRYING VALUE OF customswitch FROM HTTP DEVICE RATHER THAN $evt.value
    	//sendEvent(settings["virtualswitch"], [name:"switch", value:"$evt.value"])
-	//for (int i = 1; i<=2; i++) { runIn(i,updateVirtualSwitch) }
     //runIn(1,updateVirtualSwitch)
-    updateVirtualSwitch()
+    //updateVirtualSwitch()
+	for (int i = 1; i<=3; i++) { runIn(i,updateVirtualSwitch) }
 	sendEvent(settings["virtualswitch"], [name:"customTriggered", value:httpswitch*.currentValue("customTriggered")[0]])
 }
 def virtualSwitchHandler(evt) {
@@ -111,8 +111,12 @@ def virtualSwitchHandler(evt) {
 }
 
 def updateVirtualSwitch() {
-	log.debug "updateVirtualSwitch to ${httpswitch*.currentValue('customswitch')[0]}"
-	sendEvent(settings["virtualswitch"], [name:"switch", value:httpswitch*.currentValue("customswitch")[0]])
+	//log.debug "virtualswitch " + virtualswitch.currentValue("switch")
+	//log.debug "httpswitch " + httpswitch.currentValue("customswitch")
+	if (virtualswitch.currentValue("switch") != httpswitch.currentValue("customswitch")) {
+		log.debug "updateVirtualSwitch to ${httpswitch*.currentValue('customswitch')[0]}"
+		sendEvent(settings["virtualswitch"], [name:"switch", value:httpswitch*.currentValue("customswitch")[0]])
+	}
 }
 
 def virtualSensorHandler(evt) {
