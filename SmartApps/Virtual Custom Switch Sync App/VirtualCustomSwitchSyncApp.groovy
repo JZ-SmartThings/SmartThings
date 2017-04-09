@@ -92,10 +92,12 @@ def virtualSwitchHandler(evt) {
 	log.trace "EPOCH diff was: " + String.valueOf(now()-httpswitch*.currentValue("customTriggeredEPOCH")[0])
 	if (now()-httpswitch*.currentValue("customTriggeredEPOCH")[0] > 5000) {
 		httpswitch.off()
-        for (int i = 1; i<=2; i++) { runIn(i,updateVirtualSwitch) }
+        //for (int i = 1; i<=2; i++) { runIn(i,updateVirtualSwitch) }
+        runIn(3,updateVirtualSwitch)
 		sendEvent(settings["virtualswitch"], [name:"customTriggered", value:httpswitch*.currentValue("customTriggered")[0]])
 	} else {
-		for (int i = 1; i<=2; i++) { runIn(i,updateVirtualSwitch) }
+		//for (int i = 1; i<=2; i++) { runIn(i,updateVirtualSwitch) }
+        runIn(3,updateVirtualSwitch)
 		sendEvent(settings["virtualswitch"], [name:"customTriggered", value:httpswitch*.currentValue("customTriggered")[0]])
 	}
 }
