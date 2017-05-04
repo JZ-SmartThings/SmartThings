@@ -1,9 +1,9 @@
 /**
- *  TVDevice v1.0.20160802
+ *  TVDevice v1.0.20170503
  *
  *  Source code can be found here: https://github.com/JZ-SmartThings/SmartThings/blob/master/Devices/TVDevice/TVDevice.groovy
  *
- *  Copyright 2016 JZ
+ *  Copyright 2017 JZ
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  *  in compliance with the License. You may obtain a copy of the License at:
@@ -73,6 +73,14 @@ metadata {
 			state "default", label: 'PREVIOUS', action: "tvprev", icon: "st.motion.motion.active", backgroundColor: "#79b821", nextState: "trying"
 			state "trying", label: 'TRYING', action: "ResetTiles", icon: "st.motion.motion.active", backgroundColor: "#FFAA33"
 		}
+		standardTile("volup", "device.volup", width: 2, height: 2, canChangeIcon: true, canChangeBackground: true, decoration: "flat") {
+			state "default", label: 'VOL UP', action: "volup", icon: "st.custom.buttons.add-icon", backgroundColor: "#FF6600", nextState: "trying"
+			state "trying", label: 'TRYING', action: "ResetTiles", icon: "st.custom.buttons.add-icon", backgroundColor: "#FFAA33"
+		}
+		standardTile("voldown", "device.voldown", width: 2, height: 2, canChangeIcon: true, canChangeBackground: true, decoration: "flat") {
+			state "default", label:'VOL DOWN' , action: "voldown", icon: "st.custom.buttons.subtract-icon", backgroundColor:"#53a7c0", nextState: "trying"
+			state "trying", label: 'TRYING', action: "ResetTiles", icon: "st.custom.buttons.subtract-icon", backgroundColor: "#FFAA33"
+		}
 		standardTile("tvmute", "device.switch", width: 2, height: 2, canChangeIcon: true, canChangeBackground: true, decoration: "flat") {
 			state "default", label: 'MUTE', action: "tvmute", icon: "st.custom.sonos.muted", backgroundColor: "#9966CC", nextState: "trying"
 			state "trying", label: 'TRYING', action: "ResetTiles", icon: "st.custom.sonos.muted", backgroundColor: "#FFAA33"
@@ -82,7 +90,7 @@ metadata {
 		}
 		
 		main "switch"
-		details(["displayName","levelSliderControl", "switchon", "switchoff", "tvinput", "tvprev", "tvmute" ])
+		details(["displayName","levelSliderControl", "switchon", "switchoff", "tvinput", "tvprev", "volup", "voldown", "tvmute" ])
 	}
 }
 
@@ -91,6 +99,8 @@ def ResetTiles() {
 	sendEvent(name: "switchoff", value: "default", isStateChange: true)
 	sendEvent(name: "tvinput", value: "default", isStateChange: true)
 	sendEvent(name: "tvprev", value: "default", isStateChange: true)
+	sendEvent(name: "volup", value: "default", isStateChange: true)
+	sendEvent(name: "voldown", value: "default", isStateChange: true)
 	sendEvent(name: "tvmute", value: "default", isStateChange: true)
 	log.debug "Resetting tiles."
 }
@@ -114,6 +124,12 @@ def tvinput() {
 }
 def tvprev() {
 	runCmd("/ir?tv=prev")
+}
+def volup() {
+	runCmd("/ir?tv=volup")
+}
+def voldown() {
+	runCmd("/ir?tv=voldown")
 }
 def tvmute() {
 	runCmd("/ir?tv=mute")
@@ -225,6 +241,14 @@ def parse(String description) {
 			sendEvent(name: "tvprev", value: "default", isStateChange: true)
 			whichTile = 'tvprev'
 		}
+		if (jsonlist."tv"=="volup") {
+			sendEvent(name: "volup", value: "default", isStateChange: true)
+			whichTile = 'volup'
+		}
+		if (jsonlist."tv"=="voldown") {
+			sendEvent(name: "voldown", value: "default", isStateChange: true)
+			whichTile = 'voldown'
+		}
 		if (jsonlist."tv"=="mute") {
 			sendEvent(name: "tvmute", value: "default", isStateChange: true)
 			whichTile = 'tvmute'
@@ -262,8 +286,13 @@ def parse(String description) {
 			//sendEvent(name: "tvprev", value: "default", isStateChange: true)
 			def result = createEvent(name: "tvprev", value: "default", isStateChange: true)
 			return result
+        case 'volup':
+			def result = createEvent(name: "volup", value: "default", isStateChange: true)
+			return result
+        case 'voldown':
+			def result = createEvent(name: "voldown", value: "default", isStateChange: true)
+			return result
         case 'tvmute':
-			//sendEvent(name: "tvmute", value: "default", isStateChange: true)
 			def result = createEvent(name: "tvmute", value: "default", isStateChange: true)
 			return result
         case 'RebootNow':
