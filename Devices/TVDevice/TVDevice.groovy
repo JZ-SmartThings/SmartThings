@@ -25,6 +25,8 @@ metadata {
 		attribute "displayName", "string"
 		command "tvinput"
 		command "tvprev"
+		command "volup"
+		command "voldown"
 		command "tvmute"
 		command "ResetTiles"
 	}
