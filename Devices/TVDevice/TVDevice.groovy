@@ -1,5 +1,5 @@
 /**
- *  TVDevice v1.0.20170503
+ *  TVDevice v1.0.20170504
  *
  *  Source code can be found here: https://github.com/JZ-SmartThings/SmartThings/blob/master/Devices/TVDevice/TVDevice.groovy
  *
@@ -24,6 +24,8 @@ metadata {
 		capability "Switch Level"
 		attribute "displayName", "string"
 		command "tvinput"
+		command "chanup"
+		command "chandown"
 		command "tvprev"
 		command "volup"
 		command "voldown"
@@ -71,6 +73,14 @@ metadata {
 			state "default", label: 'TV INPUT', action: "tvinput", icon: "st.Electronics.electronics6", backgroundColor: "#79b821", nextState: "trying"
 			state "trying", label: 'TRYING', action: "ResetTiles", icon: "st.Electronics.electronics6", backgroundColor: "#FFAA33"
 		}
+		standardTile("chanup", "device.chanup", width: 2, height: 2, canChangeIcon: true, canChangeBackground: true, decoration: "flat") {
+			state "default", label: 'CHAN UP', action: "chanup", icon: "st.custom.buttons.add-icon", backgroundColor: "#FF6600", nextState: "trying"
+			state "trying", label: 'TRYING', action: "ResetTiles", icon: "st.custom.buttons.add-icon", backgroundColor: "#FFAA33"
+		}
+		standardTile("chandown", "device.chandown", width: 2, height: 2, canChangeIcon: true, canChangeBackground: true, decoration: "flat") {
+			state "default", label:'CHAN DOWN' , action: "chandown", icon: "st.custom.buttons.subtract-icon", backgroundColor:"#53a7c0", nextState: "trying"
+			state "trying", label: 'TRYING', action: "ResetTiles", icon: "st.custom.buttons.subtract-icon", backgroundColor: "#FFAA33"
+		}
 		standardTile("tvprev", "device.switch", width: 2, height: 2, canChangeIcon: true, canChangeBackground: true, decoration: "flat") {
 			state "default", label: 'PREVIOUS', action: "tvprev", icon: "st.motion.motion.active", backgroundColor: "#79b821", nextState: "trying"
 			state "trying", label: 'TRYING', action: "ResetTiles", icon: "st.motion.motion.active", backgroundColor: "#FFAA33"
@@ -87,12 +97,12 @@ metadata {
 			state "default", label: 'MUTE', action: "tvmute", icon: "st.custom.sonos.muted", backgroundColor: "#9966CC", nextState: "trying"
 			state "trying", label: 'TRYING', action: "ResetTiles", icon: "st.custom.sonos.muted", backgroundColor: "#FFAA33"
 		}
-		controlTile("levelSliderControl", "device.level", "slider", height: 2, width: 6, inactiveLabel: false, range:"(1..4)") {
+		controlTile("levelSliderControl", "device.level", "slider", width: 6, height: 1, inactiveLabel: false, range:"(1..4)") {
 			state "level", label:'HDMI Input', action:"switch level.setLevel"
 		}
 		
 		main "switch"
-		details(["displayName","levelSliderControl", "switchon", "switchoff", "tvinput", "tvprev", "volup", "voldown", "tvmute" ])
+		details(["displayName","levelSliderControl", "switchon", "switchoff", "tvinput", "chanup", "tvprev", "volup", "chandown", "tvmute", "voldown" ])
 	}
 }
 
@@ -100,6 +110,8 @@ def ResetTiles() {
 	sendEvent(name: "switchon", value: "default", isStateChange: true)
 	sendEvent(name: "switchoff", value: "default", isStateChange: true)
 	sendEvent(name: "tvinput", value: "default", isStateChange: true)
+	sendEvent(name: "chanup", value: "default", isStateChange: true)
+	sendEvent(name: "chandown", value: "default", isStateChange: true)
 	sendEvent(name: "tvprev", value: "default", isStateChange: true)
 	sendEvent(name: "volup", value: "default", isStateChange: true)
 	sendEvent(name: "voldown", value: "default", isStateChange: true)
@@ -123,6 +135,12 @@ def off() {
 }
 def tvinput() {
 	runCmd("/ir?tv=input")
+}
+def chanup() {
+	runCmd("/ir?tv=chanup")
+}
+def chandown() {
+	runCmd("/ir?tv=chandown")
 }
 def tvprev() {
 	runCmd("/ir?tv=prev")
@@ -239,6 +257,14 @@ def parse(String description) {
 			sendEvent(name: "tvinput", value: "default", isStateChange: true)
 			whichTile = 'tvinput'
 		}
+		if (jsonlist."tv"=="chanup") {
+			sendEvent(name: "chanup", value: "default", isStateChange: true)
+			whichTile = 'chanup'
+		}
+		if (jsonlist."tv"=="chandown") {
+			sendEvent(name: "chandown", value: "default", isStateChange: true)
+			whichTile = 'chandown'
+		}
 		if (jsonlist."tv"=="prev") {
 			sendEvent(name: "tvprev", value: "default", isStateChange: true)
 			whichTile = 'tvprev'
@@ -283,6 +309,12 @@ def parse(String description) {
         case 'tvinput':
 			//sendEvent(name: "tvinput", value: "default", isStateChange: true)
 			def result = createEvent(name: "tvinput", value: "default", isStateChange: true)
+			return result
+        case 'chanup':
+			def result = createEvent(name: "chanup", value: "default", isStateChange: true)
+			return result
+        case 'chandown':
+			def result = createEvent(name: "chandown", value: "default", isStateChange: true)
 			return result
         case 'tvprev':
 			//sendEvent(name: "tvprev", value: "default", isStateChange: true)
