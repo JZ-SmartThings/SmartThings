@@ -1,5 +1,5 @@
 /**
- *  TVDevice v1.0.20170504
+ *  TVDevice v1.0.20170505
  *
  *  Source code can be found here: https://github.com/JZ-SmartThings/SmartThings/blob/master/Devices/TVDevice/TVDevice.groovy
  *
@@ -97,7 +97,7 @@ metadata {
 			state "default", label: 'MUTE', action: "tvmute", icon: "st.custom.sonos.muted", backgroundColor: "#9966CC", nextState: "trying"
 			state "trying", label: 'TRYING', action: "ResetTiles", icon: "st.custom.sonos.muted", backgroundColor: "#FFAA33"
 		}
-		controlTile("levelSliderControl", "device.level", "slider", width: 6, height: 1, inactiveLabel: false, range:"(1..4)") {
+		controlTile("levelSliderControl", "device.level", "slider", width: 6, height: 1, inactiveLabel: false, range:"(0..100)") {
 			state "level", label:'HDMI Input', action:"switch level.setLevel"
 		}
 		
@@ -122,8 +122,26 @@ def ResetTiles() {
 
 def setLevel(value) {
 	def level=value as int
-	//log.debug level + "---test"
-	runCmd("/ir?hdmi=" + level)
+	def cmd="" as String
+	log.debug "setLevel >> value: $value"
+    if (value<25) {
+        level=0
+        cmd="/ir?tv=input"
+    } else if (value==25 && value<=49) {
+    	level=25
+        cmd="/ir?hdmi=" + 1
+    } else if (value==50 && value<=74) {
+    	level=50
+        cmd="/ir?hdmi=" + 2
+    } else if (value==75 && value<=99) {
+    	level=75
+        cmd="/ir?hdmi=" + 3
+    } else if (value==100) {
+    	level=100
+        cmd="/ir?hdmi=" + 4
+    }
+	sendEvent(name: "level", value: level, isStateChange: true)
+	runCmd(cmd)
 }
 
 def on() {

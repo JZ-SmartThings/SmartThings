@@ -1,5 +1,5 @@
 /**
- *  TV Device Sample v1.0.20160806
+ *  TV Device Sample v1.0.20170512
  *  Source code can be found here: https://github.com/JZ-SmartThings/SmartThings/blob/master/Devices/TVDevice
  *  Copyright 2016 JZ
  *
@@ -11,10 +11,7 @@
  *  for the specific language governing permissions and limitations under the License.
  */
 
-#include <ESP8266WiFi.h>
-#include <WiFiClient.h>
-#include <ESP8266WebServer.h>
-#include <ESP8266mDNS.h>
+// CHOOSE WHICH LIBRARY TO USE FOR IR
 #include <IRremoteESP8266at5V.h>
 //#include <IRremoteESP8266.h>
  
@@ -25,15 +22,18 @@ MDNSResponder mdns;
 ESP8266WebServer server(80);
 IRsend irsend(D2);
 
-void handleRoot() {
- String htmlContent = "<html><head><title>ESP8266 IR Remote</title></head><body><h1>ESP8266 IR Remote</h1></br>";
+//OTHER VARIABLES
+String currentIP;
 
-   htmlContent += "\n";
+void handleRoot() {
+ String htmlContent = "<html><head><title>ESP8266 IR Remote</title></head><body><a href='/'><h1>ESP8266 IR Remote</h1><br>";
+   htmlContent += currentIP;
+   htmlContent += "</a><br>\n";
    for (uint8_t i=0; i<server.args(); i++){
     htmlContent += server.argName(i);
     htmlContent += "=";
     htmlContent += server.arg(i);
-    htmlContent += "\n<br\>";
+    htmlContent += "\n<br>";
    }
  
  
@@ -138,7 +138,7 @@ void setup(void){
 
   irsend.begin();
   
-  Serial.begin(9600);
+  Serial.begin(115200);
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
   Serial.println("");
@@ -153,6 +153,7 @@ void setup(void){
   Serial.println(ssid);
   Serial.print("IP address: ");
   Serial.println(WiFi.localIP());
+  currentIP = WiFi.localIP().toString();
   
   if (mdns.begin("esp8266", WiFi.localIP())) {
     Serial.println("MDNS responder started");

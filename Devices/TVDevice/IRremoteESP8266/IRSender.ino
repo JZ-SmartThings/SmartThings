@@ -11,10 +11,7 @@
  *  for the specific language governing permissions and limitations under the License.
  */
 
-#include <ESP8266WiFi.h>
-#include <WiFiClient.h>
-#include <ESP8266WebServer.h>
-#include <ESP8266mDNS.h>
+// CHOOSE WHICH LIBRARY TO USE FOR IR
 //#include <IRremoteESP8266at5V.h>
 #include <IRremoteESP8266.h>
  
