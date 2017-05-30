@@ -1,5 +1,5 @@
 /**
- *  TVDevice v1.0.20170505
+ *  TVDevice v1.0.20170529
  *
  *  Source code can be found here: https://github.com/JZ-SmartThings/SmartThings/blob/master/Devices/TVDevice/TVDevice.groovy
  *
@@ -69,7 +69,7 @@ metadata {
 			state "default", label:'OFF' , action: "off", icon: "st.Electronics.electronics18", backgroundColor:"#53a7c0", nextState: "trying"
 			state "trying", label: 'TRYING', action: "ResetTiles", icon: "st.Electronics.electronics18", backgroundColor: "#FFAA33"
 		}
-		standardTile("tvinput", "device.switch", width: 2, height: 2, canChangeIcon: true, canChangeBackground: true, decoration: "flat") {
+		standardTile("tvinput", "device.tvinput", width: 2, height: 2, canChangeIcon: true, canChangeBackground: true, decoration: "flat") {
 			state "default", label: 'TV INPUT', action: "tvinput", icon: "st.Electronics.electronics6", backgroundColor: "#79b821", nextState: "trying"
 			state "trying", label: 'TRYING', action: "ResetTiles", icon: "st.Electronics.electronics6", backgroundColor: "#FFAA33"
 		}
@@ -81,7 +81,7 @@ metadata {
 			state "default", label:'CHAN DOWN' , action: "chandown", icon: "st.custom.buttons.subtract-icon", backgroundColor:"#53a7c0", nextState: "trying"
 			state "trying", label: 'TRYING', action: "ResetTiles", icon: "st.custom.buttons.subtract-icon", backgroundColor: "#FFAA33"
 		}
-		standardTile("tvprev", "device.switch", width: 2, height: 2, canChangeIcon: true, canChangeBackground: true, decoration: "flat") {
+		standardTile("tvprev", "device.tvprev", width: 2, height: 2, canChangeIcon: true, canChangeBackground: true, decoration: "flat") {
 			state "default", label: 'PREVIOUS', action: "tvprev", icon: "st.motion.motion.active", backgroundColor: "#79b821", nextState: "trying"
 			state "trying", label: 'TRYING', action: "ResetTiles", icon: "st.motion.motion.active", backgroundColor: "#FFAA33"
 		}
@@ -93,7 +93,7 @@ metadata {
 			state "default", label:'VOL DOWN' , action: "voldown", icon: "st.custom.buttons.subtract-icon", backgroundColor:"#53a7c0", nextState: "trying"
 			state "trying", label: 'TRYING', action: "ResetTiles", icon: "st.custom.buttons.subtract-icon", backgroundColor: "#FFAA33"
 		}
-		standardTile("tvmute", "device.switch", width: 2, height: 2, canChangeIcon: true, canChangeBackground: true, decoration: "flat") {
+		standardTile("tvmute", "device.tvmute", width: 2, height: 2, canChangeIcon: true, canChangeBackground: true, decoration: "flat") {
 			state "default", label: 'MUTE', action: "tvmute", icon: "st.custom.sonos.muted", backgroundColor: "#9966CC", nextState: "trying"
 			state "trying", label: 'TRYING', action: "ResetTiles", icon: "st.custom.sonos.muted", backgroundColor: "#FFAA33"
 		}
