@@ -1,6 +1,6 @@
-<?php //v1.0.20170328 added contact sensor 2
+<?php //v1.0.20170826 added JSON ability on GET request. Improved sync with secondary devices
 
-$perform_authentication=false;
+$perform_authentication=false;$perform_authentication=false;
 $contact_sensor=false;
 $contact_sensor_2=false;
 $sensor_pin=24;
@@ -168,7 +168,7 @@ if (isset($_POST['GPIO']) && $rpi['php5-gd'] == true) {
 	imagedestroy($im);
 	exit;
 }
-if (isset($_POST['UseJSON'])) {
+if (isset($_POST['UseJSON']) || isset($_GET['UseJSON'])) {
 	header('Content-type: application/json');
 	echo json_encode($rpi, JSON_PRETTY_PRINT);
 	die ();

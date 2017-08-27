@@ -1,5 +1,5 @@
 /**
- *  Generic HTTP Device v1.0.20170327
+ *  Generic HTTP Device v1.0.20170826
  *  Source code can be found here: https://github.com/JZ-SmartThings/SmartThings/blob/master/Devices/Generic%20HTTP%20Device/GenericHTTPDevice.groovy
  *  Copyright 2017 JZ
  *
@@ -43,6 +43,7 @@ metadata {
 		command "RebootNow"
 		command "ResetTiles"
 		command "ClearTiles"
+		command "updateEPOCH"
 	}
 
 	preferences {
@@ -325,6 +326,12 @@ def runCmd(String varCommand) {
 	}
 }
 
+def updateEPOCH(String caller) {
+	log.debug "EPOCH before update: " + device.currentValue("customTriggeredEPOCH")
+	sendEvent(name: "customTriggeredEPOCH", value: now()+6000, isStateChange: true)
+	log.debug "Updated EPOCH ${caller} to: " + now()+6000
+}
+
 def parse(String description) {
 //	log.debug "Parsing '${description}'"
 	def whichTile = ''
@@ -420,12 +427,12 @@ def parse(String description) {
 		if (jsonlist."CustomTrigger"=="Success") {
 			sendEvent(name: "customswitch", value: "on", isStateChange: true)
 			sendEvent(name: "customTriggered", value: "MOMENTARY @ " + jsonlist."Date", unit: "")
-            sendEvent(name: "customTriggeredEPOCH", value: now(), isStateChange: true)
+            updateEPOCH("from parse > CustomTrigger")
 			whichTile = 'customoff'
 		}
 		if (jsonlist."CustomTriggerOn"=="Success" && jsonlist."CustomPinStatus"==1) {
 			sendEvent(name: "customTriggered", value: "ON @ " + jsonlist."Date", unit: "")
-            sendEvent(name: "customTriggeredEPOCH", value: now(), isStateChange: true)
+            updateEPOCH("from parse > CustomTriggerOn")
 			whichTile = 'customon'
 		}
 		if (jsonlist."CustomTriggerOn"=="Authentication Required!") {
@@ -433,7 +440,7 @@ def parse(String description) {
 		}
 		if (jsonlist."CustomTriggerOff"=="Success" && jsonlist."CustomPinStatus"==0) {
 			sendEvent(name: "customTriggered", value: "OFF @ " + jsonlist."Date", unit: "")
-            sendEvent(name: "customTriggeredEPOCH", value: now(), isStateChange: true)
+            updateEPOCH("from parse > CustomTriggerOff")
 			whichTile = 'customoff'
 		}
 		if (jsonlist."CustomTriggerOff"=="Authentication Required!") {
@@ -441,12 +448,12 @@ def parse(String description) {
 		}
 		if (jsonlist."CustomPinStatus"==1) {
 			sendEvent(name: "customswitch", value: "on", isStateChange: true)
-            sendEvent(name: "customTriggeredEPOCH", value: now(), isStateChange: true)
+            updateEPOCH("from parse > CustomPinStatus 1")
 			sendEvent(name: "refreshswitch", value: "default", isStateChange: true)
 			whichTile = 'customon'
 		} else if (jsonlist."CustomPinStatus"==0) {
 			sendEvent(name: "customswitch", value: "off", isStateChange: true)
-            sendEvent(name: "customTriggeredEPOCH", value: now(), isStateChange: true)
+            updateEPOCH("from parse > CustomPinStatus 0")
 			sendEvent(name: "refreshswitch", value: "default", isStateChange: true)
 			whichTile = 'customoff'
 		}
@@ -547,37 +554,32 @@ def parse(String description) {
 	//CHANGE NAME TILE
 	sendEvent(name: "displayName", value: DeviceIP, unit: "")
 
-	//RETURN BUTTONS TO CORRECT STATE
+	//RETURN BUTTONS TO CORRECT STATE & SET EPOCH AGAIN
 	log.debug 'whichTile: ' + whichTile
     switch (whichTile) {
         case 'refresh':
 			sendEvent(name: "refreshswitch", value: "default", isStateChange: true)
-			def result = createEvent(name: "refreshswitch", value: "default", isStateChange: true)
+			return createEvent(name: "refreshswitch", value: "default", isStateChange: true)
 			//log.debug "refreshswitch returned ${result?.descriptionText}"
-			return result
         case 'customoff':
 			sendEvent(name: "customswitch", value: "off", isStateChange: true)
-			def result = createEvent(name: "customswitch", value: "off", isStateChange: true)
-			return result
+			return createEvent(name: "customswitch", value: "off", isStateChange: true)
+            updateEPOCH("from parse > customoff")
         case 'customon':
 			sendEvent(name: "customswitch", value: "on", isStateChange: true)
-			def result = createEvent(name: "customswitch", value: "on", isStateChange: true)
-			return result
+			return createEvent(name: "customswitch", value: "on", isStateChange: true)
+            updateEPOCH("from parse > customon")
         case 'mainoff':
-			def result = createEvent(name: "switch", value: "off", isStateChange: true)
-			return result
+			return createEvent(name: "switch", value: "off", isStateChange: true)
         case 'mainon':
-			def result = createEvent(name: "switch", value: "on", isStateChange: true)
-			return result
+			return createEvent(name: "switch", value: "on", isStateChange: true)
         case 'RebootNow':
 			sendEvent(name: "rebootnow", value: "default", isStateChange: true)
-			def result = createEvent(name: "rebootnow", value: "default", isStateChange: true)
-			return result
+			return createEvent(name: "rebootnow", value: "default", isStateChange: true)
         default:
 			sendEvent(name: "refreshswitch", value: "default", isStateChange: true)
-			def result = createEvent(name: "refreshswitch", value: "default", isStateChange: true)
+			return createEvent(name: "refreshswitch", value: "default", isStateChange: true)
 			//log.debug "refreshswitch returned ${result?.descriptionText}"
-			return result
     }
 }
 
