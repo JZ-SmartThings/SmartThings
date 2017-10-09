@@ -19,7 +19,7 @@ The *.ino files are the Arduino IDE code samples. Verify the few options at the 
 
 This project was tested successfully via an external IP, Pollster and with an Amazon Echo/Alexa. Echo can run TWO functions in my app. The ON command triggers the main function and OFF triggers the custom function but can be changed to only control the Main switch.
 
-* v1.0.20171008 - Added MQTT & hosting JSON status page. New support Eco Plugs/WiOn switches (by KAB) & SonOff devices. Easy ability to integrate with Home Assistant. Cleaner UI after hiding settings.
+* v1.0.20171008 - Added MQTT & hosting JSON status page. New support Eco Plugs/WiOn switches (by KAB) & Sonoff devices. Easy ability to integrate with Home Assistant. Cleaner UI after hiding settings.
 * v1.0.20170826 - Updated PHP, Generic HTTP Device & Virtual Sync App code. PHP was for better ability to interface with Node RED. Groovy code was updated for better synchronization between secondary switch & virtual switch.
 * v1.0.20170408 - Both virtual device handlers (2nd switch & 2nd sensor) now have refresh ability & a last-refreshed info tile.
 * v1.0.20170327 - Added refresh ability to the SmartApp to eliminate reliance on other refresh utilities/apps.
