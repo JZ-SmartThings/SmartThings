@@ -1,5 +1,5 @@
 /**
- *  Generic HTTP Device v1.0.20170826
+ *  Generic HTTP Device v1.0.20171030
  *  Source code can be found here: https://github.com/JZ-SmartThings/SmartThings/blob/master/Devices/Generic%20HTTP%20Device/GenericHTTPDevice.groovy
  *  Copyright 2017 JZ
  *
@@ -49,13 +49,13 @@ metadata {
 	preferences {
 		input("DeviceIP", "string", title:"Device IP Address", description: "Please enter your device's IP Address", required: true, displayDuringSetup: true)
 		input("DevicePort", "string", title:"Device Port", description: "Empty assumes port 80.", required: false, displayDuringSetup: true)
-		input("DevicePath", "string", title:"URL Path", description: "Rest of the URL, include forward slash.", displayDuringSetup: true)
+		input("DevicePath", "string", title:"URL Path (RPi)", description: "Rest of the URL, include the / slash.", displayDuringSetup: true)
 		input(name: "DevicePostGet", type: "enum", title: "POST or GET. POST for PHP & GET for Arduino.", options: ["POST","GET"], defaultValue: "POST", required: false, displayDuringSetup: true)
-		input("UseOffVoiceCommandForCustom", "bool", title:"Use the OFF voice command (e.g. by Alexa) to control the Custom command? Assumed ON if MainTrigger is Momentary setting below is ON.", description: "", defaultValue: false, required: false, displayDuringSetup: true)
+		input("UseOffVoiceCommandForCustom", "bool", title:"Use the OFF voice command (e.g. by Alexa) to control the Custom command? May cause issues with MQTT sync. Alternative is using my sync SmartApp & Device for Custom command voice control.", description: "", defaultValue: false, required: false, displayDuringSetup: true)
 		input("DeviceMainMomentary", "bool", title:"MainTrigger is Momentary?", description: "", defaultValue: true, required: false, displayDuringSetup: true)	
-		input("DeviceMainPin", "number", title:'Main Pin Number in BCM Format', description: 'Empty assumes pin #4.', required: false, displayDuringSetup: false)
+		input("DeviceMainPin", "number", title:'Main Pin # in BCM Format (RPi)', description: 'Empty assumes pin #4.', required: false, displayDuringSetup: false)
 		input("DeviceCustomMomentary", "bool", title:"CustomTrigger is Momentary?", description: "", defaultValue: true, required: false, displayDuringSetup: true)
-		input("DeviceCustomPin", "number", title:'Custom Pin Number in BCM Format', description: 'Empty assumes pin #21.', required: false, displayDuringSetup: false)
+		input("DeviceCustomPin", "number", title:'Custom Pin # in BCM Format (RPi)', description: 'Empty assumes pin #21.', required: false, displayDuringSetup: false)
 		input("DeviceSensorInvert", "bool", title:"Invert open/closed states on the primary contact sensor?", description: "", defaultValue: false, required: false, displayDuringSetup: false)	
 		input("DeviceSensor2Invert", "bool", title:"Invert open/closed states on the secondary contact sensor?", description: "", defaultValue: false, required: false, displayDuringSetup: false)	
 		input("UseJSON", "bool", title:"Use JSON instead of HTML?", description: "", defaultValue: false, required: false, displayDuringSetup: true)
@@ -212,7 +212,7 @@ def on() {
 	runCmd(FullCommand)
 }
 def off() {
-	if (DeviceMainMomentary==true || UseOffVoiceCommandForCustom==true) {
+	if (UseOffVoiceCommandForCustom==true) {
 		settings.UseOffVoiceCommandForCustom = true
 		CustomTrigger()
 	} else {

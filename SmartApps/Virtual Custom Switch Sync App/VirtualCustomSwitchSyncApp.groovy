@@ -1,5 +1,5 @@
 /**
- *  Virtual Custom Switch Sync App v1.0.20170826
+ *  Virtual Custom Switch Sync App v1.0.20171030
  *  Copyright 2017 JZ
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
@@ -101,7 +101,7 @@ def virtualSwitchHandler(evt) {
 	log.trace "EPOCH diff was: " + String.valueOf(now()-httpswitch*.currentValue("customTriggeredEPOCH")[0])
 	log.trace "Current EPOCH time: " + now()
 	if (now()-httpswitch*.currentValue("customTriggeredEPOCH")[0] > 0) {
-		httpswitch.off()
+		httpswitch.CustomTrigger()
 		//sendEvent(settings["httpswitch"], [name: "customTriggeredEPOCH", value: now(), isStateChange: true])
 	   	log.trace "EPOCH before update: " + httpswitch*.currentValue("customTriggeredEPOCH")[0]
 		httpswitch.updateEPOCH("from Virtual Sync App")
