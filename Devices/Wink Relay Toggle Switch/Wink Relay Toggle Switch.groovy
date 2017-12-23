@@ -1,5 +1,5 @@
 /**
- *  Wink Relay Toggle Switch v1.0.20171222
+ *  Wink Relay Toggle Switch v1.0.20171214
  *  Copyright 2017 JZ
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
@@ -62,16 +62,9 @@ def off() {
 }
 
 def toggleSwitch() {
-	if (device.currentValue("lastToggledEPOC")==null || device.currentValue("lastToggledEPOC")==0) {
-    	sendEvent(name: "lastToggledEPOC", value: 1, isStateChange: true)
-    }
 
 	if (now()-device.currentValue("lastToggledEPOC") > 0) {
-        def currstate = "off"
-        if (device.currentState("syncSwitch")!=null) {
-        	currstate=device.currentState("syncSwitch").getValue()
-        }
-        
+        def currstate = device.currentState("syncSwitch").getValue()
         def currdate = new Date().format("yyyy-MM-dd h:mm:ss a", location.timeZone)
         if (currstate == "on") {
             sendEvent(name: "switch", value: "off", isStateChange: true, display: false)
