@@ -1,4 +1,4 @@
-<?php //v1.0.20170826 added JSON ability on GET request. Improved sync with secondary devices
+<?php //v1.0.20170130 Added title to the page
 
 $perform_authentication=false;$perform_authentication=false;
 $contact_sensor=false;
@@ -179,6 +179,7 @@ if (isset($_POST['UseJSON']) || isset($_GET['UseJSON'])) {
 <head>
 <meta charset="UTF-8" />
 <meta name=viewport content='width=700'>
+<title>Raspberry Pi Relay</title>
 <style type='text/css'>
 body, pre	 {
 	max-width: 640px; margin: 0 auto; font-family: Calibri,Arial,Helvetica,sans-serif;

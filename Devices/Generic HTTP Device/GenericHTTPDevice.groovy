@@ -1,7 +1,7 @@
 /**
- *  Generic HTTP Device v1.0.20171030
+ *  Generic HTTP Device v1.0.20180130
  *  Source code can be found here: https://github.com/JZ-SmartThings/SmartThings/blob/master/Devices/Generic%20HTTP%20Device/GenericHTTPDevice.groovy
- *  Copyright 2017 JZ
+ *  Copyright 2018 JZ
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  *  in compliance with the License. You may obtain a copy of the License at:
@@ -59,6 +59,7 @@ metadata {
 		input("DeviceSensorInvert", "bool", title:"Invert open/closed states on the primary contact sensor?", description: "", defaultValue: false, required: false, displayDuringSetup: false)	
 		input("DeviceSensor2Invert", "bool", title:"Invert open/closed states on the secondary contact sensor?", description: "", defaultValue: false, required: false, displayDuringSetup: false)	
 		input("UseJSON", "bool", title:"Use JSON instead of HTML?", description: "", defaultValue: false, required: false, displayDuringSetup: true)
+		input(name: "DeviceTempMeasurement", type: "enum", title: "Temperature measurement in Celcius or Fahrenheit? Default is Fahrenheit.", options: ["Celcius","Fahrenheit"], defaultValue: "Fahrenheit", required: false, displayDuringSetup: true)
 		section() {
 			input("HTTPAuth", "bool", title:"Requires User Auth?", description: "Choose if the HTTP requires basic authentication", defaultValue: false, required: true, displayDuringSetup: true)
 			input("HTTPUser", "string", title:"HTTP User", description: "Enter your basic username", required: false, displayDuringSetup: true)
@@ -152,7 +153,7 @@ metadata {
 			state "default", label:'Clear Tiles', action:"ClearTiles", icon:"st.Bath.bath9"
 		}
 		valueTile("temperature", "device.temperature", width: 2, height: 2) {
-			state("default", label:'Temp\n ${currentValue}',
+			state("default", label:'Temp\n${currentValue}',
 				backgroundColors:[
 					[value: 32, color: "#153591"],
 					[value: 44, color: "#1e9cbb"],
@@ -165,7 +166,7 @@ metadata {
 			)
 		}
 		valueTile("humidity", "device.humidity", width: 2, height: 2) {
-			state("default", label: 'Humidity\n ${currentValue}',
+			state("default", label: 'Humidity\n${currentValue}',
 				backgroundColors:[
 					[value: 50, color: "#00cc33"],
 					[value: 60, color: "#99ff33"],
@@ -379,14 +380,14 @@ def parse(String description) {
 				if (line.contains('CustomTriggerOff=Failed : Authentication Required!')) { jsonlist.put ("CustomTriggerOff", "Authentication Required!") }
 				if (line.contains('CustomPinStatus=1')) { jsonlist.put ("CustomPinStatus".replace("=",""), 1) }
 				if (line.contains('CustomPinStatus=0')) { jsonlist.put ("CustomPinStatus".replace("=",""), 0) }
-				if (DeviceSensorInvert == false) { 
+				if (DeviceSensorInvert == false) {
 					if (line.contains('Contact Sensor=Open')) { jsonlist.put ("SensorPinStatus".replace("=",""), "Open") }
 					if (line.contains('Contact Sensor=Closed')) { jsonlist.put ("SensorPinStatus".replace("=",""), "Closed") }
 				} else {
 					if (line.contains('Contact Sensor=Open')) { jsonlist.put ("SensorPinStatus".replace("=",""), "Closed") }
 					if (line.contains('Contact Sensor=Closed')) { jsonlist.put ("SensorPinStatus".replace("=",""), "Open") }
 				}
-				if (DeviceSensor2Invert == false) { 
+				if (DeviceSensor2Invert == false) {
 					if (line.contains('Contact Sensor 2=Open')) { jsonlist.put ("Sensor2PinStatus".replace("=",""), "Open") }
 					if (line.contains('Contact Sensor 2=Closed')) { jsonlist.put ("Sensor2PinStatus".replace("=",""), "Closed") }
 				} else {
@@ -527,19 +528,29 @@ def parse(String description) {
 		if (jsonlist."CPU Temp") {
 			sendEvent(name: "cpuTemp", value: jsonlist."CPU Temp".replace("=","\n").replace("\'","°").replace("C ","C="), unit: "")
 		}
+		
 		if (jsonlist."Free Mem") {
 			sendEvent(name: "freeMem", value: jsonlist."Free Mem".replace("=","\n"), unit: "")
 		}
 		if (jsonlist."Temperature") {
-			sendEvent(name: "temperature", value: jsonlist."Temperature".replace("=","\n").replace("\'","°").replace("C ","C="), unit: "")
+			//sendEvent(name: "temperature", value: jsonlist."Temperature".replace("=","\n").replace("\'","°").replace("C ","C="), unit: "")
+			if (DeviceTempMeasurement == "Celcius") {
+				sendEvent(name: "temperature", value: jsonlist."Temperature".split(" ")[0].replace("°C"," ").replace("\'C"," "), unit: "")
+			} else {
+				sendEvent(name: "temperature", value: jsonlist."Temperature".split(" ")[1].replace("°F"," ").replace("\'F"," "), unit: "")
+			}
 			//String s = jsonlist."Temperature"
 			//for(int i = 0; i < s.length(); i++)	{
 			//   int c = s.charAt(i);
 			//   log.trace "'${c}'\n"
 			//}
+		} else {
+			sendEvent(name: "temperature", value: 0, unit: "")
 		}
 		if (jsonlist."Humidity") {
 			sendEvent(name: "humidity", value: jsonlist."Humidity".replace("=","\n"), unit: "")
+		} else {
+			sendEvent(name: "humidity", value: 0, unit: "")
 		}
 		if (jsonlist."RebootNow") {
 			whichTile = 'RebootNow'
