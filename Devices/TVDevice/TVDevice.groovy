@@ -1,5 +1,5 @@
 /**
- *  TVDevice v1.0.20170529
+ *  TVDevice v1.0.20180502
  *
  *  Source code can be found here: https://github.com/JZ-SmartThings/SmartThings/blob/master/Devices/TVDevice/TVDevice.groovy
  *
@@ -124,21 +124,38 @@ def setLevel(value) {
 	def level=value as int
 	def cmd="" as String
 	log.debug "setLevel >> value: $value"
-    if (value<25) {
+    if (value<10) {
         level=0
+        cmd="/ir?tv=mute"
+    } else if (value>=10 && value<=14) {
+        level=10
         cmd="/ir?tv=input"
-    } else if (value==25 && value<=49) {
-    	level=25
+    } else if (value>=15 && value<=24) {
+    	level=20
         cmd="/ir?hdmi=" + 1
-    } else if (value==50 && value<=74) {
-    	level=50
+    } else if (value>=25 && value<=34) {
+    	level=30
         cmd="/ir?hdmi=" + 2
-    } else if (value==75 && value<=99) {
-    	level=75
+    } else if (value>=35 && value<=44) {
+    	level=40
         cmd="/ir?hdmi=" + 3
-    } else if (value==100) {
-    	level=100
+    } else if (value>=45 && value<=54) {
+    	level=50
         cmd="/ir?hdmi=" + 4
+    } else if (value>=55 && value<=64) {
+    	level=60
+        cmd="/ir?hdmi=" + 5
+    } else if (value>=65 && value<=74) {
+    	level=70
+        cmd="/ir?hdmi=" + 6
+    } else if (value>=75 && value<=84) {
+    	level=80
+        cmd="/ir?hdmi=" + 7
+    } else if (value>=85 && value<=94) {
+    	level=90
+        cmd="/ir?hdmi=" + 8
+    } else if (value>95) {
+    	level=100
     }
 	sendEvent(name: "level", value: level, isStateChange: true)
 	runCmd(cmd)
