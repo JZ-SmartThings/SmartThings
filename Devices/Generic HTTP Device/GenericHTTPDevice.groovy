@@ -1,5 +1,5 @@
 /**
- *  Generic HTTP Device v1.0.20180130
+ *  Generic HTTP Device v1.0.20180502
  *  Source code can be found here: https://github.com/JZ-SmartThings/SmartThings/blob/master/Devices/Generic%20HTTP%20Device/GenericHTTPDevice.groovy
  *  Copyright 2018 JZ
  *
@@ -23,6 +23,7 @@ metadata {
 		capability "Refresh"
 		capability "Health Check"
 		attribute "mainTriggered", "string"
+		attribute "mainTriggeredEPOCH", "number"
 		attribute "refreshTriggered", "string"
 		attribute "customswitch", "string"
 		attribute "customTriggered", "string"
@@ -43,7 +44,8 @@ metadata {
 		command "RebootNow"
 		command "ResetTiles"
 		command "ClearTiles"
-		command "updateEPOCH"
+		command "updateMainEPOCH"
+		command "updateCustomEPOCH"
 	}
 
 	preferences {
@@ -327,10 +329,15 @@ def runCmd(String varCommand) {
 	}
 }
 
-def updateEPOCH(String caller) {
-	log.debug "EPOCH before update: " + device.currentValue("customTriggeredEPOCH")
+def updateMainEPOCH(String caller) {
+	log.debug "EPOCH Main before update: " + device.currentValue("mainTriggeredEPOCH")
+	sendEvent(name: "mainTriggeredEPOCH", value: now()+6000, isStateChange: true)
+	log.debug "Updated Main EPOCH ${caller} to: " + now()+6000
+}
+def updateCustomEPOCH(String caller) {
+	log.debug "EPOCH Custom before update: " + device.currentValue("customTriggeredEPOCH")
 	sendEvent(name: "customTriggeredEPOCH", value: now()+6000, isStateChange: true)
-	log.debug "Updated EPOCH ${caller} to: " + now()+6000
+	log.debug "Updated Custom EPOCH ${caller} to: " + now()+6000
 }
 
 def parse(String description) {
@@ -354,6 +361,13 @@ def parse(String description) {
 			jsonlist = slurper.parseText(body)
 			//log.debug "JSONLIST---" + jsonlist."CPU"
 			jsonlist.put ("Date", new Date().format("yyyy-MM-dd h:mm:ss a", location.timeZone))
+			if (jsonlist."CurrentRequest".contains('Refresh')) { jsonlist.put ("Refresh", "Success") }
+			if (jsonlist."CurrentRequest".contains('MainTrigger=')) { jsonlist.put ("MainTrigger", "Success") }
+			if (jsonlist."CurrentRequest".contains('MainTriggerOn=')) { jsonlist.put ("MainTriggerOn", "Success") }
+			if (jsonlist."CurrentRequest".contains('MainTriggerOff=')) { jsonlist.put ("MainTriggerOff", "Success") }
+			if (jsonlist."CurrentRequest".contains('CustomTrigger=')) { jsonlist.put ("CustomTrigger", "Success") }
+			if (jsonlist."CurrentRequest".contains('CustomTriggerOn=')) { jsonlist.put ("CustomTriggerOn", "Success") }
+			if (jsonlist."CurrentRequest".contains('CustomTriggerOff=')) { jsonlist.put ("CustomTriggerOff", "Success") }
 		} else {
 			jsonlist.put ("Date", new Date().format("yyyy-MM-dd h:mm:ss a", location.timeZone))
 			def data=bodyReturned.eachLine { line ->
@@ -394,22 +408,22 @@ def parse(String description) {
 					if (line.contains('Contact Sensor 2=Open')) { jsonlist.put ("Sensor2PinStatus".replace("=",""), "Closed") }
 					if (line.contains('Contact Sensor 2=Closed')) { jsonlist.put ("Sensor2PinStatus".replace("=",""), "Open") }
 				}
+				if (line.contains('Refresh=')) { jsonlist.put ("Refresh", "Success") }
 				if (line.contains('Refresh=Success')) { jsonlist.put ("Refresh", "Success") }
 				if (line.contains('Refresh=Failed : Authentication Required!')) { jsonlist.put ("Refresh", "Authentication Required!") }
 				if (line.contains('RebootNow=Success')) { jsonlist.put ("RebootNow", "Success") }
 				if (line.contains('RebootNow=Failed : Authentication Required!')) { jsonlist.put ("RebootNow", "Authentication Required!") }
 				//ARDUINO CHECKS
-				if (line.contains('/MainTrigger=')) { jsonlist.put ("MainTrigger".replace("=",""), "Success") }
-				if (line.contains('/MainTriggerOn=')) { jsonlist.put ("MainTriggerOn", "Success") }
-				if (line.contains('/MainTriggerOff=')) { jsonlist.put ("MainTriggerOff", "Success") }
+				if (line.contains('MainTrigger=')) { jsonlist.put ("MainTrigger".replace("=",""), "Success") }
+				if (line.contains('MainTriggerOn=')) { jsonlist.put ("MainTriggerOn", "Success") }
+				if (line.contains('MainTriggerOff=')) { jsonlist.put ("MainTriggerOff", "Success") }
 				if (line.contains('RELAY1 pin is now: On')) { jsonlist.put ("MainPinStatus".replace("=",""), 1) }
 				if (line.contains('RELAY1 pin is now: Off')) { jsonlist.put ("MainPinStatus".replace("=",""), 0) }
-				if (line.contains('/CustomTrigger=')) { jsonlist.put ("CustomTrigger".replace("=",""), "Success") }
-				if (line.contains('/CustomTriggerOn=')) { jsonlist.put ("CustomTriggerOn", "Success") }
-				if (line.contains('/CustomTriggerOff=')) { jsonlist.put ("CustomTriggerOff", "Success") }
+				if (line.contains('CustomTrigger=')) { jsonlist.put ("CustomTrigger".replace("=",""), "Success") }
+				if (line.contains('CustomTriggerOn=')) { jsonlist.put ("CustomTriggerOn", "Success") }
+				if (line.contains('CustomTriggerOff=')) { jsonlist.put ("CustomTriggerOff", "Success") }
 				if (line.contains('RELAY2 pin is now: On')) { jsonlist.put ("CustomPinStatus".replace("=",""), 1) }
 				if (line.contains('RELAY2 pin is now: Off')) { jsonlist.put ("CustomPinStatus".replace("=",""), 0) }
-				if (line == '/Refresh=') { jsonlist.put ("Refresh", "Success") }
 			}
 		}
 	}
@@ -428,12 +442,12 @@ def parse(String description) {
 		if (jsonlist."CustomTrigger"=="Success") {
 			sendEvent(name: "customswitch", value: "on", isStateChange: true)
 			sendEvent(name: "customTriggered", value: "MOMENTARY @ " + jsonlist."Date", unit: "")
-            updateEPOCH("from parse > CustomTrigger")
+            updateCustomEPOCH("from parse > CustomTrigger")
 			whichTile = 'customoff'
 		}
 		if (jsonlist."CustomTriggerOn"=="Success" && jsonlist."CustomPinStatus"==1) {
 			sendEvent(name: "customTriggered", value: "ON @ " + jsonlist."Date", unit: "")
-            updateEPOCH("from parse > CustomTriggerOn")
+            updateCustomEPOCH("from parse > CustomTriggerOn")
 			whichTile = 'customon'
 		}
 		if (jsonlist."CustomTriggerOn"=="Authentication Required!") {
@@ -441,7 +455,7 @@ def parse(String description) {
 		}
 		if (jsonlist."CustomTriggerOff"=="Success" && jsonlist."CustomPinStatus"==0) {
 			sendEvent(name: "customTriggered", value: "OFF @ " + jsonlist."Date", unit: "")
-            updateEPOCH("from parse > CustomTriggerOff")
+            updateCustomEPOCH("from parse > CustomTriggerOff")
 			whichTile = 'customoff'
 		}
 		if (jsonlist."CustomTriggerOff"=="Authentication Required!") {
@@ -449,12 +463,12 @@ def parse(String description) {
 		}
 		if (jsonlist."CustomPinStatus"==1) {
 			sendEvent(name: "customswitch", value: "on", isStateChange: true)
-            updateEPOCH("from parse > CustomPinStatus 1")
+            updateCustomEPOCH("from parse > CustomPinStatus 1")
 			sendEvent(name: "refreshswitch", value: "default", isStateChange: true)
 			whichTile = 'customon'
 		} else if (jsonlist."CustomPinStatus"==0) {
 			sendEvent(name: "customswitch", value: "off", isStateChange: true)
-            updateEPOCH("from parse > CustomPinStatus 0")
+            updateCustomEPOCH("from parse > CustomPinStatus 0")
 			sendEvent(name: "refreshswitch", value: "default", isStateChange: true)
 			whichTile = 'customoff'
 		}
@@ -464,10 +478,12 @@ def parse(String description) {
 		if (jsonlist."MainTrigger"=="Success") {
 			sendEvent(name: "switch", value: "on", isStateChange: true)
 			sendEvent(name: "mainTriggered", value: "MOMENTARY @ " + jsonlist."Date", unit: "")
+            updateMainEPOCH("from parse > MainTrigger")
 			whichTile = 'mainoff'
 		}
 		if (jsonlist."MainTriggerOn"=="Success" && jsonlist."MainPinStatus"==1) {
 			sendEvent(name: "mainTriggered", value: "ON @ " + jsonlist."Date", unit: "")
+            updateMainEPOCH("from parse > MainTriggerOn")
 			whichTile = 'mainon'
 		}
 		if (jsonlist."MainTriggerOn"=="Authentication Required!") {
@@ -475,6 +491,7 @@ def parse(String description) {
 		}
 		if (jsonlist."MainTriggerOff"=="Success" && jsonlist."MainPinStatus"==0) {
 			sendEvent(name: "mainTriggered", value: "OFF @ " + jsonlist."Date", unit: "")
+            updateMainEPOCH("from parse > MainTriggerOff")
 			whichTile = 'mainoff'
 		}
 		if (jsonlist."MainTriggerOff"=="Authentication Required!") {
@@ -484,10 +501,12 @@ def parse(String description) {
 		if (jsonlist."MainPinStatus"==1) {
 			sendEvent(name: "switch", value: "on", isStateChange: true)
 			sendEvent(name: "refreshswitch", value: "default", isStateChange: true)
+            updateMainEPOCH("from parse > CustomPinStatus 1")
 			whichTile = 'mainon'
 		} else if (jsonlist."MainPinStatus"==0) {
 			sendEvent(name: "switch", value: "off", isStateChange: true)
 			sendEvent(name: "refreshswitch", value: "default", isStateChange: true)
+            updateMainEPOCH("from parse > CustomPinStatus 0")
 			whichTile = 'mainoff'
 		}
 		if (device.currentState("contact")==null) {sendEvent(name: "contact", value: "closed", descriptionText: "$device.displayName is closed")}
@@ -575,11 +594,11 @@ def parse(String description) {
         case 'customoff':
 			sendEvent(name: "customswitch", value: "off", isStateChange: true)
 			return createEvent(name: "customswitch", value: "off", isStateChange: true)
-            updateEPOCH("from parse > customoff")
+            updateCustomEPOCH("from parse > customoff")
         case 'customon':
 			sendEvent(name: "customswitch", value: "on", isStateChange: true)
 			return createEvent(name: "customswitch", value: "on", isStateChange: true)
-            updateEPOCH("from parse > customon")
+            updateCustomEPOCH("from parse > customon")
         case 'mainoff':
 			return createEvent(name: "switch", value: "off", isStateChange: true)
         case 'mainon':

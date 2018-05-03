@@ -1,7 +1,8 @@
+const char* version_number = "1.0.20180502";
  /**
- *  ESP8266-12E / NodeMCU / WeMos D1 Mini WiFi & ENC28J60 Sample v1.0.20171030
+ *  ESP8266-12E / NodeMCU / WeMos D1 Mini WiFi & ENC28J60 Sample
  *  Source code can be found here: https://github.com/JZ-SmartThings/SmartThings/blob/master/Devices/Generic%20HTTP%20Device
- *  Copyright 2017 JZ
+ *  Copyright 2018 JZ
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  *  in compliance with the License. You may obtain a copy of the License at:
@@ -23,48 +24,51 @@
 const char* ssid = "WIFI_SSID";
 const char* password = "WIFI_PASSWORD";
 
+// SET DEVICE NAME FOR HTTP UI
+const char* DEVICENAME = "Nice Wemos";
+
 // WHICH PINS ARE USED FOR TRIGGERS
 // IF USING 3.3V RELAY, TRANSISTOR OR MOSFET THEN TOGGLE Use5Vrelay FLAG TO FALSE USING THE HTTP UI
 int relayPin1 = D1; // GPIO5 = D1 // Eco Plugs by KAB or WiOn uses D8 or GPIO15 // Sonoff use D6 or GPIO12
 int relayPin2 = D2; // GPIO4 = D2 // Eco Plugs D3 or GPIO0 for WiFi LED
-bool Use5Vrelay; // Value defaults by reading eeprom in the setup method & configured via HTTP
+long reqFrequencyThreshold = 1000; // Limit Switch Request Frequency in Millis
 
 // PHYSICAL POWER BUTTON & LEDs --- COMMENT OUT INDIVIDUAL ITEMS TO BYPASS THEIR LOGIC
 //#define physicalButton D3   // Eco Plugs or WiOn D7 or GPIO13 // Sonoff D3 or GPIO0 // OITTM D3
-#define physicalLED D4    // Eco Plugs or WiOn D3 or GPIO2 // Sonoff D7 or GPIO13 // OITTM D7 // NodeMCU Red LED is D0, GPIO16 or LED_BUILTIN and Blue LED D4 or GPIO2
+//#define physicalLED D4    // Eco Plugs or WiOn D3 or GPIO2 // Sonoff D7 or GPIO13 // OITTM D7 // NodeMCU Red LED is D0, GPIO16 or LED_BUILTIN and Blue LED D4 or GPIO2
 //#define physicalLED2 D5   // OITTM D5
 
 // USE BASIC HTTP AUTH --- COMMENT OUT TO BYPASS
 // #define useAuth
 
 // DESIGNATE CONTACT SENSOR PINS --- ENABLED VIA HTTP UI & STORED ON EEPROM NO NEED TO COMMENT OUT TO DISABLE
-#define SENSORPIN D4     // what pin is the Contact Sensor on?
-#define SENSORPIN2 D0     // what pin is the 2nd Contact Sensor on?
+#define SENSORPIN D5     // what pin is the Contact Sensor on?
+#define SENSORPIN2 D6     // what pin is the 2nd Contact Sensor on?
 
 // USE DHT TEMP/HUMIDITY SENSOR DESIGNATE WHICH PIN BELOW & PICK DHTTYPE BELOW ALSO --- COMMENT OUT LINE BELOW TO BYPASS DHT LOGIC
-//#define useDHT
+// #define useDHT
 #ifdef useDHT
   #define DHTPIN D3     // what pin is the DHT on?
   #include <DHT.h>      // Use library version 1.2.3 as 1.3.0 gives error
   // Uncomment whatever type of temperature sensor you're using!
-  #define DHTTYPE DHT11   // DHT 11
-  //#define DHTTYPE DHT22   // DHT 22  (AM2302)
+  //#define DHTTYPE DHT11   // DHT 11
+  #define DHTTYPE DHT22   // DHT 22  (AM2302)
   //#define DHTTYPE DHT21   // DHT 21 (AM2301)
   DHT dht(DHTPIN, DHTTYPE);
 #endif
 
 // IF USING MQTT MODIFY TOPICS BELOW --- COMMENT OUT THE LINE BELOW TO BYPASS ALL MQTT LOGIC
-//#define useMQTT
+// #define useMQTT
 #ifdef useMQTT
-  const char* mqttServer = "192.168.0.200";
+  const char* mqttServer = "192.168.0.251";
   char buf[6];
   const char* mqttClientName = itoa(system_get_chip_id(),buf,16); // MUST BE UNIQUE OR MQTT LOOP OCCURS
-  const char* mqttSwitch1Topic = "smartthings/Gate Switch/switch";
-  const char* mqttSwitch2Topic = "smartthings/Gate Switch 2/switch";
-  const char* mqttContact1Topic = "smartthings/Gate Switch/contact";
-  const char* mqttContact2Topic = "smartthings/Gate Switch 2/contact";
-  const char* mqttTemperatureTopic = "smartthings/Gate Switch/temperature";
-  const char* mqttHumidityTopic = "smartthings/Gate Switch/humidity";
+  const char* mqttSwitch1Topic = "smartthings/Nice Wemos/switch";
+  const char* mqttSwitch2Topic = "smartthings/Nice Wemos 2/switch";
+  const char* mqttContact1Topic = "smartthings/Nice Wemos/contact";
+  const char* mqttContact2Topic = "smartthings/Nice Wemos 2/contact";
+  const char* mqttTemperatureTopic = "smartthings/Nice Wemos/temperature";
+  const char* mqttHumidityTopic = "smartthings/Nice Wemos/humidity";
   // MQTT VARIABLES
   long lastReconnectAttempt = 0; // don't send MQTT too often
   const char* lastContact1Payload; const char* lastContact2Payload; // only send MQTT on changes
@@ -72,9 +76,12 @@ bool Use5Vrelay; // Value defaults by reading eeprom in the setup method & confi
 #endif
 
 // OTHER VARIALBES
+bool Use5Vrelay; // Value defaults by reading eeprom in the setup method & configured via HTTP UI
 String currentIP, clientIP, request, fullrequest;
 char *clientIPchar;
 long lastButtonPush = 0; // physical button millis() for debouncing
+long lastSwitch1Request = millis();
+long lastSwitch2Request = millis();
 
 // LOAD UP NETWORK LIB & PORT
 #include <PubSubClient.h>
@@ -276,7 +283,7 @@ void loop() {
 
   // SERIAL KEEP ALIVE MESSAGE
   if (millis() % 900000 == 0) { // every 15 minutes
-    Serial.print("UpTime: "); Serial.println(uptime());
+    Serial.print("--------------------------------------------------UpTime: "); Serial.println(uptime());
   }
 
   // REBOOT FREQUENCY
@@ -290,7 +297,13 @@ void loop() {
 
 #if useWIFI==true
   #ifdef useMQTT
+    // NON-BLOCKING MQTT
     mqttInLoop(millis()); // CALL MQTT LOGIC
+    // BLOCKING MQTT
+    //if (!mqtt.connected()) {
+    //  reconnect();
+    //}
+    //mqtt.loop();
   #endif
 
   // Check if HTTP client has connected
@@ -336,26 +349,41 @@ void loop() {
           HTTP_req = "";    // finished with request, empty string
           request.replace("GET ", ""); request.replace(" HTTP/1.1", ""); request.replace(" HTTP/1.0", "");
 #endif
-          // HANDLE HTTP REQUEST
-          Serial.println(request);
-          handleRequest();
-          delay(10); // pause to make sure pin status is updated for response below
+        // HANDLE HTTP REQUEST
+        Serial.println(request);
+        handleRequest();
+        delay(100); // pause to make sure pin status is updated for response below
 
-
-        if (request.indexOf("/json") != -1) {
+        if (request.indexOf("json") != -1 || request.indexOf("JSON") != -1) {
           client.println(jsonResponse());
+        } else if (request.indexOf("favicon.ico") != -1) {
+          Serial.println("Sending response 99 - HTTP 404");
+          client.println(clientResponse(99));
         } else {
+          Serial.println("Before responding to client");
           client.println(clientResponse(0));
           client.println(clientResponse(1));
           client.println(clientResponse(2));
           client.println(clientResponse(3));
           client.println(clientResponse(4));
+          Serial.println("After responding to client");
         }
+        
+        #ifdef useMQTT // sendMQTT
+          if (request.indexOf("RELAY1=ON") != -1 || request.indexOf("RELAY1=OFF") != -1 || request.indexOf("RELAY1=MOMENTARY") != -1 \
+            || request.indexOf("MainTriggerOn=") != -1 || request.indexOf("MainTriggerOff=") != -1 || request.indexOf("MainTrigger=") != -1 \
+            || request.indexOf("RELAY2=ON") != -1 || request.indexOf("RELAY2=OFF") != -1 || request.indexOf("RELAY2=MOMENTARY") != -1 \
+            || request.indexOf("CustomTriggerOn=") != -1 || request.indexOf("CustomTriggerOff=") != -1 || request.indexOf("CustomTrigger=") != -1 ) {
+                Serial.println("Before sendMQTT");
+                sendMQTT();
+                Serial.println("After sendMQTT");
+           }
+         #endif
 
 // END THE HTTP REQUEST
 #if useWIFI==true
           delay(1);
-          Serial.println("Client disonnected");
+          Serial.println("Client disconnected");
           Serial.println("");
 #else
           break;
@@ -379,12 +407,12 @@ void loop() {
 } //loop
 
 void handleRequest() {
-  //Serial.println("Starting handleRequest...");
-  // Match the request
+  // Match the HTTP request
+  Serial.println("Starting handleRequest...");
   if (request.indexOf("/favicon.ico") > -1) {
     return;
   }
-  if (request.indexOf("/RebootNow") != -1) {
+  if (request.indexOf("RebootNow") != -1) {
     //while(true);
     ESP.restart();
   }
@@ -438,78 +466,130 @@ void handleRequest() {
     }
     ESP.restart();
   }
-  //Serial.print("Use5Vrelay == "); Serial.println(Use5Vrelay);
-  if (request.indexOf("RELAY1=ON") != -1 || request.indexOf("MainTriggerOn=") != -1) {
-    digitalWrite(relayPin1, Use5Vrelay == true ? LOW : HIGH);
-    #ifdef useMQTT
-      clientIP = "HTTP ON" + clientIP;
-      //clientIPchar = strcpy((char*)malloc(clientIP.length()+1), clientIP.c_str());
-      char* clientIPchar = const_cast<char*>(clientIP.c_str());
-      mqtt.publish(mqttSwitch1Topic,clientIPchar);
-      delay(100);
-      mqtt.publish(mqttSwitch1Topic,"on");
-    #endif
-  }
-  if (request.indexOf("RELAY1=OFF") != -1 || request.indexOf("MainTriggerOff=") != -1) {
-    digitalWrite(relayPin1, Use5Vrelay == true ? HIGH : LOW);
-    #ifdef useMQTT
-      clientIP = "HTTP OFF" + clientIP;
-      //clientIPchar = strcpy((char*)malloc(clientIP.length()+1), clientIP.c_str());
-      char* clientIPchar = const_cast<char*>(clientIP.c_str());
-      mqtt.publish(mqttSwitch1Topic,clientIPchar);
-      delay(100);
-      mqtt.publish(mqttSwitch1Topic,"off");
-    #endif
-  }
-  if (request.indexOf("RELAY1=MOMENTARY") != -1 || request.indexOf("MainTrigger=") != -1) {
-    digitalWrite(relayPin1, Use5Vrelay == true ? LOW : HIGH);
-    delay(400);
-    digitalWrite(relayPin1, Use5Vrelay == true ? HIGH : LOW);
-    #ifdef useMQTT
-      clientIP = "HTTP MOMENTARY" + clientIP;
-      //clientIPchar = strcpy((char*)malloc(clientIP.length()+1), clientIP.c_str());
-      char* clientIPchar = const_cast<char*>(clientIP.c_str());
-      mqtt.publish(mqttSwitch1Topic,clientIPchar);
-      delay(100);
-      mqtt.publish(mqttSwitch1Topic,"on");
-      delay(100);
-      mqtt.publish(mqttSwitch1Topic,"off");
-    #endif
+
+  if (request.indexOf("RELAY1=ON") != -1 || request.indexOf("RELAY1=OFF") != -1 || request.indexOf("RELAY1=MOMENTARY") != -1 \
+      || request.indexOf("MainTriggerOn=") != -1 || request.indexOf("MainTriggerOff=") != -1 || request.indexOf("MainTrigger=") != -1 ) {
+    if (millis()-lastSwitch1Request < reqFrequencyThreshold) {
+      Serial.println("handleRequest Switch 1 called too frequently, ignoring request...");
+      Serial.print("lastSwitch1Request = "); Serial.println(lastSwitch1Request); 
+      Serial.print("millis - lastRequest = "); Serial.println(millis()-lastSwitch1Request); 
+      return;
+    } else {
+      Serial.println("Starting switch 1 handling...");
+    }
+  
+    //Serial.print("Use5Vrelay == "); Serial.println(Use5Vrelay);
+    if (request.indexOf("RELAY1=ON") != -1 || request.indexOf("MainTriggerOn=") != -1) {
+      digitalWrite(relayPin1, Use5Vrelay == true ? LOW : HIGH);
+      lastSwitch1Request = millis();
+    }
+    if (request.indexOf("RELAY1=OFF") != -1 || request.indexOf("MainTriggerOff=") != -1) {
+      digitalWrite(relayPin1, Use5Vrelay == true ? HIGH : LOW);
+      lastSwitch1Request = millis();
+    }
+    if (request.indexOf("RELAY1=MOMENTARY") != -1 || request.indexOf("MainTrigger=") != -1) {
+      Serial.println("Start of relay 1 handler");
+      digitalWrite(relayPin1, Use5Vrelay == true ? LOW : HIGH);
+      delay(400);
+      digitalWrite(relayPin1, Use5Vrelay == true ? HIGH : LOW);
+      lastSwitch1Request = millis();
+    }
   }
 
-  if (request.indexOf("RELAY2=ON") != -1 || request.indexOf("CustomTriggerOn=") != -1) {
-    digitalWrite(relayPin2, Use5Vrelay == true ? LOW : HIGH);
-    #ifdef useMQTT
-      clientIP = "HTTP ON" + clientIP;
-      clientIPchar = strcpy((char*)malloc(clientIP.length()+1), clientIP.c_str());
-      mqtt.publish(mqttSwitch2Topic,clientIPchar);
-      delay(100);
-      mqtt.publish(mqttSwitch2Topic,"on");
-    #endif
+  if (request.indexOf("RELAY2=ON") != -1 || request.indexOf("RELAY2=OFF") != -1 || request.indexOf("RELAY2=MOMENTARY") != -1 \
+      || request.indexOf("CustomTriggerOn=") != -1 || request.indexOf("CustomTriggerOff=") != -1 || request.indexOf("CustomTrigger=") != -1 ) {
+    if (millis()-lastSwitch2Request < reqFrequencyThreshold) {
+      Serial.println("handleRequest Switch 2 called too frequently, ignoring request...");
+      Serial.print("lastSwitch2Request = "); Serial.println(lastSwitch2Request); 
+      Serial.print("millis - lastSwitch2Request = "); Serial.println(millis()-lastSwitch2Request); 
+      return;
+    } else {
+      Serial.println("Starting switch 1 handling...");
+    }
+    if (request.indexOf("RELAY2=ON") != -1 || request.indexOf("CustomTriggerOn=") != -1) {
+      digitalWrite(relayPin2, Use5Vrelay == true ? LOW : HIGH);
+      lastSwitch2Request = millis();
+    }
+    if (request.indexOf("RELAY2=OFF") != -1 || request.indexOf("CustomTriggerOff=") != -1) {
+      digitalWrite(relayPin2, Use5Vrelay == true ? HIGH : LOW);
+      lastSwitch2Request = millis();
+    }
+    if (request.indexOf("RELAY2=MOMENTARY") != -1 || request.indexOf("CustomTrigger=") != -1) {
+      digitalWrite(relayPin2, Use5Vrelay == true ? LOW : HIGH);
+      delay(400);
+      digitalWrite(relayPin2, Use5Vrelay == true ? HIGH : LOW);
+      lastSwitch2Request = millis();
+    }
   }
-  if (request.indexOf("RELAY2=OFF") != -1 || request.indexOf("CustomTriggerOff=") != -1) {
-    digitalWrite(relayPin2, Use5Vrelay == true ? HIGH : LOW);
-    #ifdef useMQTT
-      clientIP = "HTTP OFF" + clientIP;
-      clientIPchar = strcpy((char*)malloc(clientIP.length()+1), clientIP.c_str());
-      mqtt.publish(mqttSwitch2Topic,clientIPchar);
-      delay(100);
-      mqtt.publish(mqttSwitch2Topic,"off");
-    #endif
+
+}
+
+void sendMQTT() {
+  if (request.indexOf("RELAY1=ON") != -1 || request.indexOf("RELAY1=OFF") != -1 || request.indexOf("RELAY1=MOMENTARY") != -1 \
+      || request.indexOf("MainTriggerOn=") != -1 || request.indexOf("MainTriggerOff=") != -1 || request.indexOf("MainTrigger=") != -1 ) {
+    if (request.indexOf("RELAY1=ON") != -1 || request.indexOf("MainTriggerOn=") != -1) {
+        clientIP = "HTTP ON" + clientIP;
+        //clientIPchar = strcpy((char*)malloc(clientIP.length()+1), clientIP.c_str());
+        char* clientIPchar = const_cast<char*>(clientIP.c_str());
+        mqtt.publish(mqttSwitch1Topic,clientIPchar);
+        delay(100);
+        mqtt.publish(mqttSwitch1Topic,"on");
+    }
+    if (request.indexOf("RELAY1=OFF") != -1 || request.indexOf("MainTriggerOff=") != -1) {
+        clientIP = "HTTP OFF" + clientIP;
+        //clientIPchar = strcpy((char*)malloc(clientIP.length()+1), clientIP.c_str());
+        char* clientIPchar = const_cast<char*>(clientIP.c_str());
+        mqtt.publish(mqttSwitch1Topic,clientIPchar);
+        delay(100);
+        mqtt.publish(mqttSwitch1Topic,"off");
+    }
+    if (request.indexOf("RELAY1=MOMENTARY") != -1 || request.indexOf("MainTrigger=") != -1) {
+        clientIP = "HTTP MOMENTARY" + clientIP;
+        //clientIPchar = strcpy((char*)malloc(clientIP.length()+1), clientIP.c_str());
+        char* clientIPchar = const_cast<char*>(clientIP.c_str());
+        mqtt.publish(mqttSwitch1Topic,clientIPchar);
+        delay(100);
+        mqtt.publish(mqttSwitch1Topic,"momentary");
+        delay(1000);
+        mqtt.publish(mqttSwitch1Topic,"momentary_done");
+//        delay(100);
+//        mqtt.publish(mqttSwitch1Topic,"on");
+//        delay(100);
+//        mqtt.publish(mqttSwitch1Topic,"off");
+    }
+    lastSwitch1Request = millis();
   }
-  if (request.indexOf("RELAY2=MOMENTARY") != -1 || request.indexOf("CustomTrigger=") != -1) {
-    digitalWrite(relayPin2, Use5Vrelay == true ? LOW : HIGH);
-    delay(400);
-    digitalWrite(relayPin2, Use5Vrelay == true ? HIGH : LOW);
-    #ifdef useMQTT
-      clientIP = "HTTP MOMENTARY" + clientIP;
-      clientIPchar = strcpy((char*)malloc(clientIP.length()+1), clientIP.c_str());
-      mqtt.publish(mqttSwitch2Topic,clientIPchar);
-      delay(100);
-      mqtt.publish(mqttSwitch2Topic,"on");
-      delay(100);
-      mqtt.publish(mqttSwitch2Topic,"off");
-    #endif
+
+  if (request.indexOf("RELAY2=ON") != -1 || request.indexOf("RELAY2=OFF") != -1 || request.indexOf("RELAY2=MOMENTARY") != -1 \
+      || request.indexOf("CustomTriggerOn=") != -1 || request.indexOf("CustomTriggerOff=") != -1 || request.indexOf("CustomTrigger=") != -1 ) {
+    if (request.indexOf("RELAY2=ON") != -1 || request.indexOf("CustomTriggerOn=") != -1) {
+        clientIP = "HTTP ON" + clientIP;
+        clientIPchar = strcpy((char*)malloc(clientIP.length()+1), clientIP.c_str());
+        mqtt.publish(mqttSwitch2Topic,clientIPchar);
+        delay(100);
+        mqtt.publish(mqttSwitch2Topic,"on");
+    }
+    if (request.indexOf("RELAY2=OFF") != -1 || request.indexOf("CustomTriggerOff=") != -1) {
+        clientIP = "HTTP OFF" + clientIP;
+        clientIPchar = strcpy((char*)malloc(clientIP.length()+1), clientIP.c_str());
+        mqtt.publish(mqttSwitch2Topic,clientIPchar);
+        delay(100);
+        mqtt.publish(mqttSwitch2Topic,"off");
+    }
+    if (request.indexOf("RELAY2=MOMENTARY") != -1 || request.indexOf("CustomTrigger=") != -1) {
+        clientIP = "HTTP MOMENTARY" + clientIP;
+        clientIPchar = strcpy((char*)malloc(clientIP.length()+1), clientIP.c_str());
+        mqtt.publish(mqttSwitch2Topic,clientIPchar);
+        delay(100);
+        mqtt.publish(mqttSwitch2Topic,"momentary");
+        delay(1000);
+        mqtt.publish(mqttSwitch2Topic,"momentary_done");
+//        delay(100);
+//        mqtt.publish(mqttSwitch2Topic,"on");
+//        delay(100);
+//        mqtt.publish(mqttSwitch2Topic,"off");
+    }
+    lastSwitch2Request = millis();
   }
 }
 
@@ -517,6 +597,7 @@ void handleRequest() {
 String clientResponse(int section) {
   String clientResponse = "";
   if (section == 0) {
+    Serial.print("Client section: "); Serial.print(section); Serial.print(" - Millis: "); Serial.println(millis());
     // BASIC AUTHENTICATION
     #ifdef useAuth
       // The below Base64 string is gate:gate1 for the username:password
@@ -535,6 +616,7 @@ String clientResponse(int section) {
     #endif
   }
   else if (section == 1) {
+    Serial.print("Client section: "); Serial.print(section); Serial.print(" - Millis: "); Serial.println(millis());
     // Return the response
     clientResponse.concat("<!DOCTYPE HTML>\n");
     clientResponse.concat("<html><head><title>ESP8266 & ");
@@ -543,7 +625,8 @@ String clientResponse(int section) {
     #else
       clientResponse.concat("ENC28J60");
     #endif
-    clientResponse.concat(" DUAL SWITCH</title></head><meta name=viewport content='width=500'>\n<style type='text/css'>\nbutton {line-height: 1.8em; margin: 5px; padding: 3px 7px;}");
+    clientResponse.concat(" "); clientResponse.concat(DEVICENAME);
+    clientResponse.concat("</title></head><meta name=viewport content='width=500'>\n<style type='text/css'>\nbutton {line-height: 1.8em; margin: 5px; padding: 3px 7px;}");
     clientResponse.concat("\nbody {text-align:center;}\ndiv {border:solid 1px; margin: 3px; width:150px;}\n.center { margin: auto; width: 400px; border: 3px solid #73AD21; padding: 3px;}");
     clientResponse.concat("\nhr {width:400px;}\n</style><script src=\"https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js\"></script>\n");
     clientResponse.concat("<script>\n");
@@ -577,7 +660,8 @@ String clientResponse(int section) {
     #else
       clientResponse.concat("ENC28J60");
     #endif
-    clientResponse.concat(" DUAL SWITCH</h2><h3 style=\"height: 15px;\">");
+    clientResponse.concat(" "); clientResponse.concat(DEVICENAME);
+    clientResponse.concat("</h2><h3 style=\"height: 15px;\">");
     clientResponse.concat(currentIP);
     clientResponse.concat("</a>\n</h3>\n");
 
@@ -586,6 +670,7 @@ String clientResponse(int section) {
     clientResponse.concat("\n</b><hr>");
   }
   else if (section == 2) {
+    Serial.print("Client section: "); Serial.print(section); Serial.print(" - Millis: "); Serial.println(millis());
     clientResponse.concat("<pre>\n");
     // SHOW Use5Vrelay
     clientResponse.concat("Use5Vrelay="); clientResponse.concat(Use5Vrelay ? "true" : "false"); clientResponse.concat("\n");
@@ -635,6 +720,7 @@ String clientResponse(int section) {
     clientResponse.concat("</pre>\n"); clientResponse.concat("<hr>\n");
   }
   else if (section == 3) {
+    Serial.print("Client section: "); Serial.print(section); Serial.print(" - Millis: "); Serial.println(millis());
     clientResponse.concat("<div class='center'>\n");
     clientResponse.concat("RELAY1 pin is now: ");
     if (Use5Vrelay == true) {
@@ -664,6 +750,7 @@ String clientResponse(int section) {
     clientResponse.concat("<a href=\"/RELAY2=MOMENTARY\"><button onClick=\"parent.location='/RELAY2=MOMENTARY'\">MOMENTARY</button></a></div><hr>\n");
   }
   else if (section == 4) {
+    Serial.print("Client section: "); Serial.print(section); Serial.print(" - Millis: "); Serial.println(millis());
     //clientResponse.concat("<div class='center'>");
     clientResponse.concat("<div class='center show_settings' id='show_settings'><a href='#' onClick='javascript:show_settings();' class='show_settings'><button class='show_settings'>Show Settings</button></a></div>\n");
     clientResponse.concat("<div class='settings center' id='settings' style='display:none;'><a href='#' onClick='javascript:hide_settings();' class='hide_settings'><button class='hide_settings'>Hide Settings</button></a><br><hr>\n");
@@ -689,7 +776,13 @@ String clientResponse(int section) {
     clientResponse.concat("<br><button onClick=\"javascript: if (confirm(\'Are you sure you want to reboot?\')) parent.location='/RebootNow';\">Reboot Now</button><br></div>\n");
     // BOTTOM LINKS  
     clientResponse.concat("<hr><div class='center'><a target='_blank' href='https://community.smartthings.com/t/raspberry-pi-to-php-to-gpio-to-relay-to-gate-garage-trigger/43335'>Project on SmartThings Community</a></br>\n");
-    clientResponse.concat("<a target='_blank' href='https://github.com/JZ-SmartThings/SmartThings/tree/master/Devices/Generic%20HTTP%20Device'>Project on GitHub</a></br></div></html>\n");
+    clientResponse.concat("<a target='_blank' href='https://github.com/JZ-SmartThings/SmartThings/tree/master/Devices/Generic%20HTTP%20Device'>Project on GitHub</a></br>");
+    clientResponse.concat("v"); clientResponse.concat(version_number);
+    clientResponse.concat("</div></html>\n");
+  } else if (section == 99) {
+    Serial.print("Client section: "); Serial.print(section); Serial.print(" - Millis: "); Serial.println(millis());
+    clientResponse.concat("HTTP/1.1 404 Not Found\n");
+    //clientResponse.concat("\n"); //  do not forget this one
   }
   return clientResponse;
 }
@@ -699,8 +792,15 @@ String jsonResponse() {
   //jsonResponse.concat("HTTP/1.1 200 OK\n");
   jsonResponse.concat("HTTP/1.x 200 OK\n");
   jsonResponse.concat("Content-Type: application/json; charset=ISO-8859-1\n");
+  //jsonResponse.concat("Content-Type: application/json\n");
   jsonResponse.concat("\n"); //  do not forget this one
   jsonResponse.concat("{\n");
+  jsonResponse.concat("    \"Device Name\": \""); jsonResponse.concat(DEVICENAME); jsonResponse.concat("\"");
+  jsonResponse.concat(",\n");
+  jsonResponse.concat("    \"URL\": \"http://"); jsonResponse.concat(currentIP); jsonResponse.concat("\"");
+  jsonResponse.concat(",\n");
+  jsonResponse.concat("    \"CurrentRequest\": \""); jsonResponse.concat(request); jsonResponse.concat("\"");
+  jsonResponse.concat(",\n");
   jsonResponse.concat("    \"UpTime\": \""); jsonResponse.concat(uptime()); jsonResponse.concat("\"");
   jsonResponse.concat(",\n");
   jsonResponse.concat("    \"Free Mem\": \""); jsonResponse.concat(freeRam()); jsonResponse.concat("\"");
@@ -737,8 +837,8 @@ String jsonResponse() {
     jsonResponse.concat("    \"SensorPinStatus\": \"0\"");
     jsonResponse.concat(",\n");
   }
-  if (EEPROM.read(1) == 1) {
-    jsonResponse.concat("    \"Sensor2PinStatus\": \""); jsonResponse.concat(digitalRead(SENSORPIN) ? "1" : "0"); jsonResponse.concat("\"");
+  if (EEPROM.read(2) == 1) {
+    jsonResponse.concat("    \"Sensor2PinStatus\": \""); jsonResponse.concat(digitalRead(SENSORPIN2) ? "1" : "0"); jsonResponse.concat("\"");
   }
   else {
     jsonResponse.concat("    \"Sensor2PinStatus\": \"0\"");
@@ -768,13 +868,14 @@ boolean reconnect() {
     if (mqtt.connect(mqttClientName, mqttSwitch1Topic, 0, false, "LWT disconnected")) {
       Serial.print(mqttClientName);
       Serial.println(" connected");
+      // On connection subscribe
+      mqtt.subscribe(mqttSwitch1Topic);
+      mqtt.subscribe(mqttSwitch2Topic);
       // Once connected, publish an announcement...
       mqtt.publish(mqttSwitch1Topic,"connected");
       mqtt.publish(mqttSwitch1Topic,"available");
       mqtt.publish(mqttSwitch2Topic,"connected");
       mqtt.publish(mqttSwitch2Topic,"available");
-      mqtt.subscribe(mqttSwitch1Topic);
-      mqtt.subscribe(mqttSwitch2Topic);
     } else {
       Serial.print(" connection failed, rc=");
       Serial.println(mqtt.state());
@@ -793,35 +894,60 @@ void callback(char* topic, byte* payload, unsigned int length) {
       fullPayload += (char)payload[i];
     }
     Serial.println();
-    //MQTT handling
-    if (String(topic)==mqttSwitch1Topic && fullPayload=="on") {
-      digitalWrite(relayPin1, Use5Vrelay == true ? LOW : HIGH);
+
+    if ((millis()-lastSwitch1Request < reqFrequencyThreshold) && ((String(topic)==mqttSwitch1Topic && fullPayload!="available") && (String(topic)==mqttSwitch1Topic && fullPayload!="connected"))) {
+      Serial.println("MQTT switch 1 called too frequently, ignoring request...");
+      Serial.print("lastSwitch1Request = "); Serial.println(lastSwitch1Request); 
+      Serial.print("millis - lastSwitch1Request = "); Serial.println(millis()-lastSwitch1Request); 
+      return;
+    } else if (String(topic)==mqttSwitch1Topic && fullPayload=="on" || String(topic)==mqttSwitch1Topic && fullPayload=="off" \
+          || String(topic)==mqttSwitch1Topic && fullPayload=="momentary" ) {
+        Serial.println("Starting Switch 1 MQTT Callback...");
+        if (String(topic)==mqttSwitch1Topic && fullPayload=="on") {
+          digitalWrite(relayPin1, Use5Vrelay == true ? LOW : HIGH);
+        }
+        if (String(topic)==mqttSwitch1Topic && fullPayload=="off") {
+          digitalWrite(relayPin1, Use5Vrelay == true ? HIGH : LOW);
+        }
+        if (String(topic)==mqttSwitch1Topic && fullPayload=="momentary") {
+          digitalWrite(relayPin1, Use5Vrelay == true ? LOW : HIGH);
+          delay(300);
+//          mqtt.publish(mqttSwitch1Topic,"on");
+//          delay(50);
+//          mqtt.publish(mqttSwitch1Topic,"off");
+          digitalWrite(relayPin1, Use5Vrelay == true ? HIGH : LOW);
+          mqtt.publish(mqttSwitch1Topic,"momentary_done");
+        }
+        lastSwitch1Request = millis();
     }
-    if (String(topic)==mqttSwitch1Topic && fullPayload=="off") {
-      digitalWrite(relayPin1, Use5Vrelay == true ? HIGH : LOW);
+
+
+    if ((millis()-lastSwitch2Request < reqFrequencyThreshold) && ((String(topic)==mqttSwitch2Topic && fullPayload!="available") && (String(topic)==mqttSwitch2Topic && fullPayload!="connected"))) {
+      Serial.println("MQTT switch 2 called too frequently, ignoring request...");
+      Serial.print("lastSwitch2Request = "); Serial.println(lastSwitch1Request); 
+      Serial.print("millis - lastSwitch2Request = "); Serial.println(millis()-lastSwitch2Request); 
+      return;
+    } else if (String(topic)==mqttSwitch2Topic && fullPayload=="on" || String(topic)==mqttSwitch2Topic && fullPayload=="off" \
+          || String(topic)==mqttSwitch2Topic && fullPayload=="momentary" ) {
+        Serial.println("Starting Switch 2 MQTT Callback...");
+        if (String(topic)==mqttSwitch2Topic && fullPayload=="on") {
+          digitalWrite(relayPin2, Use5Vrelay == true ? LOW : HIGH);
+        }
+        if (String(topic)==mqttSwitch2Topic && fullPayload=="off") {
+          digitalWrite(relayPin2, Use5Vrelay == true ? HIGH : LOW);
+        }
+        if (String(topic)==mqttSwitch2Topic && fullPayload=="momentary") {
+          digitalWrite(relayPin2, Use5Vrelay == true ? LOW : HIGH);
+          delay(300);
+//          mqtt.publish(mqttSwitch2Topic,"on");
+//          delay(50);
+//          mqtt.publish(mqttSwitch2Topic,"off");
+          digitalWrite(relayPin2, Use5Vrelay == true ? HIGH : LOW);
+          mqtt.publish(mqttSwitch2Topic,"momentary_done");
+        }
+        lastSwitch2Request = millis();
     }
-    if (String(topic)==mqttSwitch1Topic && fullPayload=="momentary") {
-      digitalWrite(relayPin1, Use5Vrelay == true ? LOW : HIGH);
-      delay(300);
-      mqtt.publish(mqttSwitch1Topic,"on");
-      delay(50);
-      mqtt.publish(mqttSwitch1Topic,"off");
-      digitalWrite(relayPin1, Use5Vrelay == true ? HIGH : LOW);
-    }
-    if (String(topic)==mqttSwitch2Topic && fullPayload=="on") {
-      digitalWrite(relayPin2, Use5Vrelay == true ? LOW : HIGH);
-    }
-    if (String(topic)==mqttSwitch2Topic && fullPayload=="off") {
-      digitalWrite(relayPin2, Use5Vrelay == true ? HIGH : LOW);
-    }
-    if (String(topic)==mqttSwitch2Topic && fullPayload=="momentary") {
-      digitalWrite(relayPin2, Use5Vrelay == true ? LOW : HIGH);
-      delay(300);
-      mqtt.publish(mqttSwitch2Topic,"on");
-      delay(50);
-      mqtt.publish(mqttSwitch2Topic,"off");
-      digitalWrite(relayPin2, Use5Vrelay == true ? HIGH : LOW);
-    }
+
   #endif
 }
 
@@ -829,17 +955,21 @@ void mqttInLoop(unsigned long ) {
   #ifdef useMQTT // MQTT LOGIC IN LOOP
     unsigned long currentMillis = millis();
     if (!mqtt.connected()) {
-      if (currentMillis - lastReconnectAttempt > 15000) { // RECONNECT ATTEMPT EVERY 15 SECONDS
+      if (millis() > 10000) { Serial.println("MQTT not connected!!!"); }
+      if (currentMillis - lastReconnectAttempt > 10000) { // RECONNECT ATTEMPT EVERY 10 SECONDS
         lastReconnectAttempt = currentMillis;
         // Attempt to reconnect
         if (reconnect()) {
           lastReconnectAttempt = 0;
         }
+        Serial.println("Finished reconnecting MQTT");
       }
     } else {
       // Client connected
       mqtt.loop();
     }
+
+    
     // MQTT publish contact, temperature & humidity
     const char* currentPayload;
     if (currentMillis % 1000 == 0) { // check contact sensors every 1 seconds
@@ -847,11 +977,13 @@ void mqttInLoop(unsigned long ) {
       if (EEPROM.read(1) == 1 && lastContact1Payload!=(digitalRead(SENSORPIN) ? "open" : "closed")) {
         mqtt.publish(mqttContact1Topic,digitalRead(SENSORPIN) ? "open" : "closed");
         lastContact1Payload = digitalRead(SENSORPIN) ? "open" : "closed";
+        Serial.print ("mqttSensor1 published: "); Serial.println (lastContact1Payload);
       }
       // CONTACT SENSOR 2
       if (EEPROM.read(2) == 1 && lastContact2Payload!=(digitalRead(SENSORPIN2) ? "open" : "closed")) {
         mqtt.publish(mqttContact2Topic,digitalRead(SENSORPIN2) ? "open" : "closed");
         lastContact2Payload = digitalRead(SENSORPIN2) ? "open" : "closed";
+        Serial.print ("mqttSensor2 published: "); Serial.println (lastContact2Payload);
       }
     }
     if (currentMillis % 20000 == 0) { // every 20 seconds DHT
@@ -873,7 +1005,7 @@ void mqttInLoop(unsigned long ) {
         }
       #endif // DHT
     }
-    if (currentMillis % 900000 == 0) { // check connection every 15 minutes
+    if (currentMillis % 300000 == 0) { // check connection every 5 minutes
       // MQTT KEEPALIVE AND LWT LOGIC
       mqtt.publish(mqttSwitch1Topic,"available");
       mqtt.publish(mqttSwitch2Topic,"available");
