@@ -19,6 +19,7 @@ The *.ino files are the Arduino IDE code samples. Verify the few options at the 
 
 This project was tested successfully via an external IP, Pollster and with an Amazon Echo/Alexa. Echo can run TWO functions in my app. The ON command triggers the main function and OFF triggers the custom function but can be changed to only control the Main switch.
 
+* v1.0.20180916 - Fixed Groovy DTH to correctly handle PHP null JSON values.
 * v1.0.20180502 - Lots of bug fixes. MQTT logic optimized eliminating intermittent issues with large HTML client responses while doing MQTT execution in-line. Added ability to limit frequency of requests. This helps with MQTT infinite loops with on & off constantly triggered. Reliability should be much better with this version.
 * v1.0.20171030 - Modified DHT retry logic in Arduino code. Modified main Groovy code & Virtual Sync SmartApp to stop assuming that momentary main means that Alexa should use the OFF command for custom/secondary trigger. This caused issues with SmartThings MQTT Bridge as the OFF command, sticking to explicit settings.
 * v1.0.20171008 - Added MQTT & hosting JSON status page. New support Eco Plugs/WiOn switches (by KAB) & Sonoff devices. Easy ability to integrate with Home Assistant. Cleaner UI after hiding settings.

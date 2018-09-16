@@ -1,5 +1,5 @@
 /**
- *  Generic HTTP Device v1.0.20180502
+ *  Generic HTTP Device v1.0.20180916
  *  Source code can be found here: https://github.com/JZ-SmartThings/SmartThings/blob/master/Devices/Generic%20HTTP%20Device/GenericHTTPDevice.groovy
  *  Copyright 2018 JZ
  *
@@ -359,15 +359,18 @@ def parse(String description) {
 			def body = new String(descMap["body"].decodeBase64())
 			def slurper = new JsonSlurper()
 			jsonlist = slurper.parseText(body)
-			//log.debug "JSONLIST---" + jsonlist."CPU"
+			//log.debug "JSONLIST---" + jsonlist."Refresh"
+            //log.debug "JSONFULL---" + body
 			jsonlist.put ("Date", new Date().format("yyyy-MM-dd h:mm:ss a", location.timeZone))
-			if (jsonlist."CurrentRequest".contains('Refresh')) { jsonlist.put ("Refresh", "Success") }
-			if (jsonlist."CurrentRequest".contains('MainTrigger=')) { jsonlist.put ("MainTrigger", "Success") }
-			if (jsonlist."CurrentRequest".contains('MainTriggerOn=')) { jsonlist.put ("MainTriggerOn", "Success") }
-			if (jsonlist."CurrentRequest".contains('MainTriggerOff=')) { jsonlist.put ("MainTriggerOff", "Success") }
-			if (jsonlist."CurrentRequest".contains('CustomTrigger=')) { jsonlist.put ("CustomTrigger", "Success") }
-			if (jsonlist."CurrentRequest".contains('CustomTriggerOn=')) { jsonlist.put ("CustomTriggerOn", "Success") }
-			if (jsonlist."CurrentRequest".contains('CustomTriggerOff=')) { jsonlist.put ("CustomTriggerOff", "Success") }
+            if (jsonlist."CurrentRequest" != null) {
+                if (jsonlist."CurrentRequest".contains('Refresh')) { jsonlist.put ("Refresh", "Success") }
+                if (jsonlist."CurrentRequest".contains('MainTrigger=')) { jsonlist.put ("MainTrigger", "Success") }
+                if (jsonlist."CurrentRequest".contains('MainTriggerOn=')) { jsonlist.put ("MainTriggerOn", "Success") }
+                if (jsonlist."CurrentRequest".contains('MainTriggerOff=')) { jsonlist.put ("MainTriggerOff", "Success") }
+                if (jsonlist."CurrentRequest".contains('CustomTrigger=')) { jsonlist.put ("CustomTrigger", "Success") }
+                if (jsonlist."CurrentRequest".contains('CustomTriggerOn=')) { jsonlist.put ("CustomTriggerOn", "Success") }
+                if (jsonlist."CurrentRequest".contains('CustomTriggerOff=')) { jsonlist.put ("CustomTriggerOff", "Success") }
+            }
 		} else {
 			jsonlist.put ("Date", new Date().format("yyyy-MM-dd h:mm:ss a", location.timeZone))
 			def data=bodyReturned.eachLine { line ->
