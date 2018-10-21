@@ -1,5 +1,5 @@
 /**
- *  Generic HTTP Device v1.0.20180916
+ *  Generic HTTP Device v1.0.20181021
  *  Source code can be found here: https://github.com/JZ-SmartThings/SmartThings/blob/master/Devices/Generic%20HTTP%20Device/GenericHTTPDevice.groovy
  *  Copyright 2018 JZ
  *
@@ -400,16 +400,24 @@ def parse(String description) {
 				if (DeviceSensorInvert == false) {
 					if (line.contains('Contact Sensor=Open')) { jsonlist.put ("SensorPinStatus".replace("=",""), "Open") }
 					if (line.contains('Contact Sensor=Closed')) { jsonlist.put ("SensorPinStatus".replace("=",""), "Closed") }
+					if (line.contains('SensorPinStatus=Open')) { jsonlist.put ("SensorPinStatus".replace("=",""), "Open") }
+					if (line.contains('SensorPinStatus=Closed')) { jsonlist.put ("SensorPinStatus".replace("=",""), "Closed") }
 				} else {
 					if (line.contains('Contact Sensor=Open')) { jsonlist.put ("SensorPinStatus".replace("=",""), "Closed") }
 					if (line.contains('Contact Sensor=Closed')) { jsonlist.put ("SensorPinStatus".replace("=",""), "Open") }
+					if (line.contains('SensorPinStatus=Open')) { jsonlist.put ("SensorPinStatus".replace("=",""), "Closed") }
+					if (line.contains('SensorPinStatus=Closed')) { jsonlist.put ("SensorPinStatus".replace("=",""), "Open") }
 				}
 				if (DeviceSensor2Invert == false) {
 					if (line.contains('Contact Sensor 2=Open')) { jsonlist.put ("Sensor2PinStatus".replace("=",""), "Open") }
 					if (line.contains('Contact Sensor 2=Closed')) { jsonlist.put ("Sensor2PinStatus".replace("=",""), "Closed") }
+					if (line.contains('Sensor2PinStatus=Open')) { jsonlist.put ("Sensor2PinStatus".replace("=",""), "Open") }
+					if (line.contains('Sensor2PinStatus=Closed')) { jsonlist.put ("Sensor2PinStatus".replace("=",""), "Closed") }
 				} else {
 					if (line.contains('Contact Sensor 2=Open')) { jsonlist.put ("Sensor2PinStatus".replace("=",""), "Closed") }
 					if (line.contains('Contact Sensor 2=Closed')) { jsonlist.put ("Sensor2PinStatus".replace("=",""), "Open") }
+					if (line.contains('Sensor2PinStatus=Open')) { jsonlist.put ("Sensor2PinStatus".replace("=",""), "Closed") }
+					if (line.contains('Sensor2PinStatus=Closed')) { jsonlist.put ("Sensor2PinStatus".replace("=",""), "Open") }
 				}
 				if (line.contains('Refresh=')) { jsonlist.put ("Refresh", "Success") }
 				if (line.contains('Refresh=Success')) { jsonlist.put ("Refresh", "Success") }
