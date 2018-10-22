@@ -1,6 +1,6 @@
-<?php //v1.0.20170130 Added title to the page
+<?php //v1.0.20181022 Added title to the page
 
-$perform_authentication=false;$perform_authentication=false;
+$perform_authentication=false;
 $contact_sensor=false;
 $contact_sensor_2=false;
 $sensor_pin=24;
