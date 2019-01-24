@@ -50,7 +50,7 @@ $rpi = array(
 	"CPU" => shell_exec('grep \'cpu \' /proc/stat | awk \'{usage=($2+$4)*100/($2+$4+$5)} END {print usage "%"}\' | sed \'s/\(\.[0-9]\).*$/\1%/g\' | tr -d \'\n\''),
 	"CPU Temp" => CPUTemp(),
 	"Free Mem" => shell_exec('free -t -h | tr -s " " | grep "Total:" | awk -F " " \'{print $4 " of " $2}\' | tr -d \'\n\''),
-	"php5-gd" => $gd_installed
+	"php-gd" => $gd_installed
 );
 
 function CPUTemp() {
@@ -137,13 +137,13 @@ if (isset($_POST['RebootNow'])) {
 	shell_exec("sudo shutdown -r now");
 	$rpi = $rpi + array("RebootNow" => "Success");
 }
-if (isset($_POST['GDInstall']) && $rpi['php5-gd'] != "Installed") {
-	$gdinstalling = str_replace("\n","",shell_exec('sudo ps -ef | grep php5-gd | grep -v grep | wc -l'));
+if (isset($_POST['GDInstall']) && $rpi['php-gd'] != "Installed") {
+	$gdinstalling = str_replace("\n","",shell_exec('sudo ps -ef | grep php-gd | grep -v grep | wc -l'));
 	if ($gdinstalling=="0") {
-		shell_exec('sudo apt-get update; sudo apt-get -y install php5-gd --fix-missing ; sudo service apache2 restart');
+		shell_exec('sudo apt-get update; sudo apt-get -y install php-gd --fix-missing ; sudo service apache2 restart');
 	}
 }
-if (isset($_POST['GPIO']) && $rpi['php5-gd'] == true) {
+if (isset($_POST['GPIO']) && $rpi['php-gd'] == true) {
 	header("Content-type: image/jpeg");
 	$gpiolines = shell_exec("gpio readall | wc -l");
 	$imheight = 200 + ($gpiolines - 19)*12;
@@ -223,7 +223,7 @@ echo "CPU Temp=".str_replace("'","°",$rpi['CPU Temp'])."\n";
 //FREE MEMORY
 echo "Free Mem=".$rpi['Free Mem']."\n";
 
-echo ($rpi['php5-gd']) ? "php5-gd=Installed\n" : "php5-gd=Not installed\n";
+echo ($rpi['php-gd']) ? "php-gd=Installed\n" : "php-gd=Not installed\n";
 
 if ($rpi['MainPin']) { echo "MainPin=".$rpi['MainPin']."\n"; }
 echo "MainPinStatus=".$rpi['MainPinStatus']."\n";
@@ -264,11 +264,11 @@ if ($rpi['RebootNow']) { echo "RebootNow=Success\n"; }
 	</div>
 	<button class="btn" name="RebootNow" OnClick='return (confirm("Are you sure you want to reboot?"));'>Reboot Now</button>
 	<br/>
-	<?php if ($rpi['php5-gd'] == "Installed") { ?>
+	<?php if ($rpi['php-gd'] == "Installed") { ?>
 		<button class="btn" name="GPIO" target="_blank">Show GPIO Pins</button>
 		<br/>
 	<?php } else { ?>
-		<button class="btn" name="GDInstall">Install php5-gd</button>
+		<button class="btn" name="GDInstall">Install php-gd</button>
 		<br/>
 	<?php } ?>
 	<div class="center" style="transform: scale(1.3); -webkit-transform: scale(1.3); margin-top:30px; width:150px;border:1px solid;"><input type="checkbox" name="UseJSON" value="">&nbsp;&nbsp;&nbsp;UseJSON</input></div>
