@@ -1,6 +1,6 @@
 /**
- *  Virtual Custom Switch Sync App v1.0.20171030
- *  Copyright 2017 JZ
+ *  Virtual Custom Switch Sync App v1.0.20190209
+ *  Copyright 2019 JZ
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  *  in compliance with the License. You may obtain a copy of the License at:
@@ -94,6 +94,8 @@ def switchOffHandler(evt) {
 	//for (int i = 1; i<=3; i++) { runIn(i,updateVirtualSwitch) }
 	for (int i = 1; i<=3; i++) { schedule(now() + i*1000, updateVirtualSwitch) }
 	sendEvent(settings["virtualswitch"], [name:"customTriggered", value:httpswitch*.currentValue("customTriggered")[0]])
+	sendEvent(settings["virtualswitch"], [name:"switch", value:httpswitch*.currentValue("customswitch")])
+	sendEvent(settings["httpswitch"], [name:"customswitch", value:virtualswitch*.currentValue("switch")])
 }
 def virtualSwitchHandler(evt) {
 	log.debug "virtualSwitchHandler called with event: deviceId ${evt.deviceId} name:${evt.name} source:${evt.source} value:${evt.value} isStateChange: ${evt.isStateChange()} isPhysical: ${evt.isPhysical()} isDigital: ${evt.isDigital()} data: ${evt.data} device: ${evt.device}"
